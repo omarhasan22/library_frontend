@@ -1,2 +1,35 @@
-<p *ngIf="!userName" class="text-center">You are not Authenticated!! Please <a routerLink="/login">Login</a></p>
-<p *ngIf="userName" class="text-center">Welcome, {{userName}}</p>
+<div class="container">
+  <h1>Book Management</h1>
+
+  <!-- Search and Book List -->
+  <div class="book-list-section">
+    <h2>Books</h2>
+    <div class="search-bar">
+      <input 
+        type="text" 
+        [(ngModel)]="searchQuery" 
+        placeholder="Search books..." 
+        (input)="onSearch()" 
+      />
+    </div>
+
+    <ul class="book-list">
+      <li *ngFor="let book of books" (click)="viewBook(book._id)">
+        {{ book.title }} - {{ book.author }}
+      </li>
+    </ul>
+  </div>
+
+  <!-- Book Details -->
+  <div class="book-detail-section" *ngIf="selectedBook">
+    <h2>Book Details</h2>
+    <h3>{{ selectedBook.title }}</h3>
+    <p><strong>Author:</strong> {{ selectedBook.author }}</p>
+    <p><strong>Volumes:</strong> {{ selectedBook.volumes }}</p>
+    <p><strong>Publisher:</strong> {{ selectedBook.publisher }}</p>
+    <p><strong>Page Count:</strong> {{ selectedBook.pageCount }}</p>
+    <p><strong>Published Year:</strong> {{ selectedBook.publicationYear }}</p>
+
+    <button (click)="clearSelection()">Close Details</button>
+  </div>
+</div>

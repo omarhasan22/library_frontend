@@ -10,6 +10,9 @@ import { NavComponent } from './nav/nav.component';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http'
 import { AuthInterceptor } from './interceptors/auth.interceptor';
+import { BookListComponent } from './components/book-list/book-list.component';
+import { BookDetailComponent } from './components/book-detail/book-detail.component';
+import { AddBookComponent } from './components/add-book/add-book.component';
 
 @NgModule({
   declarations: [
@@ -17,7 +20,10 @@ import { AuthInterceptor } from './interceptors/auth.interceptor';
     RegisterComponent,
     LoginComponent,
     HomeComponent,
-    NavComponent
+    NavComponent,
+    BookDetailComponent,
+    BookListComponent,
+    AddBookComponent
   ],
   imports: [
     BrowserModule,

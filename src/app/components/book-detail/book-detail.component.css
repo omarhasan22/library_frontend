@@ -1,0 +1,11 @@
+.book-detail {
+  padding: 1rem;
+  background-color: #e0e0e0;
+  border-radius: 5px;
+}
+
+.no-book {
+  padding: 1rem;
+  text-align: center;
+  color: #888;
+}

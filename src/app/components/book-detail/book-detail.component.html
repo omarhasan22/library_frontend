@@ -1,0 +1,12 @@
+<div *ngIf="book" class="book-detail">
+  <h2>{{ book.title }}</h2>
+  <p><strong>Author:</strong> {{ book.author }}</p>
+  <p><strong>Volumes:</strong> {{ book.volumes }}</p>
+  <p><strong>Publisher:</strong> {{ book.publisher }}</p>
+  <p><strong>Page Count:</strong> {{ book.pageCount }}</p>
+  <p><strong>Published Year:</strong> {{ book.publicationYear }}</p>
+</div>
+
+<div *ngIf="!book" class="no-book">
+  <p>Book not found.</p>
+</div>

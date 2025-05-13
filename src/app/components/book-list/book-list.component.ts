@@ -1,16 +1,15 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { BookService } from '../services/book.service';
-import { Book } from '../models/book.model';
+import { BookService } from '../../services/book.service';
+import { Book } from '../../models/book.model';
 
 @Component({
-  selector: 'app-home',
-  templateUrl: './home.component.html',
-  styleUrls: ['./home.component.css']
+  selector: 'app-book-list',
+  templateUrl: './book-list.component.html',
+  styleUrls: ['./book-list.component.css']
 })
-export class HomeComponent implements OnInit {
+export class BookListComponent implements OnInit {
   books: Book[] = [];
-  selectedBook: Book | null = null;
   searchQuery: string = '';
 
   constructor(private bookService: BookService, private router: Router) {}
@@ -31,13 +30,6 @@ export class HomeComponent implements OnInit {
   }
 
   viewBook(id: any): void {
-    this.bookService.getBookById(id).subscribe(
-      (data) => (this.selectedBook = data),
-      (error) => console.error('Error fetching book:', error)
-    );
-  }
-
-  clearSelection(): void {
-    this.selectedBook = null;
+    this.router.navigate(['/books', id]);
   }
 }

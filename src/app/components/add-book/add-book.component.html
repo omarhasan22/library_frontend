@@ -1,0 +1,37 @@
+<div class="add-book-form">
+  <h2>Add New Book</h2>
+
+  <form (ngSubmit)="addBook()">
+    <div class="form-group">
+      <label for="title">Title:</label>
+      <input type="text" id="title" [(ngModel)]="newBook.title" name="title" required />
+    </div>
+
+    <div class="form-group">
+      <label for="author">Author:</label>
+      <input type="text" id="author" [(ngModel)]="newBook.author" name="author" required />
+    </div>
+
+    <div class="form-group">
+      <label for="volumes">Volumes:</label>
+      <input type="number" id="volumes" [(ngModel)]="newBook.volumes" name="volumes" min="1" />
+    </div>
+
+    <div class="form-group">
+      <label for="publisher">Publisher:</label>
+      <input type="text" id="publisher" [(ngModel)]="newBook.publisher" name="publisher" />
+    </div>
+
+    <div class="form-group">
+      <label for="pageCount">Page Count:</label>
+      <input type="number" id="pageCount" [(ngModel)]="newBook.pageCount" name="pageCount" min="1" />
+    </div>
+
+    <div class="form-group">
+      <label for="publicationYear">Publication Year:</label>
+      <input type="number" id="publicationYear" [(ngModel)]="newBook.publicationYear" name="publicationYear" min="0" />
+    </div>
+
+    <button type="submit">Add Book</button>
+  </form>
+</div>
