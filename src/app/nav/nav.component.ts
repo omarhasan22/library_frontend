@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
-import { Emitter } from '../emitters/auth.emitter';
-import { TokenService } from '../services/token.service';
+import { AuthService } from '../services/auth.service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-nav',
@@ -11,18 +11,19 @@ export class NavComponent implements OnInit {
 
   isLoggedIn = false ;
 
-  constructor(private tokenService : TokenService) { }
+
+  constructor(private authService: AuthService,private router:Router,) {}
 
   ngOnInit(): void {
-    Emitter.authEmitter.subscribe(res=>{
-      this.isLoggedIn = res
-    })
+    this.authService.isLoggedIn$.subscribe((status) => {
+      this.isLoggedIn = status;
+    });
   }
 
-  logout(){
-    this.tokenService.deleteAccessToken()
-    this.tokenService.deleteRefreshToken()
-    Emitter.authEmitter.emit(false)
+  logout(): void {
+    this.authService.logout();
+    this.router.navigate(['/login']);
+
   }
 
 }

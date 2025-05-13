@@ -13,6 +13,7 @@ import { AuthInterceptor } from './interceptors/auth.interceptor';
 import { BookListComponent } from './components/book-list/book-list.component';
 import { BookDetailComponent } from './components/book-detail/book-detail.component';
 import { AddBookComponent } from './components/add-book/add-book.component';
+import { AuthService } from './services/auth.service';
 
 @NgModule({
   declarations: [
@@ -33,7 +34,8 @@ import { AddBookComponent } from './components/add-book/add-book.component';
     HttpClientModule,
   ],
   providers: [
-    {provide:HTTP_INTERCEPTORS,useClass:AuthInterceptor,multi:true}
+    {provide:HTTP_INTERCEPTORS,useClass:AuthInterceptor,multi:true},
+    AuthService
   ],
   bootstrap: [AppComponent]
 })

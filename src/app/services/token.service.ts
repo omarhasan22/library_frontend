@@ -31,5 +31,8 @@ export class TokenService {
     localStorage.removeItem('refreshToken')
   }
 
-
+clearTokens(): void {
+  localStorage.removeItem('accessToken');
+  localStorage.removeItem('refreshToken');
+}
 }
