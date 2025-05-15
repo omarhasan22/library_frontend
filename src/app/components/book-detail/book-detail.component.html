@@ -1,12 +1,18 @@
-<div *ngIf="book" class="book-detail">
+<div *ngIf="book">
   <h2>{{ book.title }}</h2>
-  <p><strong>Author:</strong> {{ book.author }}</p>
-  <p><strong>Volumes:</strong> {{ book.volumes }}</p>
-  <p><strong>Publisher:</strong> {{ book.publisher }}</p>
-  <p><strong>Page Count:</strong> {{ book.pageCount }}</p>
-  <p><strong>Published Year:</strong> {{ book.publicationYear }}</p>
-</div>
+  <p>Author: {{ book.author }}</p>
 
-<div *ngIf="!book" class="no-book">
-  <p>Book not found.</p>
+  <button (click)="showBorrowForm = true">Borrow Book</button>
+
+  <div *ngIf="showBorrowForm" class="popup-form">
+    <h3>Borrow Book</h3>
+    <label>
+      Duration (months):
+      <input type="number" min="1" [(ngModel)]="borrowDuration" />
+    </label>
+
+    <br />
+    <button (click)="borrowBook()">Submit</button>
+    <button (click)="showBorrowForm = false">Cancel</button>
+  </div>
 </div>

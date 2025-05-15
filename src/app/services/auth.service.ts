@@ -16,7 +16,9 @@ export class AuthService {
   }
 
   isAuthenticated(): boolean {
-    return !!this.tokenService.getAccessToken();
+        console.log(123);
+    const token = this.tokenService.getAccessToken();
+    return token ? this.tokenService.isTokenValid(token) : false;
   }
 
   logout(): void {

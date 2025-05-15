@@ -9,3 +9,22 @@
   text-align: center;
   color: #888;
 }
+
+.popup-form {
+  position: fixed;
+  top: 30%;
+  left: 50%;
+  transform: translate(-50%, -30%);
+  background: white;
+  border: 1px solid #ccc;
+  padding: 15px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+  z-index: 1000;
+  width: 300px;
+  border-radius: 8px;
+}
+
+.popup-form label {
+  display: block;
+  margin-bottom: 10px;
+}

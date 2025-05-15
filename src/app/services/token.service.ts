@@ -5,34 +5,48 @@ import { Injectable } from '@angular/core';
 })
 export class TokenService {
 
-  constructor() { }
+  private ACCESS_TOKEN_KEY = 'access_token';
+  private REFRESH_TOKEN_KEY = 'refresh_token';
 
-  storeAccessToken = (token:string) => {
-    localStorage.setItem('accessToken',token)
+  storeAccessToken(token: string): void {
+    localStorage.setItem(this.ACCESS_TOKEN_KEY, token);
   }
 
-  storeRefrshToken = (token:string) => {
-    localStorage.setItem('refreshToken',token)
+  getAccessToken(): string | any {
+    console.log("12344");
+    
+    return localStorage.getItem(this.ACCESS_TOKEN_KEY);
   }
 
-  getAccessToken = () => {
-    return localStorage.getItem('accessToken')
+  storeRefreshToken(token: string): void {
+    localStorage.setItem(this.REFRESH_TOKEN_KEY, token);
   }
 
-  getRefreshToken = () => {
-    return localStorage.getItem('refreshToken')
+  getRefreshToken(): string | null {
+    return localStorage.getItem(this.REFRESH_TOKEN_KEY);
   }
 
-  deleteAccessToken = () => {
-    localStorage.removeItem('accessToken')
+  clearTokens(): void {
+    localStorage.removeItem(this.ACCESS_TOKEN_KEY);
+    localStorage.removeItem(this.REFRESH_TOKEN_KEY);
   }
 
-  deleteRefreshToken = () => {
-    localStorage.removeItem('refreshToken')
+  private decodePayload(token: string): any | null {
+    try {
+      // JWT format: header.payload.signature
+      const payload = token.split('.')[1];
+      // atob decodes base64 string (browser built-in)
+      const decodedJson = atob(payload);
+      return JSON.parse(decodedJson);
+    } catch {
+      return null;
+    }
   }
 
-clearTokens(): void {
-  localStorage.removeItem('accessToken');
-  localStorage.removeItem('refreshToken');
-}
+  isTokenValid(token: string): boolean {
+    const decoded = this.decodePayload(token);
+    if (!decoded || !decoded.exp) return false;
+    const currentTime = Math.floor(Date.now() / 1000);
+    return decoded.exp > currentTime;
+  }
 }
