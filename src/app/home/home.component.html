@@ -1,35 +1,33 @@
+    <body id="page-top">
+<!-- <app-navbar></app-navbar> -->
+        <header class="masthead">
+            <div class="container">
+                <div class="masthead-subheading">أهلا وسهلا</div>
+                <div class="masthead-heading text-uppercase">It's Nice To Meet You</div>
+                <a class="btn btn-primary btn-xl text-uppercase" href="#services">Tell Me More</a>
+            </div>
+        </header>
+        <!-- <section class="page-section" id="services">
+            <div class="container">
+                <app-categories></app-categories>
+            </div>
+          </section> -->
+        <section class="page-section bg-light" id="portfolio">
 <div class="container">
-  <h1>Book Management</h1>
-
-  <!-- Search and Book List -->
-  <div class="book-list-section">
-    <h2>Books</h2>
-    <div class="search-bar">
-      <input 
-        type="text" 
-        [(ngModel)]="searchQuery" 
-        placeholder="Search books..." 
-        (input)="onSearch()" 
-      />
-    </div>
-
-    <ul class="book-list">
-      <li *ngFor="let book of books" (click)="viewBook(book._id)">
-        {{ book.title }} - {{ book.author }}
-      </li>
-    </ul>
-  </div>
-
-  <!-- Book Details -->
-  <div class="book-detail-section" *ngIf="selectedBook">
-    <h2>Book Details</h2>
-    <h3>{{ selectedBook.title }}</h3>
-    <p><strong>Author:</strong> {{ selectedBook.author }}</p>
-    <p><strong>Volumes:</strong> {{ selectedBook.volumes }}</p>
-    <p><strong>Publisher:</strong> {{ selectedBook.publisher }}</p>
-    <p><strong>Page Count:</strong> {{ selectedBook.pageCount }}</p>
-    <p><strong>Published Year:</strong> {{ selectedBook.publicationYear }}</p>
-
-    <button (click)="clearSelection()">Close Details</button>
-  </div>
+  <app-add-book></app-add-book>
 </div>
+        </section>
+
+        <section class="page-section bg-light" id="portfolio">
+<div class="container">
+<app-book-list></app-book-list>
+</div>
+        </section>
+
+        <section class="page-section bg-light" id="portfolio">
+<div class="container">
+      <router-outlet></router-outlet>
+</div>
+        </section>
+ 
+    </body>

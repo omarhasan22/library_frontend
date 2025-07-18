@@ -1,0 +1,106 @@
+<nav class="navbar navbar-expand-lg navbar-dark fixed-top" id="mainNav">
+  <div class="container">
+    <div class="navbar-brand"><img src="../../assets/img/logos/dark logo.png" alt="..." /></div>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarResponsive">
+      القائمة <i class="fas fa-bars ms-1"></i>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarResponsive">
+      <ul class="navbar-nav text-uppercase ms-auto py-4 py-lg-0">
+        <li class="nav-item"><a class="nav-link" href="#services">الخدمات</a></li>
+        <li class="nav-item"><a class="nav-link" href="#portfolio">الأعمال</a></li>
+        <li class="nav-item"><a class="nav-link" href="#about">من نحن</a></li>
+        <li *ngIf="!isLoggedIn" class="nav-item"><a routerLink="/login" class="nav-link" href="#team">تسجيل الدخول</a></li>
+        <li *ngIf="isLoggedIn" class="nav-item"><a (click)="logout()" class="nav-link" href="#team">تسجيل الخروج</a></li>
+        <li *ngIf="isLoggedIn && isAdmin " class="nav-item"><a class="nav-link" href="#contact">اضافة كتاب</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- 
+              <div class="sidebar" data-background-color="dark">
+        <div class="sidebar-logo">
+          <div class="logo-header" data-background-color="dark">
+            <a href="../index.html" class="logo">
+              <img
+                src="../assets/img/kaiadmin/logo_light.svg"
+                alt="navbar brand"
+                class="navbar-brand"
+                height="20"
+              />
+            </a>
+            <div class="nav-toggle">
+              <button class="btn btn-toggle toggle-sidebar">
+                <i class="gg-menu-right"></i>
+              </button>
+              <button class="btn btn-toggle sidenav-toggler">
+                <i class="gg-menu-left"></i>
+              </button>
+            </div>
+            <button class="topbar-toggler more">
+              <i class="gg-more-vertical-alt"></i>
+            </button>
+          </div>
+        </div>
+        <div class="sidebar-wrapper scrollbar scrollbar-inner">
+          <div class="sidebar-content">
+            <ul class="nav nav-secondary">
+             <li class="nav-section">
+                <span class="sidebar-mini-icon">
+                  <i class="fa fa-ellipsis-h"></i>
+                </span>
+                <h4 class="text-section">Books</h4>
+              </li>
+               <li class="nav-item">
+                <a routerLink="/" class="nav-link">
+                  <i class="fas fa-layer-group"></i>
+                  <p>Home</p>
+                </a>
+              </li>
+               <li class="nav-item" *ngIf="isLoggedIn && isAdmin " >
+                <a routerLink="/add-book" class="nav-link">
+                  <i class="fas fa-layer-group"></i>
+                  <p>Add Book</p>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a routerLink="/books" class="nav-link">
+                  <i class="fas fa-layer-group"></i>
+                  <p>All Books</p>
+                </a>
+              </li>  
+
+
+
+              <li class="nav-section">
+                <span class="sidebar-mini-icon">
+                  <i class="fa fa-ellipsis-h"></i>
+                </span>
+                <h4 class="text-section">Setting</h4>
+              </li>
+               <li class="nav-item" *ngIf="!isLoggedIn">
+                <a  routerLink="/login" class="nav-link">
+                  <i class="fas fa-layer-group"></i>
+                  <p>Login</p>
+                </a>
+              </li>
+              <li class="nav-item" *ngIf="!isLoggedIn">
+                <a routerLink="/register" class="nav-link">
+                  <i class="fas fa-layer-group"></i>
+                  <p>Register</p>
+                </a>
+              </li>  
+                  <li class="nav-item" *ngIf="isLoggedIn">
+                <a (click)="logout()" class="nav-link">
+                  <i class="fas fa-layer-group"></i>
+                  <p>Logout</p>
+                </a>
+              </li> 
+
+     
+
+
+            </ul>
+          </div>
+        </div>
+      </div> -->

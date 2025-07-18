@@ -25,3 +25,48 @@
 .book-list li:hover {
   background-color: #d0d0d0;
 }
+
+.container {
+  padding: 1rem;
+}
+
+.book-list-section, .book-detail-section {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+}
+
+.search-bar {
+  margin-bottom: 1rem;
+}
+
+.search-bar input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.book-list {
+  list-style: none;
+  padding: 0;
+}
+
+.book-list li {
+  padding: 0.5rem;
+  margin-bottom: 0.5rem;
+  background-color: #e0e0e0;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+.book-list li:hover {
+  background-color: #c0c0c0;
+}
+
+.book-detail-section {
+  background-color: #f0f0f0;
+  padding: 1rem;
+  border-radius: 5px;
+}

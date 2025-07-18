@@ -49,4 +49,15 @@ export class TokenService {
     const currentTime = Math.floor(Date.now() / 1000);
     return decoded.exp > currentTime;
   }
+
+  decodeToken(token: string): any | null {
+    try {
+      const payload = token.split('.')[1];
+      const decodedJson = atob(payload);
+      return JSON.parse(decodedJson);
+    } catch (error) {
+      console.error('Error decoding token:', error);
+      return null;
+    }
+  }
 }

@@ -1,4 +1,4 @@
-<div class="login-container">
+<!-- <div  class="form-signin">
   <h2>Login</h2>
   <form [formGroup]="loginForm" (ngSubmit)="login()">
     <div>
@@ -19,4 +19,50 @@
       {{ isLoading ? 'Logging in...' : 'Login' }}
     </button>
   </form>
-</div>
+</div> -->
+
+<section class="vh-100 "
+ >
+  <div class="mask d-flex align-items-center h-100 ">
+    <div class="container h-100">
+      <div class="row d-flex justify-content-center align-items-center h-100">
+        <div class="col-12 col-md-9 col-lg-7 col-xl-6">
+          <div class="card bg-image" style="border-radius: 15px;">
+            <div class="card-body p-5">
+              <h2 class="text-uppercase text-center mb-5">Log In</h2>
+
+              <form [formGroup]="loginForm" (ngSubmit)="login()" >
+                <div data-mdb-input-init class="form-outline mb-4">
+                  <input  id="username" formControlName="username" type="text" class="form-control form-control-lg" />
+                  <label for="username" class="form-label" >Username</label>
+                </div>
+
+                <div data-mdb-input-init class="form-outline mb-4">
+                  <input type="password" id="password" formControlName="password" id="form3Example4cg" class="form-control form-control-lg" />
+                  <label for="password" class="form-label">Password</label>
+                </div>
+
+    <div *ngIf="message" class="error-message">
+      {{ message }}
+    </div>
+
+                <!-- <div class="d-flex justify-content-center">
+                  <button  type="submit" 
+                    class="btn btn-success btn-block btn-lg gradient-custom-4 text-body">Log In</button>
+                </div> -->
+    <button type="submit" class="btn btn-block btn-lg text-body " style="background-color: #209c90; color: white !important;"
+     [disabled]="isLoading">
+      {{ isLoading ? 'Logging in...' : 'Login' }}
+    </button>
+                <p class="text-center text-muted mt-5 mb-0">Have already an account? <a routerLink="/register"   
+                class="fw-bold text-body"><u>Login here</u></a></p>
+
+              </form>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

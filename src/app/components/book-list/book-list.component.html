@@ -1,18 +1,86 @@
-<p>book-list works!</p>
-<div class="search-bar">
-  <input 
-    type="text" 
-    [(ngModel)]="searchQuery" 
-    placeholder="Search books..." 
-    (input)="onSearch()" 
-  />
-</div>
+<div class="wrapper">
+  <div class="main-panel">
+    <div class="main-header">
+      <!-- Navbar Header -->
+      <nav class="navbar navbar-header navbar-header-transparent navbar-expand-lg border-bottom">
+        <div class="container-fluid">
+          <nav class="navbar navbar-header-left navbar-expand-lg navbar-form nav-search p-0 d-none d-lg-flex">
+            <div class="input-group">
+              <div class="input-group-prepend">
+                <button type="submit" class="btn btn-search pe-1">
+                  <i class="fa fa-search search-icon"></i>
+                </button>
+              </div>
+              <input
+                type="text"
+                placeholder="ابحث..."
+                class="form-control"
+              />
+            </div>
+          </nav>
+        </div>
+      </nav>
+      <!-- End Navbar -->
+    </div>
 
-<div class="book-list">
-  <h2>All Books</h2>
-  <ul>
-    <li *ngFor="let book of books" (click)="viewBook(book._id)">
-      {{ book.title }} - {{ book.author }}
-    </li>
-  </ul>
+    <div class="container">
+      <div class="page-inner">
+        <div class="row">
+          <div class="col-md-12">
+            <div class="card">
+              <div class="card-header">
+                <h4 class="card-title">أساسي</h4>
+              </div>
+              <div class="card-body">
+                <div class="table-responsive">
+                  <table
+                    id="basic-datatables"
+                    class="display table table-striped table-hover"
+                  >
+                    <thead>
+                      <tr>
+                        <th>العنوان</th>
+                        <th>المؤلف</th>
+                        <th>عدد الأجزاء</th>
+                        <th>الدار</th>
+                        <th>المحقق</th>
+                        <th>اعتنى به</th>
+                        <th>رقم الطبعة</th>
+                        <th>سنة الطباعة</th>
+                        <th>موضوع الكتاب</th>
+                        <th>موضوع الكتاب الفرعي</th>
+                        <th>رقم الغرفة</th>
+                        <th>رقم الرف</th>
+                        <th>رقم الجدار</th>
+                        <th>رقم الكتاب</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let book of books">
+                        <td>{{ book.title }}</td>
+                        <td>{{ book.author?.name }}</td>
+                        <td>{{ book.numberOfVolumes ?? '—' }}</td>
+                        <td>{{ book.publisher?.title ?? '—' }}</td>
+                        <td>{{ book.editor?.name ?? '—' }}</td>
+                        <td>{{ book.caretaker?.name ?? '—' }}</td>
+                        <td>{{ book.editionNumber ?? '—' }}</td>
+                        <td>{{ book.publicationYear ?? '—' }}</td>
+                        <td>{{ book.category?.title ?? '—' }}</td>
+                        <td>{{ book.subject?.title ?? '—' }}</td>
+                        <td>{{ book.address?.roomNumber ?? '—' }}</td>
+                        <td>{{ book.address?.shelfNumber ?? '—' }}</td>
+                        <td>{{ book.address?.wallNumber ?? '—' }}</td>
+                        <td>{{ book.address?.bookNumber ?? '—' }}</td>
+
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div> 
+    </div>
+  </div>
 </div>
