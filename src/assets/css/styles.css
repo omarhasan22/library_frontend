@@ -11327,7 +11327,7 @@ section#contact form#contactForm :-ms-input-placeholder {
 }
 
 .categories {
-  background-image: url('../../../assets/img/islamicpattern.png');
+  /* background-image: url('../../../assets/img/islamicpattern.png'); */
   background-size: contain;
   background-color: #e7e7e7;
     box-shadow: 0px 4px 10px 0.25rem rgb(0 0 0 / 21%)
