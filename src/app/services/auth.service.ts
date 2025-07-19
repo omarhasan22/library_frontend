@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { TokenService } from './token.service';
 import { HttpClient } from '@angular/common/http';
+import { environment } from 'src/environments/environment';
 
 @Injectable({
   providedIn: 'root',
@@ -9,7 +10,8 @@ import { HttpClient } from '@angular/common/http';
 export class AuthService  {
   private isLoggedInSubject: BehaviorSubject<boolean>;
   isLoggedIn$: Observable<boolean>;
-  private apiUrl = 'http://localhost:8000/users';  // Adjust as per backend URL
+  
+  private baseUrl = environment.apiUrl;
 
   constructor(private tokenService: TokenService,private http: HttpClient) {
     const initialAuthState = this.isAuthenticated();
@@ -46,7 +48,7 @@ export class AuthService  {
     const payload = this.tokenService.decodeToken(token);
     console.log("payloadpayload ",payload.userId);
     
-    return this.http.get<any>(`${this.apiUrl}/userId/${payload.userId}`);   
+    return this.http.get<any>(`${this.baseUrl}/users/userId/${payload.userId}`);   
   }
     return null;
   }
