@@ -47,11 +47,11 @@
                         <th>اعتنى به</th>
                         <th>رقم الطبعة</th>
                         <th>سنة الطباعة</th>
-                        <th>موضوع الكتاب</th>
-                        <th>موضوع الكتاب الفرعي</th>
-                        <th>رقم الغرفة</th>
+                        <th>تصنيف</th>
+                        <th>تصنيف فرعي</th>
+                        <th>رقم القاعة</th>
+                        <th>رقم الاستاند</th>
                         <th>رقم الرف</th>
-                        <th>رقم الجدار</th>
                         <th>رقم الكتاب</th>
                       </tr>
                     </thead>
@@ -68,8 +68,8 @@
                         <td>{{ book.category?.title ?? '—' }}</td>
                         <td>{{ book.subject?.title ?? '—' }}</td>
                         <td>{{ book.address?.roomNumber ?? '—' }}</td>
-                        <td>{{ book.address?.shelfNumber ?? '—' }}</td>
                         <td>{{ book.address?.wallNumber ?? '—' }}</td>
+                        <td>{{ book.address?.shelfNumber ?? '—' }}</td>
                         <td>{{ book.address?.bookNumber ?? '—' }}</td>
 
                       </tr>

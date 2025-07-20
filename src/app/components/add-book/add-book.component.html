@@ -19,7 +19,7 @@
 
       <!-- المؤلف -->
       <div class="mb-3">
-        <label class="form-label" style="font-weight: bolder;">المؤلف</label>
+        <label class="form-label" style="font-weight: bolder;">ماتن</label>
         <select
           class="form-select"
           [(ngModel)]="newBook.author.name"
@@ -40,7 +40,7 @@
 
       <!-- المحشي -->
       <div class="mb-3">
-        <label class="form-label" style="font-weight: bolder;">المحشي</label>
+        <label class="form-label" style="font-weight: bolder;">الشارح</label>
         <select
           class="form-select"
           [(ngModel)]="newBook.muhashi.name"
@@ -278,7 +278,6 @@
           class="form-control"
           [(ngModel)]="newBook.address.bookNumber"
           name="addressBook"
-          readonly
         />
       </div>
 
