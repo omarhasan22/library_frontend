@@ -248,6 +248,16 @@
           />
         </div>
         <div class="col mb-3">
+          <label for="wallNumber" class="form-label" style="font-weight: bolder;">رقم الستاند</label>
+          <input
+            type="text"
+            id="wallNumber"
+            class="form-control"
+            [(ngModel)]="newBook.address.wallNumber"
+            name="addressWall"
+          />
+        </div>
+          <div class="col mb-3">
           <label for="shelfNumber" class="form-label" style="font-weight: bolder;">رقم الرف</label>
           <input
             type="text"
@@ -255,16 +265,6 @@
             class="form-control"
             [(ngModel)]="newBook.address.shelfNumber"
             name="addressShelf"
-          />
-        </div>
-        <div class="col mb-3">
-          <label for="wallNumber" class="form-label" style="font-weight: bolder;">رقم الجدار</label>
-          <input
-            type="text"
-            id="wallNumber"
-            class="form-control"
-            [(ngModel)]="newBook.address.wallNumber"
-            name="addressWall"
           />
         </div>
       </div>
