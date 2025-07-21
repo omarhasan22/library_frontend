@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, Renderer2  } from '@angular/core';
+import { Component, OnDestroy, OnInit, Renderer2 } from '@angular/core';
 import { Router } from '@angular/router';
 import { BookService } from '../services/book.service';
 import { Book } from '../models/book.model';
@@ -9,17 +9,15 @@ import { Book } from '../models/book.model';
   styleUrls: ['./home.component.css'],
 })
 export class HomeComponent implements OnInit, OnDestroy {
-  books: Book[] = [];
-  selectedBook: Book | null = null;
-  searchQuery: string = '';
+  addedBook: Book | null = null;
   private scrollHandler: () => void;
 
-  constructor(private bookService: BookService, private router: Router,private renderer: Renderer2) {}
+  constructor(private bookService: BookService, private router: Router, private renderer: Renderer2) { }
 
   ngOnInit(): void {
-    this.loadBooks();
+    // this.loadBooks();
 
-     // on init, attach our handler
+    // on init, attach our handler
     this.scrollHandler = this.renderer.listen('window', 'scroll', () => {
       const nav = document.querySelector('#mainNav');
       if (!nav) return;
@@ -46,25 +44,29 @@ export class HomeComponent implements OnInit, OnDestroy {
     }
   }
 
-  loadBooks(): void {
-    this.bookService.getAllBooks(this.searchQuery).subscribe(
-      (data) => (this.books = data),
-      (error) => console.error('Error fetching books:', error)
-    );
+  // loadBooks(): void {
+  //   this.bookService.getAllBooks(this.searchQuery).subscribe(
+  //     (data) => (this.books = data),
+  //     (error) => console.error('Error fetching books:', error)
+  //   );
+  // // }
+
+  // onSearch(): void {
+  //   this.loadBooks();
+  // }
+
+  // viewBook(id: any): void {
+  //   this.bookService.getBookById(id).subscribe(
+  //     (data) => (this.selectedBook = data),
+  //     (error) => console.error('Error fetching book:', error)
+  //   );
+  // }
+
+  appendBook(addedBook: Book): void {
+    this.addedBook = addedBook;
   }
 
-  onSearch(): void {
-    this.loadBooks();
-  }
-
-  viewBook(id: any): void {
-    this.bookService.getBookById(id).subscribe(
-      (data) => (this.selectedBook = data),
-      (error) => console.error('Error fetching book:', error)
-    );
-  }
-
-  clearSelection(): void {
-    this.selectedBook = null;
-  }
+  // clearSelection(): void {
+  //   this.selectedBook = null;
+  // }
 }

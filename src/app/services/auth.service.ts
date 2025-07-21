@@ -7,13 +7,13 @@ import { environment } from 'src/environments/environment';
 @Injectable({
   providedIn: 'root',
 })
-export class AuthService  {
+export class AuthService {
   private isLoggedInSubject: BehaviorSubject<boolean>;
   isLoggedIn$: Observable<boolean>;
-  
+
   private baseUrl = environment.apiUrl;
 
-  constructor(private tokenService: TokenService,private http: HttpClient) {
+  constructor(private tokenService: TokenService, private http: HttpClient) {
     const initialAuthState = this.isAuthenticated();
     this.isLoggedInSubject = new BehaviorSubject<boolean>(initialAuthState);
     this.isLoggedIn$ = this.isLoggedInSubject.asObservable();
@@ -24,19 +24,16 @@ export class AuthService  {
   }
 
   isAuthenticated(): boolean {
-    console.log(123);
     const token = this.tokenService.getAccessToken();
     return token ? this.tokenService.isTokenValid(token) : false;
   }
 
   isAdmin(): boolean {
     const token = this.tokenService.getAccessToken();
-    console.log("token ",token);
-    
+
     if (token) {
       const payload = this.tokenService.decodeToken(token);
-      console.log("payload ",payload);
-      
+
       return payload && payload.role === 'admin';
     }
     return false;
@@ -45,16 +42,15 @@ export class AuthService  {
   getUserData(): any | null {
     const token = this.tokenService.getAccessToken();
     if (token) {
-    const payload = this.tokenService.decodeToken(token);
-    console.log("payloadpayload ",payload.userId);
-    
-    return this.http.get<any>(`${this.baseUrl}/users/userId/${payload.userId}`);   
-  }
+      const payload = this.tokenService.decodeToken(token);
+
+      return this.http.get<any>(`${this.baseUrl}/users/userId/${payload.userId}`);
+    }
     return null;
   }
 
   logout(): void {
     this.tokenService.clearTokens();
     this.setLoginState(false);
-}
+  }
 }

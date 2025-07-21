@@ -1,5 +1,5 @@
 // add-book.component.ts
-import { Component, OnInit } from '@angular/core';
+import { Component, EventEmitter, OnInit, Output } from '@angular/core';
 import { BookService } from '../../services/book.service';
 import { Book } from '../../models/book.model';
 import { Category } from '../../models/category.model';
@@ -54,7 +54,9 @@ export class AddBookComponent implements OnInit {
     imageUrl: ''
   };
 
-  constructor(private bookService: BookService) {}
+  @Output() newBookAdded = new EventEmitter<Book>();
+
+  constructor(private bookService: BookService) { }
 
   ngOnInit(): void {
     this.loadPeople();
@@ -62,7 +64,7 @@ export class AddBookComponent implements OnInit {
     this.loadPublishers();
   }
 
-   loadPeople() {
+  loadPeople() {
     this.bookService.getPeople().subscribe((people) => {
       this.people = people;
       this.authors = people.filter((p) => p.type === 'author');
@@ -72,25 +74,25 @@ export class AddBookComponent implements OnInit {
     });
   }
 
-   loadCategories() {
+  loadCategories() {
     this.bookService.getCategories().subscribe((cats) => (this.categories = cats));
   }
 
-   loadSubjects() {
+  loadSubjects() {
     this.bookService.getSubjects().subscribe((sub) => (this.subjects = sub));
   }
 
-   loadPublishers() {
+  loadPublishers() {
     this.bookService.getPublishers().subscribe((pubs) => (this.publishers = pubs));
   }
 
-  onAuthorInputChange(val: string)    { this.newBook.author.name = val; }
-  onMuhashiInputChange(val: string)   { this.newBook.muhashi = { name: val }; }
-  onEditorInputChange(val: string)    { this.newBook.editor.name = val; }
+  onAuthorInputChange(val: string) { this.newBook.author.name = val; }
+  onMuhashiInputChange(val: string) { this.newBook.muhashi = { name: val }; }
+  onEditorInputChange(val: string) { this.newBook.editor.name = val; }
   onCaretakerInputChange(val: string) { this.newBook.caretaker.name = val; }
   onPublisherInputChange(val: string) { this.newBook.publisher.title = val; }
-  onCategoryInputChange(val: string)  { this.newBook.category.title = val; }
-  onSubjectInputChange(val: string)  { this.newBook.subject.title = val; }
+  onCategoryInputChange(val: string) { this.newBook.category.title = val; }
+  onSubjectInputChange(val: string) { this.newBook.subject.title = val; }
 
   onImageSelected(evt: Event) {
     const inp = evt.target as HTMLInputElement;
@@ -103,25 +105,22 @@ export class AddBookComponent implements OnInit {
     const payload: any = { ...this.newBook };
 
     // override “add new” fields
-    if (this.newAuthorName)    payload.author = { name: this.newAuthorName };
-    if (this.newMuhashiName)   payload.muhashi = { name: this.newMuhashiName };
-    if (this.newEditorName)    payload.editor = { name: this.newEditorName };
+    if (this.newAuthorName) payload.author = { name: this.newAuthorName };
+    if (this.newMuhashiName) payload.muhashi = { name: this.newMuhashiName };
+    if (this.newEditorName) payload.editor = { name: this.newEditorName };
     if (this.newCaretakerName) payload.caretaker = { name: this.newCaretakerName };
     if (this.newPublisherName) payload.publisher = { title: this.newPublisherName };
-    if (this.newCategoryName)  payload.category = { title: this.newCategoryName };
-    if (this.newSubjectName)  payload.subject = { title: this.newSubjectName };
+    if (this.newCategoryName) payload.category = { title: this.newCategoryName };
+    if (this.newSubjectName) payload.subject = { title: this.newSubjectName };
 
     // attach image file if any
-    console.log('Selected image file:', this.selectedImageFile  );
-    
+
     if (this.selectedImageFile) {
-      console.log('Selected image file:', this.selectedImageFile);
-      
       payload.image = this.selectedImageFile.name;
     }
 
     this.bookService.createBook(payload).subscribe(
-      () => {
+      (createdBook) => {
         alert('تم إضافة الكتاب بنجاح!');
 
         // increment bookNumber
@@ -145,8 +144,12 @@ export class AddBookComponent implements OnInit {
         this.newBook.publicationYear = new Date().getFullYear();
         this.newBook.pageCount = 1;
         this.selectedImageFile = null;
+
+        // ✅ Emit the created book data here
+        this.newBookAdded.emit(createdBook);
       },
       (err) => console.error('Error adding book:', err)
     );
+
   }
 }

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, Input, OnInit, SimpleChange } from '@angular/core';
 import { Router } from '@angular/router';
 import { BookService } from '../../services/book.service';
 import { Book } from '../../models/book.model';
@@ -11,11 +11,18 @@ import { Book } from '../../models/book.model';
 export class BookListComponent implements OnInit {
   books: Book[] = [];
   searchQuery: string = '';
+  @Input() addedBook: Book | null = null;
 
-  constructor(private bookService: BookService, private router: Router) {}
+  constructor(private bookService: BookService, private router: Router) { }
 
   ngOnInit(): void {
     this.loadBooks();
+  }
+
+  ngOnChanges(changes: SimpleChange): void {
+    if (changes['addedBook'] && this.addedBook) {
+      this.books.push(this.addedBook);
+    }
   }
 
   loadBooks(): void {

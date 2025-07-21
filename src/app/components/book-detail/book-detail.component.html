@@ -1,18 +1,59 @@
-<div *ngIf="book" class="wrapper">
-  <h2>{{ book.title }}</h2>
-  <p>Author: {{ book.author }}</p>
+<div *ngIf="book" class="container py-5">
+  <div class="card shadow-lg">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+      <h3 class="mb-0">{{ book.title }}</h3>
+      <div>
+        <button class="btn btn-sm btn-warning me-2" (click)="editBook()">تعديل</button>
+        <button class="btn btn-sm btn-danger" (click)="deleteBook()">حذف</button>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="row mb-3">
+        <div class="col-md-6"><strong>المؤلف:</strong> {{ book.author?.name || '—' }}</div>
+        <div class="col-md-6"><strong>المحقق:</strong> {{ book.editor?.name || '—' }}</div>
+      </div>
+      <div class="row mb-3">
+        <div class="col-md-6"><strong>عدد الأجزاء:</strong> {{ book.numberOfVolumes || '—' }}</div>
+        <div class="col-md-6"><strong>الناشر:</strong> {{ book.publisher?.title || '—' }}</div>
+      </div>
+      <div class="row mb-3">
+        <div class="col-md-6"><strong>رقم الطبعة:</strong> {{ book.editionNumber || '—' }}</div>
+        <div class="col-md-6"><strong>سنة الطباعة:</strong> {{ book.publicationYear || '—' }}</div>
+      </div>
+      <div class="row mb-3">
+        <div class="col-md-6"><strong>التصنيف:</strong> {{ book.category }}</div>
+        <div class="col-md-6"><strong>الموضوع:</strong> {{ book.subject?.title || '—' }}</div>
+      </div>
+      <div class="row mb-3">
+        <div class="col-md-6"><strong>المكان:</strong>
+          قاعة {{ book.address?.roomNumber }} - استانـد {{ book.address?.wallNumber }} - رف {{ book.address?.shelfNumber
+          }}
+        </div>
+        <div class="col-md-6"><strong>رقم الكتاب:</strong> {{ book.address?.bookNumber }}</div>
+      </div>
 
-  <button (click)="showBorrowForm = true">Borrow Book</button>
+      <div class="text-center mt-4">
+        <button class="btn btn-success" (click)="showBorrowForm = true">استعارة الكتاب</button>
+      </div>
+    </div>
+  </div>
 
-  <div *ngIf="showBorrowForm" class="popup-form">
-    <h3>Borrow Book</h3>
-    <label>
-      Duration (months):
-      <input type="number" min="1" [(ngModel)]="borrowDuration" />
-    </label>
+  <!-- Borrow Form Popup -->
+  <div class="modal-backdrop fade show" *ngIf="showBorrowForm"
+    style="z-index: 1050; background-color: rgba(0, 0, 0, 0.5); position: fixed; inset: 0;"></div>
 
-    <br />
-    <button (click)="borrowBook()">Submit</button>
-    <button (click)="showBorrowForm = false">Cancel</button>
+  <div class="modal fade show d-block" *ngIf="showBorrowForm" tabindex="-1"
+    style="z-index: 1055; background: white; border-radius: 8px; padding: 20px; max-width: 500px; margin: 100px auto;">
+    <h4 class="mb-3">استعارة الكتاب</h4>
+
+    <div class="mb-3">
+      <label>المدة (بالأشهر):</label>
+      <input type="number" class="form-control" [(ngModel)]="borrowDuration" min="1" />
+    </div>
+
+    <div class="d-flex justify-content-end">
+      <button class="btn btn-primary me-2">إرسال</button>
+      <button class="btn btn-secondary" (click)="showBorrowForm = false">إلغاء</button>
+    </div>
   </div>
 </div>

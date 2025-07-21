@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { BookService } from '../../services/book.service';
-import { BorrowService } from '../../services/borrow.service';
+import { Book } from '../../models/book.model';
 
 @Component({
   selector: 'app-book-detail',
@@ -9,50 +9,60 @@ import { BorrowService } from '../../services/borrow.service';
   styleUrls: ['./book-detail.component.css']
 })
 export class BookDetailComponent implements OnInit {
-  book: any = null;
+  book!: Book;
+  borrowDuration: number = 1;
   showBorrowForm = false;
-  borrowDuration: number = 1; // months
-  constructor(private route: ActivatedRoute, private bookService: BookService, private borrowService :BorrowService) {}
+
+  constructor(
+    private route: ActivatedRoute,
+    private router: Router,
+    private bookService: BookService
+  ) {
+  }
 
   ngOnInit(): void {
     const bookId = this.route.snapshot.paramMap.get('id');
     if (bookId) {
-      this.loadBook(bookId);
+      this.bookService.getBookById(bookId).subscribe(
+        (b) => this.book = b,
+        (err) => console.error('Failed to load book', err)
+      );
     }
+
   }
 
-  loadBook(id: string): void {
-    this.bookService.getBookById(id).subscribe(
-      (data) => this.book = data,
-      (error) => console.error('Error fetching book details:', error)
+  // borrowBook(): void {
+  //   if (!this.book || !this.book._id) return;
+  //   const payload = { bookId: this.book._id, duration: this.borrowDuration };
+
+  //   this.bookService.borrowBook(payload).subscribe(
+  //     () => {
+  //       alert('تمت استعارة الكتاب بنجاح');
+  //       this.showBorrowForm = false;
+  //     },
+  //     (err) => {
+  //       alert('حدث خطأ في الاستعارة');
+  //       console.error(err);
+  //     }
+  //   );
+  // }
+
+  editBook(): void {
+    this.router.navigate(['/books/edit', this.book._id]);
+  }
+
+  deleteBook(): void {
+    if (!confirm('هل أنت متأكد من حذف هذا الكتاب؟')) return;
+
+    this.bookService.deleteBook(this.book._id!).subscribe(
+      () => {
+        alert('تم حذف الكتاب');
+        this.router.navigate(['/books']);
+      },
+      (err) => {
+        alert('فشل حذف الكتاب');
+        console.error(err);
+      }
     );
   }
-
-borrowBook(): void {
-  if (!this.borrowDuration || this.borrowDuration < 1) {
-    alert('Please enter a valid duration in months.');
-    return;
-  }
-
-  const startDate = new Date(); // current date
-  const endDate = new Date(startDate.getFullYear(), startDate.getMonth() + this.borrowDuration, startDate.getDate() - 1);
-
-  const formattedStartDate = startDate.toISOString().slice(0, 10);
-  const formattedEndDate = endDate.toISOString().slice(0, 10);
-
-  this.borrowService.borrowBook(this.book._id, formattedStartDate, formattedEndDate).subscribe({
-    next: (res) => {
-      alert('Book borrowed successfully!');
-      this.showBorrowForm = false;
-    },
-    error: (err) => {
-      alert('Failed to borrow the book: ' + err.error?.error || err.message);
-    }
-  });
 }
-
-}
-
-  
-
-

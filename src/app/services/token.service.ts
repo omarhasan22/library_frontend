@@ -13,8 +13,6 @@ export class TokenService {
   }
 
   getAccessToken(): string | any {
-    console.log("12344");
-    
     return localStorage.getItem(this.ACCESS_TOKEN_KEY);
   }
 
