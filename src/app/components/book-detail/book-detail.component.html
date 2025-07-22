@@ -1,38 +1,200 @@
-<div *ngIf="book" class="container py-5 mt-10">
+<div *ngIf="book" class="container py-5 mt-10" dir="rtl" style="text-align: right;">
   <div class="card shadow-lg">
     <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-      <h3 class="mb-0">{{ book.title }}</h3>
+      <h3 class="mb-0">{{ isEditMode ? 'تعديل الكتاب' : book.title }}</h3>
       <div>
-        <button class="btn btn-sm btn-warning me-2" (click)="editBook()">تعديل</button>
-        <button class="btn btn-sm btn-danger" (click)="deleteBook()">حذف</button>
+        <button *ngIf="!isEditMode" class="btn btn-sm btn-warning me-2" (click)="toggleEditMode()">تعديل</button>
+        <button *ngIf="isEditMode" class="btn btn-sm btn-success me-2" (click)="saveBook()">حفظ</button>
+        <button *ngIf="isEditMode" class="btn btn-sm btn-secondary me-2" (click)="cancelEdit()">إلغاء</button>
+        <button *ngIf="!isEditMode" class="btn btn-sm btn-danger" (click)="deleteBook()">حذف</button>
       </div>
     </div>
+
     <div class="card-body">
-      <div class="row mb-3">
-        <div class="col-md-6"><strong>المؤلف:</strong> {{ book.author?.name || '—' }}</div>
-        <div class="col-md-6"><strong>المحقق:</strong> {{ book.editor?.name || '—' }}</div>
-      </div>
-      <div class="row mb-3">
-        <div class="col-md-6"><strong>عدد الأجزاء:</strong> {{ book.numberOfVolumes || '—' }}</div>
-        <div class="col-md-6"><strong>الناشر:</strong> {{ book.publisher?.title || '—' }}</div>
-      </div>
-      <div class="row mb-3">
-        <div class="col-md-6"><strong>رقم الطبعة:</strong> {{ book.editionNumber || '—' }}</div>
-        <div class="col-md-6"><strong>سنة الطباعة:</strong> {{ book.publicationYear || '—' }}</div>
-      </div>
-      <div class="row mb-3">
-        <div class="col-md-6"><strong>التصنيف:</strong> {{ book.category }}</div>
-        <div class="col-md-6"><strong>الموضوع:</strong> {{ book.subject?.title || '—' }}</div>
-      </div>
-      <div class="row mb-3">
-        <div class="col-md-6"><strong>المكان:</strong>
-          قاعة {{ book.address?.roomNumber }} - استانـد {{ book.address?.wallNumber }} - رف {{ book.address?.shelfNumber
-          }}
+      <!-- View Mode -->
+      <div *ngIf="!isEditMode">
+        <div class="row mb-3">
+          <div class="col-md-6"><strong>المؤلف:</strong> {{ book.author?.name || '—' }}</div>
+          <div class="col-md-6"><strong>المحقق:</strong> {{ book.editor?.name || '—' }}</div>
         </div>
-        <div class="col-md-6"><strong>رقم الكتاب:</strong> {{ book.address?.bookNumber }}</div>
+        <div class="row mb-3">
+          <div class="col-md-6"><strong>الشارح:</strong> {{ book.muhashi?.name || '—' }}</div>
+          <div class="col-md-6"><strong>اعتنى به:</strong> {{ book.caretaker?.name || '—' }}</div>
+        </div>
+        <div class="row mb-3">
+          <div class="col-md-6"><strong>عدد الأجزاء:</strong> {{ book.numberOfVolumes || '—' }}</div>
+          <div class="col-md-6"><strong>الناشر:</strong> {{ book.publisher?.title || '—' }}</div>
+        </div>
+        <div class="row mb-3">
+          <div class="col-md-6"><strong>رقم الطبعة:</strong> {{ book.editionNumber || '—' }}</div>
+          <div class="col-md-6"><strong>سنة الطباعة:</strong> {{ book.publicationYear || '—' }}</div>
+        </div>
+        <div class="row mb-3">
+          <div class="col-md-6"><strong>التصنيف:</strong> {{ book.category?.title || '—' }}</div>
+          <div class="col-md-6"><strong>التصنيف الفرعي:</strong> {{ book.subject?.title || '—' }}</div>
+        </div>
+        <div class="row mb-3">
+          <div class="col-md-6"><strong>عدد الصفحات:</strong> {{ book.pageCount || '—' }}</div>
+          <div class="col-md-6"><strong>المكان:</strong>
+            قاعة {{ book.address?.roomNumber }} - استانـد {{ book.address?.wallNumber }} - رف {{
+            book.address?.shelfNumber }}
+          </div>
+        </div>
+        <div class="row mb-3">
+          <div class="col-md-6"><strong>رقم الكتاب:</strong> {{ book.address?.bookNumber }}</div>
+        </div>
       </div>
 
-      <div class="text-center mt-4">
+      <!-- Edit Mode -->
+      <form *ngIf="isEditMode" #bookForm="ngForm">
+        <!-- عنوان الكتاب -->
+        <div class="mb-3">
+          <label for="title" class="form-label" style="font-weight: bolder;">عنوان الكتاب</label>
+          <input type="text" id="title" class="form-control" [(ngModel)]="editBook.title" name="title" required />
+        </div>
+
+        <!-- المؤلف -->
+        <div class="mb-3">
+          <label class="form-label" style="font-weight: bolder;">المؤلف</label>
+          <select class="form-select" [(ngModel)]="editBook.author.name" name="authorSelect">
+            <option [ngValue]="''">اختر مؤلفًا</option>
+            <option *ngFor="let p of authors" [ngValue]="p.name">{{ p.name }}</option>
+          </select>
+          <input type="text" class="form-control mt-2" placeholder="أو أضف مؤلفًا جديدًا" [(ngModel)]="newAuthorName"
+            name="newAuthorName" (ngModelChange)="onAuthorInputChange($event)" />
+        </div>
+
+        <!-- الشارح -->
+        <div class="mb-3">
+          <label class="form-label" style="font-weight: bolder;">الشارح</label>
+          <select class="form-select" [(ngModel)]="editBook.muhashi.name" name="muhashiSelect">
+            <option [ngValue]="''">اختر شارحًا</option>
+            <option *ngFor="let p of muhashis" [ngValue]="p.name">{{ p.name }}</option>
+          </select>
+          <input type="text" class="form-control mt-2" placeholder="أو أضف شارحًا جديدًا" [(ngModel)]="newMuhashiName"
+            name="newMuhashiName" (ngModelChange)="onMuhashiInputChange($event)" />
+        </div>
+
+        <!-- عدد الأجزاء -->
+        <div class="mb-3">
+          <label for="numberOfVolumes" class="form-label" style="font-weight: bolder;">عدد الأجزاء</label>
+          <input type="number" id="numberOfVolumes" class="form-control" [(ngModel)]="editBook.numberOfVolumes"
+            name="numberOfVolumes" min="1" required />
+        </div>
+
+        <!-- الناشر -->
+        <div class="mb-3">
+          <label class="form-label" style="font-weight: bolder;">الدار</label>
+          <select class="form-select" [(ngModel)]="editBook.publisher.title" name="publisherSelect"
+            (click)="loadPublishers()">
+            <option [ngValue]="''">اختر دارًا</option>
+            <option *ngFor="let p of publishers" [ngValue]="p.title">{{ p.title }}</option>
+          </select>
+          <input type="text" class="form-control mt-2" placeholder="أو أضف دارًا جديدة" [(ngModel)]="newPublisherName"
+            name="newPublisherName" (ngModelChange)="onPublisherInputChange($event)" />
+        </div>
+
+        <!-- المحقق -->
+        <div class="mb-3">
+          <label class="form-label" style="font-weight: bolder;">المحقق</label>
+          <select class="form-select" [(ngModel)]="editBook.editor.name" name="editorSelect">
+            <option [ngValue]="''">اختر محققًا</option>
+            <option *ngFor="let p of editors" [ngValue]="p.name">{{ p.name }}</option>
+          </select>
+          <input type="text" class="form-control mt-2" placeholder="أو أضف محققًا جديدًا" [(ngModel)]="newEditorName"
+            name="newEditorName" (ngModelChange)="onEditorInputChange($event)" />
+        </div>
+
+        <!-- اعتنى به -->
+        <div class="mb-3">
+          <label class="form-label" style="font-weight: bolder;">اعتنى به</label>
+          <select class="form-select" [(ngModel)]="editBook.caretaker.name" name="caretakerSelect">
+            <option [ngValue]="''">اختر معتنٍ</option>
+            <option *ngFor="let p of caretakers" [ngValue]="p.name">{{ p.name }}</option>
+          </select>
+          <input type="text" class="form-control mt-2" placeholder="أو أضف معتنٍ جديدًا" [(ngModel)]="newCaretakerName"
+            name="newCaretakerName" (ngModelChange)="onCaretakerInputChange($event)" />
+        </div>
+
+        <!-- رقم الطبعة -->
+        <div class="mb-3">
+          <label for="editionNumber" class="form-label" style="font-weight: bolder;">رقم الطبعة</label>
+          <input type="number" id="editionNumber" class="form-control" [(ngModel)]="editBook.editionNumber"
+            name="editionNumber" min="1" required />
+        </div>
+
+        <!-- سنة الطباعة -->
+        <div class="mb-3">
+          <label for="publicationYear" class="form-label" style="font-weight: bolder;">سنة الطباعة</label>
+          <input type="number" id="publicationYear" class="form-control" [(ngModel)]="editBook.publicationYear"
+            name="publicationYear" min="0" required />
+        </div>
+
+        <!-- التصنيف -->
+        <div class="mb-3">
+          <label class="form-label" style="font-weight: bolder;">التصنيف</label>
+          <select class="form-select" [(ngModel)]="editBook.category.title" name="categorySelect"
+            (click)="loadCategories()">
+            <option [ngValue]="''">اختر تصنيفًا</option>
+            <option *ngFor="let c of categories" [ngValue]="c.title">{{ c.title }}</option>
+          </select>
+          <input type="text" class="form-control mt-2" placeholder="أو أضف تصنيفًا جديدًا" [(ngModel)]="newCategoryName"
+            name="newCategoryName" (ngModelChange)="onCategoryInputChange($event)" />
+        </div>
+
+        <!-- التصنيف الفرعي -->
+        <div class="mb-3">
+          <label class="form-label" style="font-weight: bolder;">التصنيف الفرعي</label>
+          <select class="form-select" [(ngModel)]="editBook.subject.title" name="subjectSelect"
+            (click)="loadSubjects()">
+            <option [ngValue]="''">اختر تصنيفًا فرعيًا</option>
+            <option *ngFor="let c of subjects" [ngValue]="c.title">{{ c.title }}</option>
+          </select>
+          <input type="text" class="form-control mt-2" placeholder="أو أضف تصنيفًا فرعيًا جديدًا"
+            [(ngModel)]="newSubjectName" name="newSubjectName" (ngModelChange)="onSubjectInputChange($event)" />
+        </div>
+
+        <!-- عدد الصفحات -->
+        <div class="mb-3">
+          <label for="pageCount" class="form-label" style="font-weight: bolder;">عدد الصفحات</label>
+          <input type="number" id="pageCount" class="form-control" [(ngModel)]="editBook.pageCount" name="pageCount"
+            min="1" required />
+        </div>
+
+        <!-- صورة الكتاب -->
+        <div class="mb-3">
+          <label for="image" class="form-label" style="font-weight: bolder;">صورة الكتاب</label>
+          <input type="file" id="image" class="form-control" (change)="onImageSelected($event)" accept="image/*" />
+        </div>
+
+        <!-- العنوان (address) -->
+        <div class="row">
+          <div class="col mb-3">
+            <label for="roomNumber" class="form-label" style="font-weight: bolder;">رقم الغرفة</label>
+            <input type="text" id="roomNumber" class="form-control" [(ngModel)]="editBook.address.roomNumber"
+              name="addressRoom" />
+          </div>
+          <div class="col mb-3">
+            <label for="wallNumber" class="form-label" style="font-weight: bolder;">رقم الاستاند</label>
+            <input type="text" id="wallNumber" class="form-control" [(ngModel)]="editBook.address.wallNumber"
+              name="addressWall" />
+          </div>
+          <div class="col mb-3">
+            <label for="shelfNumber" class="form-label" style="font-weight: bolder;">رقم الرف</label>
+            <input type="text" id="shelfNumber" class="form-control" [(ngModel)]="editBook.address.shelfNumber"
+              name="addressShelf" />
+          </div>
+        </div>
+
+        <!-- رقم الكتاب -->
+        <div class="mb-3">
+          <label for="bookNumber" class="form-label" style="font-weight: bolder;">رقم الكتاب</label>
+          <input type="text" id="bookNumber" class="form-control" [(ngModel)]="editBook.address.bookNumber"
+            name="addressBook" />
+        </div>
+      </form>
+
+      <div *ngIf="!isEditMode" class="text-center mt-4">
         <button class="btn btn-success" (click)="showBorrowForm = true">استعارة الكتاب</button>
       </div>
     </div>
