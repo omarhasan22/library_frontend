@@ -11,7 +11,9 @@
                   <i class="fa fa-search search-icon"></i>
                 </button>
               </div>
-              <input type="text" placeholder="ابحث..." class="form-control" />
+              <!-- Search Bar in Navbar -->
+              <input type="text" placeholder="ابحث بعنوان، مؤلف، ناشر، تصنيف..." class="form-control"
+                [(ngModel)]="searchQuery" (input)="onSearch()" />
             </div>
           </nav>
         </div>

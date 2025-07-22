@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams  } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Book } from '../models/book.model';
 import { Category } from '../models/category.model';
@@ -12,7 +12,7 @@ import { environment } from 'src/environments/environment';
 export class BookService {
   private baseUrl = environment.apiUrl;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   getAllBooks(query: string = ''): Observable<Book[]> {
     const params = query ? new HttpParams().set('q', query) : new HttpParams();
@@ -23,22 +23,22 @@ export class BookService {
     return this.http.get<Book>(`${this.baseUrl}/books/${id}`);
   }
 
-  createBook(book: Book): Observable<Book> {        
+  createBook(book: Book): Observable<Book> {
     return this.http.post<Book>(`${this.baseUrl}/books`, book);
   }
 
-  getCategories(): Observable<Category[]> {    
-     const d= this.http.get<Category[]>(`${this.baseUrl}/categories`);
+  getCategories(): Observable<Category[]> {
+    const d = this.http.get<Category[]>(`${this.baseUrl}/categories`);
     return d;
   }
 
-  getSubjects(): Observable<Category[]> {    
-     const d= this.http.get<Subject[]>(`${this.baseUrl}/subjects`);
+  getSubjects(): Observable<Category[]> {
+    const d = this.http.get<Subject[]>(`${this.baseUrl}/subjects`);
     return d;
   }
 
-  getPublishers(): Observable<Category[]> {    
-     const d= this.http.get<Category[]>(`${this.baseUrl}/publishers`);
+  getPublishers(): Observable<Category[]> {
+    const d = this.http.get<Category[]>(`${this.baseUrl}/publishers`);
     return d;
   }
 
@@ -51,6 +51,6 @@ export class BookService {
   }
 
   getPeople(): Observable<any[]> {
-  return this.http.get<any[]>(`${this.baseUrl}/people`); 
-}
+    return this.http.get<any[]>(`${this.baseUrl}/people`);
+  }
 }

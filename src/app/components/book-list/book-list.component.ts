@@ -33,7 +33,10 @@ export class BookListComponent implements OnInit {
   }
 
   onSearch(): void {
-    this.loadBooks();
+    this.bookService.getAllBooks(this.searchQuery).subscribe(
+      (data) => (this.books = data),
+      (error) => console.error('Error:', error)
+    );
   }
 
   viewBook(id: any): void {
