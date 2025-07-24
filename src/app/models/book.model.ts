@@ -1,40 +1,44 @@
 export class Book {
   _id?: string;
   title?: string;
-  address:{
-  roomNumber?: string;
-  wallNumber?: string;
-  shelfNumber?: string;
-  bookNumber?: string;
+  address: {
+    roomNumber?: string;
+    wallNumber?: string;
+    shelfNumber?: string;
+    bookNumber?: string;
   };
-  author : {
-    name?:string,
-    _id?:string
-  };   
+  author: {
+    name?: string,
+    _id?: string
+  };
   category: {
-    title?:string,
-    _id?:string
+    title?: string,
+    _id?: string
   };
   subject: {
-    title?:string,
-    _id?:string
+    title?: string,
+    _id?: string
   };
   numberOfVolumes?: number; // عدد الأجزاء
-  publisher? : {
-    title?:string,
-    _id?:string
+  publisher?: {
+    title?: string,
+    _id?: string
   };      // الدار
-  editor? : {
-    name?:string,
-    _id?:string
+  publisher2?: {
+    title?: string,
+    _id?: string
+  };      // الدار
+  editor?: {
+    name?: string,
+    _id?: string
   };             // المحقق
-  muhashi? : {
-    name?:string,
-    _id?:string
+  muhashi?: {
+    name?: string,
+    _id?: string
   };             // المحقق
-  caretaker : {
-    name?:string,
-    _id?:string
+  caretaker: {
+    name?: string,
+    _id?: string
   };         // اعتنى به
   editionNumber?: number;   // رقم الطبعة
   publicationYear?: number; // سنة الطباعة

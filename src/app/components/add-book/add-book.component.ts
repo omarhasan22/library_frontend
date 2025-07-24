@@ -27,6 +27,7 @@ export class AddBookComponent implements OnInit {
   newEditorName = '';
   newCaretakerName = '';
   newPublisherName = '';
+  newPublisherName2 = '';
   newCategoryName = '';
   newSubjectName = '';
 
@@ -40,6 +41,7 @@ export class AddBookComponent implements OnInit {
     subject: { title: '' },
     numberOfVolumes: 1,
     publisher: { title: '' },
+    publisher2: { title: '' },
     editor: { name: '' },
     caretaker: { name: '' },
     editionNumber: 1,
@@ -91,6 +93,7 @@ export class AddBookComponent implements OnInit {
   onEditorInputChange(val: string) { this.newBook.editor.name = val; }
   onCaretakerInputChange(val: string) { this.newBook.caretaker.name = val; }
   onPublisherInputChange(val: string) { this.newBook.publisher.title = val; }
+  onPublisherInput2Change(val: string) { this.newBook.publisher2.title = val; }
   onCategoryInputChange(val: string) { this.newBook.category.title = val; }
   onSubjectInputChange(val: string) { this.newBook.subject.title = val; }
 
@@ -110,6 +113,7 @@ export class AddBookComponent implements OnInit {
     if (this.newEditorName) payload.editor = { name: this.newEditorName };
     if (this.newCaretakerName) payload.caretaker = { name: this.newCaretakerName };
     if (this.newPublisherName) payload.publisher = { title: this.newPublisherName };
+    if (this.newPublisherName2) payload.publisher2 = { title: this.newPublisherName2 };
     if (this.newCategoryName) payload.category = { title: this.newCategoryName };
     if (this.newSubjectName) payload.subject = { title: this.newSubjectName };
 
@@ -136,6 +140,7 @@ export class AddBookComponent implements OnInit {
         this.newBook.numberOfVolumes = 1;
         this.newBook.publisher = { title: '' };
         this.newPublisherName = '';
+        this.newBook.publisher2 = { title: '' };
         this.newBook.editor = { name: '' };
         this.newEditorName = '';
         this.newBook.caretaker = { name: '' };

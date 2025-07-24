@@ -316,7 +316,7 @@ export class BookDetailComponent implements OnInit {
     this.bookService.deleteBook(this.book._id!).subscribe(
       () => {
         alert('تم حذف الكتاب');
-        this.router.navigate(['/books']);
+        this.router.navigate(['/']);
       },
       (err) => {
         alert('فشل حذف الكتاب');

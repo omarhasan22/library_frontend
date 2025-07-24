@@ -38,6 +38,7 @@
                         <th>المؤلف</th>
                         <th>عدد الأجزاء</th>
                         <th>الدار</th>
+                        <th>2 الدار</th>
                         <th>المحقق</th>
                         <th>اعتنى به</th>
                         <th>رقم الطبعة</th>
@@ -56,6 +57,7 @@
                         <td>{{ book.author?.name }}</td>
                         <td>{{ book.numberOfVolumes ?? '—' }}</td>
                         <td>{{ book.publisher?.title ?? '—' }}</td>
+                        <td>{{ book.publisher2?.title ?? '—' }}</td>
                         <td>{{ book.editor?.name ?? '—' }}</td>
                         <td>{{ book.caretaker?.name ?? '—' }}</td>
                         <td>{{ book.editionNumber ?? '—' }}</td>

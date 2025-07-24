@@ -6,279 +6,161 @@
     <form (ngSubmit)="addBook()" #bookForm="ngForm">
       <!-- عنوان الكتاب -->
       <div class="mb-3">
-        <label for="title" class="form-label" style="font-weight: bolder;" style="font-weight: bolder;">عنوان الكتاب</label>
-        <input
-          type="text"
-          id="title"
-          class="form-control"
-          [(ngModel)]="newBook.title"
-          name="title"
-          required
-        />
+        <label for="title" class="form-label" style="font-weight: bolder;" style="font-weight: bolder;">عنوان
+          الكتاب</label>
+        <input type="text" id="title" class="form-control" placeholder="أضف كتابا جديدًا" [(ngModel)]="newBook.title"
+          name="title" required />
       </div>
 
       <!-- المؤلف -->
       <div class="mb-3">
-        <label class="form-label" style="font-weight: bolder;">ماتن</label>
-        <select
-          class="form-select"
-          [(ngModel)]="newBook.author.name"
-          name="authorSelect"
-        >
-          <option [ngValue]="''">اختر مؤلفًا</option>
+        <label class="form-label" style="font-weight: bolder;">الماتن</label>
+        <select class="form-select" [(ngModel)]="newBook.author.name" name="authorSelect">
+          <option [ngValue]="''">اختر ماتنا</option>
           <option *ngFor="let p of authors" [ngValue]="p.name">{{ p.name }}</option>
         </select>
-        <input
-          type="text"
-          class="form-control mt-2"
-          placeholder="أو أضف مؤلفًا جديدًا"
-          [(ngModel)]="newAuthorName"
-          name="newAuthorName"
-          (ngModelChange)="onAuthorInputChange($event)"
-        />
+        <input type="text" class="form-control mt-2" placeholder="أو أضف ماتنا جديدًا" [(ngModel)]="newAuthorName"
+          name="newAuthorName" (ngModelChange)="onAuthorInputChange($event)" />
       </div>
 
       <!-- المحشي -->
       <div class="mb-3">
         <label class="form-label" style="font-weight: bolder;">الشارح</label>
-        <select
-          class="form-select"
-          [(ngModel)]="newBook.muhashi.name"
-          name="muhashiSelect"
-        >
-          <option [ngValue]="''">اختر محشيًا</option>
+        <select class="form-select" [(ngModel)]="newBook.muhashi.name" name="muhashiSelect">
+          <option [ngValue]="''">اختر الشارح</option>
           <option *ngFor="let p of muhashis" [ngValue]="p.name">{{ p.name }}</option>
         </select>
-        <input
-          type="text"
-          class="form-control mt-2"
-          placeholder="أو أضف محشيًا جديدًا"
-          [(ngModel)]="newMuhashiName"
-          name="newMuhashiName"
-          (ngModelChange)="onMuhashiInputChange($event)"
-        />
+        <input type="text" class="form-control mt-2" placeholder="أو أضف الشارح جديدًا" [(ngModel)]="newMuhashiName"
+          name="newMuhashiName" (ngModelChange)="onMuhashiInputChange($event)" />
       </div>
 
       <!-- عدد الأجزاء -->
       <div class="mb-3">
         <label for="numberOfVolumes" class="form-label" style="font-weight: bolder;">عدد الأجزاء</label>
-        <input
-          type="number"
-          id="numberOfVolumes"
-          class="form-control"
-          [(ngModel)]="newBook.numberOfVolumes"
-          name="numberOfVolumes"
-          min="1"
-          required
-        />
+        <input type="number" id="numberOfVolumes" class="form-control" [(ngModel)]="newBook.numberOfVolumes"
+          name="numberOfVolumes" min="1" required />
       </div>
 
       <!-- الناشر -->
       <div class="mb-3">
         <label class="form-label" style="font-weight: bolder;">الدار</label>
-        <select
-          class="form-select"
-          [(ngModel)]="newBook.publisher.title"
-          name="publisherSelect"
-          (click)="loadPublishers()"
-        >
+        <select class="form-select" [(ngModel)]="newBook.publisher.title" name="publisherSelect"
+          (click)="loadPublishers()">
           <option [ngValue]="''">اختر دارًا</option>
           <option *ngFor="let p of publishers" [ngValue]="p.title">{{ p.title }}</option>
         </select>
-        <input
-          type="text"
-          class="form-control mt-2"
-          placeholder="أو أضف دارًا جديدة"
-          [(ngModel)]="newPublisherName"
-          name="newPublisherName"
-          (ngModelChange)="onPublisherInputChange($event)"
-        />
+        <input type="text" class="form-control mt-2" placeholder="أو أضف دارًا جديدة" [(ngModel)]="newPublisherName"
+          name="newPublisherName" (ngModelChange)="onPublisherInputChange($event)" />
+      </div>
+
+      <!-- الناشر -->
+      <div class="mb-3">
+        <label class="form-label" style="font-weight: bolder;">الدار 2</label>
+        <select class="form-select" [(ngModel)]="newBook.publisher2.title" name="publisherSelect2"
+          (click)="loadPublishers()">
+          <option [ngValue]="''">اختر دارًا ثانية</option>
+          <option *ngFor="let p of publishers" [ngValue]="p.title">{{ p.title }}</option>
+        </select>
+        <input type="text" class="form-control mt-2" placeholder="أو أضف دارًا جديدة" [(ngModel)]="newPublisherName2"
+          name="newPublisherName2" (ngModelChange)="onPublisherInputChange($event)" />
       </div>
 
       <!-- المحقق -->
       <div class="mb-3">
         <label class="form-label" style="font-weight: bolder;">المحقق</label>
-        <select
-          class="form-select"
-          [(ngModel)]="newBook.editor.name"
-          name="editorSelect"
-        >
+        <select class="form-select" [(ngModel)]="newBook.editor.name" name="editorSelect">
           <option [ngValue]="''">اختر محققًا</option>
           <option *ngFor="let p of editors" [ngValue]="p.name">{{ p.name }}</option>
         </select>
-        <input
-          type="text"
-          class="form-control mt-2"
-          placeholder="أو أضف محققًا جديدًا"
-          [(ngModel)]="newEditorName"
-          name="newEditorName"
-          (ngModelChange)="onEditorInputChange($event)"
-        />
+        <input type="text" class="form-control mt-2" placeholder="أو أضف محققًا جديدًا" [(ngModel)]="newEditorName"
+          name="newEditorName" (ngModelChange)="onEditorInputChange($event)" />
       </div>
 
       <!-- اعتنى به -->
       <div class="mb-3">
         <label class="form-label" style="font-weight: bolder;">اعتنى به</label>
-        <select
-          class="form-select"
-          [(ngModel)]="newBook.caretaker.name"
-          name="caretakerSelect"
-        >
+        <select class="form-select" [(ngModel)]="newBook.caretaker.name" name="caretakerSelect">
           <option [ngValue]="''">اختر معتنٍ</option>
           <option *ngFor="let p of caretakers" [ngValue]="p.name">{{ p.name }}</option>
         </select>
-        <input
-          type="text"
-          class="form-control mt-2"
-          placeholder="أو أضف معتنٍ جديدًا"
-          [(ngModel)]="newCaretakerName"
-          name="newCaretakerName"
-          (ngModelChange)="onCaretakerInputChange($event)"
-        />
+        <input type="text" class="form-control mt-2" placeholder="أو أضف معتنٍ جديدًا" [(ngModel)]="newCaretakerName"
+          name="newCaretakerName" (ngModelChange)="onCaretakerInputChange($event)" />
       </div>
 
       <!-- رقم الطبعة -->
       <div class="mb-3">
         <label for="editionNumber" class="form-label" style="font-weight: bolder;">رقم الطبعة</label>
-        <input
-          type="number"
-          id="editionNumber"
-          class="form-control"
-          [(ngModel)]="newBook.editionNumber"
-          name="editionNumber"
-          min="1"
-          required
-        />
+        <input type="number" id="editionNumber" class="form-control" [(ngModel)]="newBook.editionNumber"
+          name="editionNumber" min="1" required />
       </div>
 
       <!-- سنة الطباعة -->
       <div class="mb-3">
         <label for="publicationYear" class="form-label" style="font-weight: bolder;">سنة الطباعة</label>
-        <input
-          type="number"
-          id="publicationYear"
-          class="form-control"
-          [(ngModel)]="newBook.publicationYear"
-          name="publicationYear"
-          min="0"
-          required
-        />
+        <input type="number" id="publicationYear" class="form-control" [(ngModel)]="newBook.publicationYear"
+          name="publicationYear" min="0" required />
       </div>
 
       <!-- التصنيف -->
       <div class="mb-3">
         <label class="form-label" style="font-weight: bolder;">التصنيف</label>
-        <select
-          class="form-select"
-          [(ngModel)]="newBook.category.title"
-          name="categorySelect"
-          (click)="loadCategories()"
-        >
+        <select class="form-select" [(ngModel)]="newBook.category.title" name="categorySelect"
+          (click)="loadCategories()">
           <option [ngValue]="''">اختر تصنيفًا</option>
           <option *ngFor="let c of categories" [ngValue]="c.title">{{ c.title }}</option>
         </select>
-        <input
-          type="text"
-          class="form-control mt-2"
-          placeholder="أو أضف تصنيفًا جديدًا"
-          [(ngModel)]="newCategoryName"
-          name="newCategoryName"
-          (ngModelChange)="onCategoryInputChange($event)"
-        />
+        <input type="text" class="form-control mt-2" placeholder="أو أضف تصنيفًا جديدًا" [(ngModel)]="newCategoryName"
+          name="newCategoryName" (ngModelChange)="onCategoryInputChange($event)" />
       </div>
 
       <!-- التصنيف -->
       <div class="mb-3">
         <label class="form-label" style="font-weight: bolder;">التصنيف الفرعي</label>
-        <select
-          class="form-select"
-          [(ngModel)]="newBook.subject.title"
-          name="subjectSelect"
-          (click)="loadSubjects()"
-        >
+        <select class="form-select" [(ngModel)]="newBook.subject.title" name="subjectSelect" (click)="loadSubjects()">
           <option [ngValue]="''">اختر تصنيفًا</option>
           <option *ngFor="let c of subjects" [ngValue]="c.title">{{ c.title }}</option>
         </select>
-        <input
-          type="text"
-          class="form-control mt-2"
-          placeholder="أو أضف تصنيفًا جديدًا"
-          [(ngModel)]="newSubjectName"
-          name="newSubjectName"
-          (ngModelChange)="onSubjectInputChange($event)"
-        />
+        <input type="text" class="form-control mt-2" placeholder="أو أضف تصنيفًا جديدًا" [(ngModel)]="newSubjectName"
+          name="newSubjectName" (ngModelChange)="onSubjectInputChange($event)" />
       </div>
 
       <!-- عدد الصفحات -->
       <div class="mb-3">
         <label for="pageCount" class="form-label" style="font-weight: bolder;">عدد الصفحات</label>
-        <input
-          type="number"
-          id="pageCount"
-          class="form-control"
-          [(ngModel)]="newBook.pageCount"
-          name="pageCount"
-          min="1"
-          required
-        />
+        <input type="number" id="pageCount" class="form-control" [(ngModel)]="newBook.pageCount" name="pageCount"
+          min="1" required />
       </div>
 
       <!-- صورة الكتاب -->
       <div class="mb-3">
         <label for="image" class="form-label" style="font-weight: bolder;">صورة الكتاب</label>
-        <input
-          type="file"
-          id="image"
-          class="form-control"
-          (change)="onImageSelected($event)"
-          accept="image/*"
-        />
+        <input type="file" id="image" class="form-control" (change)="onImageSelected($event)" accept="image/*" />
       </div>
 
       <!-- العنوان (address) -->
       <div class="row">
         <div class="col mb-3">
-          <label for="roomNumber" class="form-label" style="font-weight: bolder;">رقم الغرفة</label>
-          <input
-            type="text"
-            id="roomNumber"
-            class="form-control"
-            [(ngModel)]="newBook.address.roomNumber"
-            name="addressRoom"
-          />
+          <label for="roomNumber" class="form-label" style="font-weight: bolder;">الغرفة</label>
+          <input type="text" id="roomNumber" class="form-control" [(ngModel)]="newBook.address.roomNumber"
+            name="addressRoom" />
         </div>
         <div class="col mb-3">
-          <label for="wallNumber" class="form-label" style="font-weight: bolder;">رقم الاستاند</label>
-          <input
-            type="text"
-            id="wallNumber"
-            class="form-control"
-            [(ngModel)]="newBook.address.wallNumber"
-            name="addressWall"
-          />
+          <label for="wallNumber" class="form-label" style="font-weight: bolder;">الاستاند</label>
+          <input type="text" id="wallNumber" class="form-control" [(ngModel)]="newBook.address.wallNumber"
+            name="addressWall" />
         </div>
-          <div class="col mb-3">
-          <label for="shelfNumber" class="form-label" style="font-weight: bolder;">رقم الرف</label>
-          <input
-            type="text"
-            id="shelfNumber"
-            class="form-control"
-            [(ngModel)]="newBook.address.shelfNumber"
-            name="addressShelf"
-          />
+        <div class="col mb-3">
+          <label for="shelfNumber" class="form-label" style="font-weight: bolder;">الرف</label>
+          <input type="text" id="shelfNumber" class="form-control" [(ngModel)]="newBook.address.shelfNumber"
+            name="addressShelf" />
         </div>
       </div>
 
       <!-- رقم الكتاب -->
       <div class="mb-3">
-        <label for="bookNumber" class="form-label" style="font-weight: bolder;">رقم الكتاب</label>
-        <input
-          type="text"
-          id="bookNumber"
-          class="form-control"
-          [(ngModel)]="newBook.address.bookNumber"
-          name="addressBook"
-        />
+        <label for="bookNumber" class="form-label" style="font-weight: bolder;">الكتاب</label>
+        <input type="text" id="bookNumber" class="form-control" [(ngModel)]="newBook.address.bookNumber"
+          name="addressBook" />
       </div>
 
       <button type="submit" class="btn btn-primary w-100">إضافة الكتاب</button>
