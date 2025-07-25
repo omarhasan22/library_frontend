@@ -1,4 +1,3 @@
-// add-book.component.ts
 import { Component, EventEmitter, OnInit, Output } from '@angular/core';
 import { BookService } from '../../services/book.service';
 import { Book } from '../../models/book.model';
@@ -18,32 +17,49 @@ export class AddBookComponent implements OnInit {
 
   people: any[] = [];
   authors: any[] = [];
-  muhashis: any[] = [];
+  commentators: any[] = [];
   editors: any[] = [];
   caretakers: any[] = [];
 
-  newAuthorName = '';
-  newMuhashiName = '';
-  newEditorName = '';
-  newCaretakerName = '';
-  newPublisherName = '';
-  newPublisherName2 = '';
-  newCategoryName = '';
-  newSubjectName = '';
+  // Filtered arrays for search functionality
+  filteredAuthors: any[] = [];
+  filteredCommentators: any[] = [];
+  filteredEditors: any[] = [];
+  filteredCaretakers: any[] = [];
+  filteredPublishers: any[] = [];
+  filteredCategories: any[] = [];
+  filteredSubjects: any[] = [];
+
+  // Search input values
+  authorSearchTerm = '';
+  commentatorSearchTerm = '';
+  editorSearchTerm = '';
+  caretakerSearchTerm = '';
+  publisherSearchTerm = '';
+  categorySearchTerm = '';
+  subjectSearchTerm = '';
+
+  // Show dropdown flags
+  showAuthorDropdown = false;
+  showCommentatorDropdown = false;
+  showEditorDropdown = false;
+  showCaretakerDropdown = false;
+  showPublisherDropdown = false;
+  showCategoryDropdown = false;
+  showSubjectDropdown = false;
 
   selectedImageFile: File | null = null;
 
   newBook: Book & { address: { roomNumber: string; shelfNumber: string; wallNumber: string; bookNumber: string } } = {
     title: '',
-    author: { name: '' },
-    muhashi: { name: '' },
-    category: { title: '' },
-    subject: { title: '' },
+    authors: [],
+    commentators: [],
+    editors: [],
+    caretakers: [],
+    category: { title: '', _id: '' },
+    subject: { title: '', _id: '' },
     numberOfVolumes: 1,
-    publisher: { title: '' },
-    publisher2: { title: '' },
-    editor: { name: '' },
-    caretaker: { name: '' },
+    publishers: [],
     editionNumber: 1,
     publicationYear: new Date().getFullYear(),
     pageCount: 1,
@@ -51,7 +67,7 @@ export class AddBookComponent implements OnInit {
       roomNumber: '',
       shelfNumber: '',
       wallNumber: '',
-      bookNumber: '1',  // start at 1
+      bookNumber: '1',
     },
     imageUrl: ''
   };
@@ -63,39 +79,241 @@ export class AddBookComponent implements OnInit {
   ngOnInit(): void {
     this.loadPeople();
     this.loadCategories();
+    this.loadSubjects();
     this.loadPublishers();
   }
 
   loadPeople() {
-    this.bookService.getPeople().subscribe((people) => {
+    this.bookService.getPeople().subscribe(people => {
       this.people = people;
-      this.authors = people.filter((p) => p.type === 'author');
-      this.muhashis = people.filter((p) => p.type === 'muhashi');
-      this.editors = people.filter((p) => p.type === 'editor');
-      this.caretakers = people.filter((p) => p.type === 'caretaker');
+      this.authors = people.filter(p => p.type === 'author');
+      this.commentators = people.filter(p => p.type === 'commentator');
+      this.editors = people.filter(p => p.type === 'editor');
+      this.caretakers = people.filter(p => p.type === 'caretaker');
+
+      this.filteredAuthors = [...this.authors];
+      this.filteredCommentators = [...this.commentators];
+      this.filteredEditors = [...this.editors];
+      this.filteredCaretakers = [...this.caretakers];
     });
   }
 
   loadCategories() {
-    this.bookService.getCategories().subscribe((cats) => (this.categories = cats));
+    this.bookService.getCategories().subscribe(cats => {
+      this.categories = cats;
+      this.filteredCategories = [...cats];
+    });
   }
 
   loadSubjects() {
-    this.bookService.getSubjects().subscribe((sub) => (this.subjects = sub));
+    this.bookService.getSubjects().subscribe(sub => {
+      this.subjects = sub;
+      this.filteredSubjects = [...sub];
+    });
   }
 
   loadPublishers() {
-    this.bookService.getPublishers().subscribe((pubs) => (this.publishers = pubs));
+    this.bookService.getPublishers().subscribe(pubs => {
+      this.publishers = pubs;
+      this.filteredPublishers = [...pubs];
+    });
   }
 
-  onAuthorInputChange(val: string) { this.newBook.author.name = val; }
-  onMuhashiInputChange(val: string) { this.newBook.muhashi = { name: val }; }
-  onEditorInputChange(val: string) { this.newBook.editor.name = val; }
-  onCaretakerInputChange(val: string) { this.newBook.caretaker.name = val; }
-  onPublisherInputChange(val: string) { this.newBook.publisher.title = val; }
-  onPublisherInput2Change(val: string) { this.newBook.publisher2.title = val; }
-  onCategoryInputChange(val: string) { this.newBook.category.title = val; }
-  onSubjectInputChange(val: string) { this.newBook.subject.title = val; }
+  // Search functionality
+  onAuthorSearch(term: string) {
+    this.authorSearchTerm = term;
+    this.filteredAuthors = this.authors.filter(author =>
+      author.name.toLowerCase().includes(term.toLowerCase())
+    );
+    console.log('Filtered Authors:', this.filteredAuthors);
+
+    this.showAuthorDropdown = term.length > 0;
+  }
+
+  onCommentatorSearch(term: string) {
+    this.commentatorSearchTerm = term;
+    this.filteredCommentators = this.commentators.filter(commentator =>
+      commentator.name.toLowerCase().includes(term.toLowerCase())
+    );
+    this.showCommentatorDropdown = term.length > 0;
+  }
+
+  onEditorSearch(term: string) {
+    this.editorSearchTerm = term;
+    this.filteredEditors = this.editors.filter(editor =>
+      editor.name.toLowerCase().includes(term.toLowerCase())
+    );
+    this.showEditorDropdown = term.length > 0;
+  }
+
+  onCaretakerSearch(term: string) {
+    this.caretakerSearchTerm = term;
+    this.filteredCaretakers = this.caretakers.filter(caretaker =>
+      caretaker.name.toLowerCase().includes(term.toLowerCase())
+    );
+    this.showCaretakerDropdown = term.length > 0;
+  }
+
+  onPublisherSearch(term: string) {
+    this.publisherSearchTerm = term;
+    this.filteredPublishers = this.publishers.filter(publisher =>
+      publisher.title.toLowerCase().includes(term.toLowerCase())
+    );
+    this.showPublisherDropdown = term.length > 0;
+  }
+
+  onCategorySearch(term: string) {
+    this.categorySearchTerm = term;
+    this.filteredCategories = this.categories.filter(category =>
+      category.title.toLowerCase().includes(term.toLowerCase())
+    );
+    this.showCategoryDropdown = term.length > 0;
+  }
+
+  onSubjectSearch(term: string) {
+    this.subjectSearchTerm = term;
+    this.filteredSubjects = this.subjects.filter(subject =>
+      subject.title.toLowerCase().includes(term.toLowerCase())
+    );
+    this.showSubjectDropdown = term.length > 0;
+  }
+
+  // Add existing items
+  selectAuthor(author: any) {
+    if (!this.newBook.authors.find(a => a._id === author._id)) {
+      this.newBook.authors.push({ _id: author._id, name: author.name });
+    }
+    this.authorSearchTerm = '';
+    this.showAuthorDropdown = false;
+  }
+
+  selectCommentator(commentator: any) {
+    this.newBook.commentators = this.newBook.commentators || [];
+    if (!this.newBook.commentators.find(c => c._id === commentator._id)) {
+      this.newBook.commentators.push({ _id: commentator._id, name: commentator.name });
+    }
+    this.commentatorSearchTerm = '';
+    this.showCommentatorDropdown = false;
+  }
+
+  selectEditor(editor: any) {
+    this.newBook.editors = this.newBook.editors || [];
+    if (!this.newBook.editors.find(e => e._id === editor._id)) {
+      this.newBook.editors.push({ _id: editor._id, name: editor.name });
+    }
+    this.editorSearchTerm = '';
+    this.showEditorDropdown = false;
+  }
+
+  selectCaretaker(caretaker: any) {
+    if (!this.newBook.caretakers.find(c => c._id === caretaker._id)) {
+      this.newBook.caretakers.push({ _id: caretaker._id, name: caretaker.name });
+    }
+    this.caretakerSearchTerm = '';
+    this.showCaretakerDropdown = false;
+  }
+
+  selectPublisher(publisher: any) {
+    this.newBook.publishers = this.newBook.publishers || [];
+    if (!this.newBook.publishers.find(p => p._id === publisher._id)) {
+      this.newBook.publishers.push({ _id: publisher._id, name: publisher.title });
+    }
+    this.publisherSearchTerm = '';
+    this.showPublisherDropdown = false;
+  }
+
+  selectCategory(category: any) {
+    this.newBook.category = { _id: category._id, title: category.title };
+    this.categorySearchTerm = '';
+    this.showCategoryDropdown = false;
+  }
+
+  selectSubject(subject: any) {
+    this.newBook.subject = { _id: subject._id, title: subject.title };
+    this.subjectSearchTerm = '';
+    this.showSubjectDropdown = false;
+  }
+
+  // Add new items
+  addNewAuthor() {
+    if (this.authorSearchTerm.trim()) {
+      this.newBook.authors.push({ name: this.authorSearchTerm.trim() });
+      this.authorSearchTerm = '';
+      this.showAuthorDropdown = false;
+    }
+  }
+
+  addNewCommentator() {
+    if (this.commentatorSearchTerm.trim()) {
+      this.newBook.commentators = this.newBook.commentators || [];
+      this.newBook.commentators.push({ name: this.commentatorSearchTerm.trim() });
+      this.commentatorSearchTerm = '';
+      this.showCommentatorDropdown = false;
+    }
+  }
+
+  addNewEditor() {
+    if (this.editorSearchTerm.trim()) {
+      this.newBook.editors = this.newBook.editors || [];
+      this.newBook.editors.push({ name: this.editorSearchTerm.trim() });
+      this.editorSearchTerm = '';
+      this.showEditorDropdown = false;
+    }
+  }
+
+  addNewCaretaker() {
+    if (this.caretakerSearchTerm.trim()) {
+      this.newBook.caretakers.push({ name: this.caretakerSearchTerm.trim() });
+      this.caretakerSearchTerm = '';
+      this.showCaretakerDropdown = false;
+    }
+  }
+
+  addNewPublisher() {
+    if (this.publisherSearchTerm.trim()) {
+      this.newBook.publishers = this.newBook.publishers || [];
+      this.newBook.publishers.push({ name: this.publisherSearchTerm.trim() });
+      this.publisherSearchTerm = '';
+      this.showPublisherDropdown = false;
+    }
+  }
+
+  addNewCategory() {
+    if (this.categorySearchTerm.trim()) {
+      this.newBook.category = { title: this.categorySearchTerm.trim() };
+      this.categorySearchTerm = '';
+      this.showCategoryDropdown = false;
+    }
+  }
+
+  addNewSubject() {
+    if (this.subjectSearchTerm.trim()) {
+      this.newBook.subject = { title: this.subjectSearchTerm.trim() };
+      this.subjectSearchTerm = '';
+      this.showSubjectDropdown = false;
+    }
+  }
+
+  // Remove items
+  removeAuthor(index: number) {
+    this.newBook.authors.splice(index, 1);
+  }
+
+  removeCommentator(index: number) {
+    this.newBook.commentators.splice(index, 1);
+  }
+
+  removeEditor(index: number) {
+    this.newBook.editors.splice(index, 1);
+  }
+
+  removeCaretaker(index: number) {
+    this.newBook.caretakers.splice(index, 1);
+  }
+
+  removePublisher(index: number) {
+    this.newBook.publishers.splice(index, 1);
+  }
 
   onImageSelected(evt: Event) {
     const inp = evt.target as HTMLInputElement;
@@ -107,54 +325,44 @@ export class AddBookComponent implements OnInit {
   addBook(): void {
     const payload: any = { ...this.newBook };
 
-    // override “add new” fields
-    if (this.newAuthorName) payload.author = { name: this.newAuthorName };
-    if (this.newMuhashiName) payload.muhashi = { name: this.newMuhashiName };
-    if (this.newEditorName) payload.editor = { name: this.newEditorName };
-    if (this.newCaretakerName) payload.caretaker = { name: this.newCaretakerName };
-    if (this.newPublisherName) payload.publisher = { title: this.newPublisherName };
-    if (this.newPublisherName2) payload.publisher2 = { title: this.newPublisherName2 };
-    if (this.newCategoryName) payload.category = { title: this.newCategoryName };
-    if (this.newSubjectName) payload.subject = { title: this.newSubjectName };
-
-    // attach image file if any
-
     if (this.selectedImageFile) {
       payload.image = this.selectedImageFile.name;
     }
 
     this.bookService.createBook(payload).subscribe(
-      (createdBook) => {
+      createdBook => {
         alert('تم إضافة الكتاب بنجاح!');
 
-        // increment bookNumber
         const curr = parseInt(this.newBook.address.bookNumber, 10) || 0;
         this.newBook.address.bookNumber = String(curr + 1);
 
-        // reset only the specified fields
+        // Reset fields
         this.newBook.title = '';
-        this.newBook.author = { name: '' };
-        this.newAuthorName = '';
-        this.newBook.muhashi = { name: '' };
-        this.newMuhashiName = '';
+        this.newBook.authors = [];
+        this.newBook.commentators = [];
+        this.newBook.editors = [];
+        this.newBook.caretakers = [];
         this.newBook.numberOfVolumes = 1;
-        this.newBook.publisher = { title: '' };
-        this.newPublisherName = '';
-        this.newBook.publisher2 = { title: '' };
-        this.newBook.editor = { name: '' };
-        this.newEditorName = '';
-        this.newBook.caretaker = { name: '' };
-        this.newCaretakerName = '';
+        this.newBook.publishers = [];
         this.newBook.editionNumber = 1;
         this.newBook.publicationYear = new Date().getFullYear();
         this.newBook.pageCount = 1;
+        this.newBook.category = { title: '', _id: '' };
+        this.newBook.subject = { title: '', _id: '' };
         this.selectedImageFile = null;
 
-        // ✅ Emit the created book data here
+        // Reset search terms
+        this.authorSearchTerm = '';
+        this.commentatorSearchTerm = '';
+        this.editorSearchTerm = '';
+        this.caretakerSearchTerm = '';
+        this.publisherSearchTerm = '';
+        this.categorySearchTerm = '';
+        this.subjectSearchTerm = '';
+
         this.newBookAdded.emit(createdBook);
       },
-      (err) => console.error('Error adding book:', err)
+      err => console.error('Error adding book:', err)
     );
-
   }
 }

@@ -1,30 +1,306 @@
-.book-detail {
-  padding: 1rem;
-  background-color: #e0e0e0;
-  border-radius: 5px;
-}
+      body {
+            font-family: 'Cairo', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
 
-.no-book {
-  padding: 1rem;
-  text-align: center;
-  color: #888;
-}
+        .main-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
 
-.popup-form {
-  position: fixed;
-  top: 30%;
-  left: 50%;
-  transform: translate(-50%, -30%);
-  background: white;
-  border: 1px solid #ccc;
-  padding: 15px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-  z-index: 1000;
-  width: 300px;
-  border-radius: 8px;
-}
+        .book-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+            margin-bottom: 2rem;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
 
-.popup-form label {
-  display: block;
-  margin-bottom: 10px;
-}
+        .book-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .book-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="2" fill="rgba(255,255,255,0.1)"/></svg>') repeat;
+            opacity: 0.3;
+        }
+
+        .book-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        .book-subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            position: relative;
+            z-index: 2;
+        }
+
+        .action-buttons {
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+            z-index: 3;
+        }
+
+        .btn-modern {
+            border-radius: 50px;
+            padding: 0.7rem 1.5rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+            border: none;
+            margin: 0 0.3rem;
+        }
+
+        .btn-edit {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a52);
+            color: white;
+        }
+
+        .btn-edit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(238, 90, 82, 0.3);
+            color: white;
+        }
+
+        .btn-delete {
+            background: linear-gradient(45deg, #ff4757, #c44569);
+            color: white;
+        }
+
+        .btn-delete:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(196, 69, 105, 0.3);
+            color: white;
+        }
+
+        .book-content {
+            padding: 2rem;
+        }
+
+        .info-section {
+            margin-bottom: 2rem;
+        }
+
+        .section-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 3px solid #667eea;
+            display: inline-block;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .info-item {
+            background: linear-gradient(135deg, #f8f9ff 0%, #f1f3ff 100%);
+            padding: 1.5rem;
+            border-radius: 15px;
+            border: 1px solid rgba(102, 126, 234, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .info-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.15);
+        }
+
+        .info-label {
+            font-weight: 700;
+            color: #4a5568;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .info-label i {
+            margin-left: 0.7rem;
+            color: #667eea;
+            width: 20px;
+            text-align: center;
+        }
+
+        .info-value {
+            color: #2d3748;
+            font-size: 1.05rem;
+            line-height: 1.6;
+        }
+
+        .empty-value {
+            color: #a0aec0;
+            font-style: italic;
+        }
+
+        /* Edit Form Styles */
+        .edit-form {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        }
+
+        .form-section {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: linear-gradient(135deg, #f8f9ff 0%, #f1f3ff 100%);
+            border-radius: 15px;
+            border: 1px solid rgba(102, 126, 234, 0.1);
+        }
+
+        .form-section-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #4a5568;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .form-section-title i {
+            margin-left: 0.7rem;
+            color: #667eea;
+        }
+
+        .form-control, .form-select {
+            border-radius: 10px;
+            border: 2px solid #e2e8f0;
+            padding: 0.75rem 1rem;
+            transition: all 0.3s ease;
+            font-family: 'Cairo', sans-serif;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .dynamic-input-group {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            align-items: stretch;
+        }
+
+        .btn-add {
+            background: linear-gradient(45deg, #48bb78, #38a169);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 0.7rem 1.5rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-add:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(72, 187, 120, 0.3);
+            color: white;
+        }
+
+        .btn-remove {
+            background: linear-gradient(45deg, #f56565, #e53e3e);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 0.5rem 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn-remove:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 5px 10px rgba(245, 101, 101, 0.3);
+            color: white;
+        }
+
+        .btn-save {
+            background: linear-gradient(45deg, #4299e1, #3182ce);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            padding: 1rem 2rem;
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-left: 1rem;
+        }
+
+        .btn-save:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(66, 153, 225, 0.3);
+            color: white;
+        }
+
+        .btn-cancel {
+            background: linear-gradient(45deg, #718096, #4a5568);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            padding: 1rem 2rem;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .btn-cancel:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(113, 128, 150, 0.3);
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                padding: 1rem;
+            }
+            
+            .book-title {
+                font-size: 2rem;
+            }
+            
+            .info-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            
+            .action-buttons {
+                position: static;
+                text-align: center;
+                margin-top: 1rem;
+            }
+            
+            .dynamic-input-group {
+                flex-direction: column;
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.6s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }

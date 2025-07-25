@@ -20,7 +20,6 @@
       <!-- End Navbar -->
     </div>
 
-
     <div class="container">
       <div class="page-inner">
         <div class="row">
@@ -37,9 +36,9 @@
                         <th>العنوان</th>
                         <th>المؤلف</th>
                         <th>عدد الأجزاء</th>
-                        <th>الدار</th>
-                        <th>2 الدار</th>
-                        <th>المحقق</th>
+                        <th>الناشرون</th>
+                        <th>المحققون</th>
+                        <th>الشارحون</th>
                         <th>اعتنى به</th>
                         <th>رقم الطبعة</th>
                         <th>سنة الطباعة</th>
@@ -54,12 +53,12 @@
                     <tbody>
                       <tr *ngFor="let book of books" (click)="viewBook(book._id)" style="cursor: pointer;">
                         <td>{{ book.title }}</td>
-                        <td>{{ book.author?.name }}</td>
+                        <td>{{ getNames(book.authors) }}</td>
                         <td>{{ book.numberOfVolumes ?? '—' }}</td>
-                        <td>{{ book.publisher?.title ?? '—' }}</td>
-                        <td>{{ book.publisher2?.title ?? '—' }}</td>
-                        <td>{{ book.editor?.name ?? '—' }}</td>
-                        <td>{{ book.caretaker?.name ?? '—' }}</td>
+                        <td>{{ getNames(book.publishers) }}</td>
+                        <td>{{ getNames(book.editors) }}</td>
+                        <td>{{ getNames(book.commentators) }}</td>
+                        <td>{{ getNames(book.caretakers) }}</td>
                         <td>{{ book.editionNumber ?? '—' }}</td>
                         <td>{{ book.publicationYear ?? '—' }}</td>
                         <td>{{ book.category?.title ?? '—' }}</td>
@@ -68,7 +67,6 @@
                         <td>{{ book.address?.wallNumber ?? '—' }}</td>
                         <td>{{ book.address?.shelfNumber ?? '—' }}</td>
                         <td>{{ book.address?.bookNumber ?? '—' }}</td>
-
                       </tr>
                     </tbody>
                   </table>

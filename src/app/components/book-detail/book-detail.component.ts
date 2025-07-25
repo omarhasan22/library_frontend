@@ -26,27 +26,9 @@ export class BookDetailComponent implements OnInit {
   publishers: Publisher[] = [];
   people: any[] = [];
   authors: any[] = [];
-  muhashis: any[] = [];
+  commentators: any[] = [];
   editors: any[] = [];
   caretakers: any[] = [];
-
-  // For new entries
-  newAuthorName = '';
-  newMuhashiName = '';
-  newEditorName = '';
-  newCaretakerName = '';
-  newPublisherName = '';
-  newCategoryName = '';
-  newSubjectName = '';
-
-  // For dropdown selections
-  selectedAuthorId = '';
-  selectedMuhashiId = '';
-  selectedEditorId = '';
-  selectedCaretakerId = '';
-  selectedPublisherId = '';
-  selectedCategoryId = '';
-  selectedSubjectId = '';
 
   selectedImageFile: File | null = null;
 
@@ -76,14 +58,70 @@ export class BookDetailComponent implements OnInit {
     this.loadSubjects();
   }
 
+  // Array management methods
+  addAuthor(): void {
+    if (!this.editBook.authors) {
+      this.editBook.authors = [];
+    }
+    this.editBook.authors.push({ name: '' });
+  }
+
+  removeAuthor(index: number): void {
+    this.editBook.authors.splice(index, 1);
+  }
+
+  addCommentator(): void {
+    if (!this.editBook.commentators) {
+      this.editBook.commentators = [];
+    }
+    this.editBook.commentators.push({ name: '' });
+  }
+
+  removeCommentator(index: number): void {
+    this.editBook.commentators.splice(index, 1);
+  }
+
+  addEditor(): void {
+    if (!this.editBook.editors) {
+      this.editBook.editors = [];
+    }
+    this.editBook.editors.push({ name: '' });
+  }
+
+  removeEditor(index: number): void {
+    this.editBook.editors.splice(index, 1);
+  }
+
+  addCaretaker(): void {
+    if (!this.editBook.caretakers) {
+      this.editBook.caretakers = [];
+    }
+    this.editBook.caretakers.push({ name: '' });
+  }
+
+  removeCaretaker(index: number): void {
+    this.editBook.caretakers.splice(index, 1);
+  }
+
+  addPublisher(): void {
+    if (!this.editBook.publishers) {
+      this.editBook.publishers = [];
+    }
+    this.editBook.publishers.push({ name: '' });
+  }
+
+  removePublisher(index: number): void {
+    this.editBook.publishers.splice(index, 1);
+  }
+
   initializeEditBook(): void {
     this.editBook = {
       ...this.book,
-      author: { name: this.book.author?.name || '' },
-      muhashi: { name: this.book.muhashi?.name || '' },
-      editor: { name: this.book.editor?.name || '' },
-      caretaker: { name: this.book.caretaker?.name || '' },
-      publisher: { title: this.book.publisher?.title || '' },
+      authors: this.book.authors?.length ? [...this.book.authors] : [],
+      commentators: this.book.commentators?.length ? [...this.book.commentators] : [],
+      editors: this.book.editors?.length ? [...this.book.editors] : [],
+      caretakers: this.book.caretakers?.length ? [...this.book.caretakers] : [],
+      publishers: this.book.publishers?.length ? [...this.book.publishers] : [],
       category: { title: this.book.category?.title || '' },
       subject: { title: this.book.subject?.title || '' },
       address: {
@@ -94,51 +132,55 @@ export class BookDetailComponent implements OnInit {
       }
     };
 
-    // Set selected IDs for dropdowns
-    this.setSelectedIds();
-  }
-
-  setSelectedIds(): void {
-    // Find and set the selected IDs based on current book data
-    if (this.book.author && typeof this.book.author === 'object' && '_id' in this.book.author) {
-      this.selectedAuthorId = (this.book.author as any)._id;
-    } else {
-      const author = this.authors.find(a => a.name === this.book.author?.name);
-      this.selectedAuthorId = author ? author._id : '';
+    // Ensure arrays have at least one empty entry for the form
+    if (this.editBook.authors.length === 0) {
+      this.editBook.authors.push({ name: '' });
     }
-
-    if (this.book.muhashi && typeof this.book.muhashi === 'object' && '_id' in this.book.muhashi) {
-      this.selectedMuhashiId = (this.book.muhashi as any)._id;
-    } else {
-      const muhashi = this.muhashis.find(m => m.name === this.book.muhashi?.name);
-      this.selectedMuhashiId = muhashi ? muhashi._id : '';
+    if (this.editBook.commentators.length === 0) {
+      this.editBook.commentators.push({ name: '' });
     }
-
-    // Similar for other fields...
+    if (this.editBook.editors.length === 0) {
+      this.editBook.editors.push({ name: '' });
+    }
+    if (this.editBook.caretakers.length === 0) {
+      this.editBook.caretakers.push({ name: '' });
+    }
+    if (this.editBook.publishers.length === 0) {
+      this.editBook.publishers.push({ name: '' });
+    }
   }
 
   toggleEditMode(): void {
     this.isEditMode = true;
     this.initializeEditBook();
-    this.clearNewFields();
   }
 
   cancelEdit(): void {
     this.isEditMode = false;
-    this.clearNewFields();
     this.selectedImageFile = null;
     // Reset editBook to original values
     this.initializeEditBook();
   }
 
-  clearNewFields(): void {
-    this.newAuthorName = '';
-    this.newMuhashiName = '';
-    this.newEditorName = '';
-    this.newCaretakerName = '';
-    this.newPublisherName = '';
-    this.newCategoryName = '';
-    this.newSubjectName = '';
+  private prepareArrayPayload(field: string): any[] {
+    const items = this.editBook[field] || [];
+    return items
+      .filter((item: any) => (item.name && item.name.trim()) || (item.title && item.title.trim()))
+      .map((item: any) => {
+        if (item._id) {
+          return item._id;
+        }
+        return field === 'publishers' ? { title: item.title.trim() } : { name: item.name.trim() };
+      });
+  }
+
+  private prepareEntityPayload(field: string): any {
+    const entity = this.editBook[field];
+    if (entity?.title && entity.title.trim()) {
+      const found = this[field + 's'].find((c: any) => c.title === entity.title.trim());
+      return found ? found._id : { title: entity.title.trim() };
+    }
+    return null;
   }
 
   saveBook(): void {
@@ -148,64 +190,17 @@ export class BookDetailComponent implements OnInit {
       editionNumber: this.editBook.editionNumber,
       publicationYear: this.editBook.publicationYear,
       pageCount: this.editBook.pageCount,
-      address: this.editBook.address
+      address: this.editBook.address,
+      // Array fields
+      authors: this.prepareArrayPayload('authors'),
+      commentators: this.prepareArrayPayload('commentators'),
+      editors: this.prepareArrayPayload('editors'),
+      caretakers: this.prepareArrayPayload('caretakers'),
+      publishers: this.prepareArrayPayload('publishers'),
+      // Category and subject
+      category: this.prepareEntityPayload('category'),
+      subject: this.prepareEntityPayload('subject')
     };
-
-    // Handle author
-    if (this.newAuthorName) {
-      payload.author = { name: this.newAuthorName };
-    } else if (this.editBook.author.name) {
-      const foundAuthor = this.authors.find(a => a.name === this.editBook.author.name);
-      payload.author = foundAuthor ? foundAuthor._id : { name: this.editBook.author.name };
-    }
-
-    // Handle muhashi
-    if (this.newMuhashiName) {
-      payload.muhashi = { name: this.newMuhashiName };
-    } else if (this.editBook.muhashi.name) {
-      const foundMuhashi = this.muhashis.find(m => m.name === this.editBook.muhashi.name);
-      payload.muhashi = foundMuhashi ? foundMuhashi._id : { name: this.editBook.muhashi.name };
-    }
-
-    // Handle editor
-    if (this.newEditorName) {
-      payload.editor = { name: this.newEditorName };
-    } else if (this.editBook.editor.name) {
-      const foundEditor = this.editors.find(e => e.name === this.editBook.editor.name);
-      payload.editor = foundEditor ? foundEditor._id : { name: this.editBook.editor.name };
-    }
-
-    // Handle caretaker
-    if (this.newCaretakerName) {
-      payload.caretaker = { name: this.newCaretakerName };
-    } else if (this.editBook.caretaker.name) {
-      const foundCaretaker = this.caretakers.find(c => c.name === this.editBook.caretaker.name);
-      payload.caretaker = foundCaretaker ? foundCaretaker._id : { name: this.editBook.caretaker.name };
-    }
-
-    // Handle publisher
-    if (this.newPublisherName) {
-      payload.publisher = { title: this.newPublisherName };
-    } else if (this.editBook.publisher.title) {
-      const foundPublisher = this.publishers.find(p => p.title === this.editBook.publisher.title);
-      payload.publisher = foundPublisher ? foundPublisher._id : { title: this.editBook.publisher.title };
-    }
-
-    // Handle category
-    if (this.newCategoryName) {
-      payload.category = { title: this.newCategoryName };
-    } else if (this.editBook.category.title) {
-      const foundCategory = this.categories.find(c => c.title === this.editBook.category.title);
-      payload.category = foundCategory ? foundCategory._id : { title: this.editBook.category.title };
-    }
-
-    // Handle subject
-    if (this.newSubjectName) {
-      payload.subject = { title: this.newSubjectName };
-    } else if (this.editBook.subject.title) {
-      const foundSubject = this.subjects.find(s => s.title === this.editBook.subject.title);
-      payload.subject = foundSubject ? foundSubject._id : { title: this.editBook.subject.title };
-    }
 
     // Attach image file if any
     if (this.selectedImageFile) {
@@ -217,7 +212,6 @@ export class BookDetailComponent implements OnInit {
         this.book = updatedBook;
         this.originalBook = JSON.parse(JSON.stringify(updatedBook));
         this.isEditMode = false;
-        this.clearNewFields();
         this.selectedImageFile = null;
         alert('تم تحديث الكتاب بنجاح!');
       },
@@ -228,12 +222,11 @@ export class BookDetailComponent implements OnInit {
     );
   }
 
-  // Load data methods (same as add-book component)
   loadPeople(): void {
     this.bookService.getPeople().subscribe((people) => {
       this.people = people;
       this.authors = people.filter((p) => p.type === 'author');
-      this.muhashis = people.filter((p) => p.type === 'muhashi');
+      this.commentators = people.filter((p) => p.type === 'muhashi');
       this.editors = people.filter((p) => p.type === 'editor');
       this.caretakers = people.filter((p) => p.type === 'caretaker');
     });
@@ -249,53 +242,6 @@ export class BookDetailComponent implements OnInit {
 
   loadPublishers(): void {
     this.bookService.getPublishers().subscribe((pubs) => (this.publishers = pubs));
-  }
-
-  // Dropdown change handlers
-  onAuthorSelectChange(authorId: string): void {
-    const author = this.authors.find(a => a._id === authorId);
-    if (author) {
-      this.editBook.author.name = author.name;
-      this.newAuthorName = ''; // Clear the "add new" field
-    }
-  }
-
-  onMuhashiSelectChange(muhashiId: string): void {
-    const muhashi = this.muhashis.find(m => m._id === muhashiId);
-    if (muhashi) {
-      this.editBook.muhashi.name = muhashi.name;
-      this.newMuhashiName = '';
-    }
-  }
-
-  // Input change handlers (same as add-book component)
-  onAuthorInputChange(val: string): void {
-    this.editBook.author.name = val;
-    if (val) this.selectedAuthorId = ''; // Clear dropdown selection
-  }
-
-  onMuhashiInputChange(val: string): void {
-    this.editBook.muhashi = { name: val };
-  }
-
-  onEditorInputChange(val: string): void {
-    this.editBook.editor.name = val;
-  }
-
-  onCaretakerInputChange(val: string): void {
-    this.editBook.caretaker.name = val;
-  }
-
-  onPublisherInputChange(val: string): void {
-    this.editBook.publisher.title = val;
-  }
-
-  onCategoryInputChange(val: string): void {
-    this.editBook.category.title = val;
-  }
-
-  onSubjectInputChange(val: string): void {
-    this.editBook.subject.title = val;
   }
 
   onImageSelected(evt: Event): void {
@@ -323,5 +269,26 @@ export class BookDetailComponent implements OnInit {
         console.error(err);
       }
     );
+  }
+
+  // Helper methods for template display
+  getAuthorsNames(): string {
+    return this.book.authors?.map(a => a.name).join('، ') || '';
+  }
+
+  getEditorsNames(): string {
+    return this.book.editors?.map(e => e.name).join('، ') || '';
+  }
+
+  getCommentatorsNames(): string {
+    return this.book.commentators?.map(c => c.name).join('، ') || '';
+  }
+
+  getCaretakersNames(): string {
+    return this.book.caretakers?.map(c => c.name).join('، ') || '';
+  }
+
+  getPublishersNames(): string {
+    return this.book.publishers?.map(p => p.name).join('، ') || '';
   }
 }

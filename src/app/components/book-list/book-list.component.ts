@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, SimpleChange } from '@angular/core';
+import { Component, Input, OnInit, SimpleChanges } from '@angular/core';
 import { Router } from '@angular/router';
 import { BookService } from '../../services/book.service';
 import { Book } from '../../models/book.model';
@@ -19,27 +19,35 @@ export class BookListComponent implements OnInit {
     this.loadBooks();
   }
 
-  ngOnChanges(changes: SimpleChange): void {
+  getNames(list?: { name?: string }[]): string {
+    return list && list.length ? list.map(i => i.name).filter(Boolean).join(', ') : '—';
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
     if (changes['addedBook'] && this.addedBook) {
-      this.books.push(this.addedBook);
+      // Check if book already exists (avoid duplicates)
+      const exists = this.books.some(book => book._id === this.addedBook!._id);
+      if (!exists) {
+        this.books.unshift(this.addedBook); // Add to top
+      }
     }
   }
 
   loadBooks(): void {
     this.bookService.getAllBooks(this.searchQuery).subscribe(
-      (data) => (this.books = data),
+      (data) => this.books = data,
       (error) => console.error('Error fetching books:', error)
     );
   }
 
   onSearch(): void {
     this.bookService.getAllBooks(this.searchQuery).subscribe(
-      (data) => (this.books = data),
+      (data) => this.books = data,
       (error) => console.error('Error:', error)
     );
   }
 
-  viewBook(id: any): void {
+  viewBook(id: string): void {
     this.router.navigate(['/books', id]);
   }
 }
