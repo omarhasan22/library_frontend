@@ -299,8 +299,89 @@
         .fade-in {
             animation: fadeIn 0.6s ease-in;
         }
+        .dropdown-item {
+  padding: 8px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid #eee;
+}
+
+.dropdown-item:hover {
+  background-color: #f5f5f5;
+}
+
+.dropdown-item.add-new {
+  background-color: #e7f3ff;
+  color: #0066cc;
+}
+
+.selected-item {
+  display: inline-flex;
+  align-items: center;
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  padding: 4px 8px;
+  margin-top: 8px;
+}
+
+
+.search-dropdown-container {
+  position: relative;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 1000;
+  display: block;
+  width: 100%;
+  background-color: white;
+  border: 1px solid #ccc;
+  border-radius: 0.25rem;
+  max-height: 200px;
+  overflow-y: auto;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
 
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
+
+        /* Ensure proper RTL flow */
+[dir="rtl"] {
+  direction: rtl;        /* normalizes bidi for RTL */
+  unicode-bidi: embed;   /* isolate the embed from LTR context */
+}
+
+/* Right‑align all form labels and info values */
+[dir="rtl"] .form-label,
+[dir="rtl"] .info-label,
+[dir="rtl"] .info-value,
+[dir="rtl"] .book-title,
+[dir="rtl"] .book-subtitle {
+  text-align: right;
+}
+
+/* Make sure dynamic lists and input groups flow RTL */
+[dir="rtl"] .dynamic-input-group {
+  display: flex;
+  flex-direction: row-reverse;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Adjust action‑buttons in header for RTL */
+[dir="rtl"] .action-buttons {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-start; /* buttons appear on the left in RTL */
+}
+
+/* Table rows: right‑align cell contents */
+[dir="rtl"] table th,
+[dir="rtl"] table td {
+  text-align: right;
+  direction: rtl;
+}

@@ -31,7 +31,7 @@
               "src/assets/css/styles.css"
             ],
             "scripts": [
-                "src/assets/js/scripts.js"
+              "src/assets/js/scripts.js"
             ]
           },
           "configurations": {
@@ -44,8 +44,8 @@
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "2kb",
-                  "maximumError": "4kb"
+                  "maximumWarning": "1mb",
+                  "maximumError": "1mb"
                 }
               ],
               "fileReplacements": [
@@ -97,7 +97,8 @@
               "src/assets"
             ],
             "styles": [
-              "src/styles.css"
+              "src/styles.css",
+              "src/assets/css/styles.css"
             ],
             "scripts": []
           }

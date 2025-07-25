@@ -20,6 +20,7 @@ export class AddBookComponent implements OnInit {
   commentators: any[] = [];
   editors: any[] = [];
   caretakers: any[] = [];
+  muhashis: any[] = [];
 
   // Filtered arrays for search functionality
   filteredAuthors: any[] = [];
@@ -29,6 +30,7 @@ export class AddBookComponent implements OnInit {
   filteredPublishers: any[] = [];
   filteredCategories: any[] = [];
   filteredSubjects: any[] = [];
+  filteredMuhashis: any[] = [];
 
   // Search input values
   authorSearchTerm = '';
@@ -38,6 +40,7 @@ export class AddBookComponent implements OnInit {
   publisherSearchTerm = '';
   categorySearchTerm = '';
   subjectSearchTerm = '';
+  muhashiSearchTerm = '';
 
   // Show dropdown flags
   showAuthorDropdown = false;
@@ -47,30 +50,41 @@ export class AddBookComponent implements OnInit {
   showPublisherDropdown = false;
   showCategoryDropdown = false;
   showSubjectDropdown = false;
+  showMuhashiDropdown = false;
 
   selectedImageFile: File | null = null;
 
-  newBook: Book & { address: { roomNumber: string; shelfNumber: string; wallNumber: string; bookNumber: string } } = {
-    title: '',
-    authors: [],
-    commentators: [],
-    editors: [],
-    caretakers: [],
-    category: { title: '', _id: '' },
-    subject: { title: '', _id: '' },
-    numberOfVolumes: 1,
-    publishers: [],
-    editionNumber: 1,
-    publicationYear: new Date().getFullYear(),
-    pageCount: 1,
+  newBook: Book & {
     address: {
-      roomNumber: '',
-      shelfNumber: '',
-      wallNumber: '',
-      bookNumber: '1',
-    },
-    imageUrl: ''
-  };
+      roomNumber: string;
+      shelfNumber: string;
+      wallNumber: string;
+      bookNumber: string;
+    };
+    notes?: string;
+  } = {
+      title: '',
+      authors: [],
+      commentators: [],
+      editors: [],
+      caretakers: [],
+      muhashis: [],
+      category: { title: '', _id: '' },
+      subject: { title: '', _id: '' },
+      numberOfVolumes: 1,
+      publishers: [],
+      editionNumber: 1,
+      publicationYear: new Date().getFullYear(),
+      pageCount: 1,
+      address: {
+        roomNumber: '',
+        shelfNumber: '',
+        wallNumber: '',
+        bookNumber: '1',
+      },
+      imageUrl: '',
+      notes: ''
+    };
 
   @Output() newBookAdded = new EventEmitter<Book>();
 
@@ -81,6 +95,23 @@ export class AddBookComponent implements OnInit {
     this.loadCategories();
     this.loadSubjects();
     this.loadPublishers();
+    // Add click listener to close dropdowns when clicking outside
+    document.addEventListener('click', (event) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.search-dropdown-container')) {
+        this.closeAllDropdowns();
+      }
+    });
+  }
+  closeAllDropdowns(): void {
+    this.showAuthorDropdown = false;
+    this.showCommentatorDropdown = false;
+    this.showEditorDropdown = false;
+    this.showCaretakerDropdown = false;
+    this.showMuhashiDropdown = false;
+    this.showPublisherDropdown = false;
+    this.showCategoryDropdown = false;
+    this.showSubjectDropdown = false;
   }
 
   loadPeople() {
@@ -90,11 +121,14 @@ export class AddBookComponent implements OnInit {
       this.commentators = people.filter(p => p.type === 'commentator');
       this.editors = people.filter(p => p.type === 'editor');
       this.caretakers = people.filter(p => p.type === 'caretaker');
+      this.muhashis = people.filter(p => p.type === 'muhashi');
 
       this.filteredAuthors = [...this.authors];
       this.filteredCommentators = [...this.commentators];
       this.filteredEditors = [...this.editors];
       this.filteredCaretakers = [...this.caretakers];
+      this.filteredMuhashis = [...this.muhashis];
+
     });
   }
 
@@ -294,6 +328,36 @@ export class AddBookComponent implements OnInit {
     }
   }
 
+  addNewMuhashi() {
+    if (this.muhashiSearchTerm.trim()) {
+      this.newBook.muhashis = this.newBook.muhashis || [];
+      this.newBook.muhashis.push({ name: this.muhashiSearchTerm.trim() });
+      this.muhashiSearchTerm = '';
+      this.showMuhashiDropdown = false;
+    }
+  }
+
+  selectMuhashi(muhashi: any) {
+    this.newBook.muhashis = this.newBook.muhashis || [];
+    if (!this.newBook.muhashis.find(m => m._id === muhashi._id)) {
+      this.newBook.muhashis.push({ _id: muhashi._id, name: muhashi.name });
+    }
+    this.muhashiSearchTerm = '';
+    this.showMuhashiDropdown = false;
+  }
+
+  removeMuhashi(index: number) {
+    this.newBook.muhashis.splice(index, 1);
+  }
+
+  onMuhashiSearch(term: string) {
+    this.muhashiSearchTerm = term;
+    this.filteredMuhashis = this.muhashis.filter(m =>
+      m.name.toLowerCase().includes(term.toLowerCase())
+    );
+    this.showMuhashiDropdown = term.length > 0;
+  }
+
   // Remove items
   removeAuthor(index: number) {
     this.newBook.authors.splice(index, 1);
@@ -350,6 +414,8 @@ export class AddBookComponent implements OnInit {
         this.newBook.category = { title: '', _id: '' };
         this.newBook.subject = { title: '', _id: '' };
         this.selectedImageFile = null;
+        this.newBook.notes = '';
+        this.newBook.muhashis = [];
 
         // Reset search terms
         this.authorSearchTerm = '';
@@ -359,6 +425,7 @@ export class AddBookComponent implements OnInit {
         this.publisherSearchTerm = '';
         this.categorySearchTerm = '';
         this.subjectSearchTerm = '';
+        this.muhashiSearchTerm = '';
 
         this.newBookAdded.emit(createdBook);
       },

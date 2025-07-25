@@ -1,53 +1,3 @@
-// export class Book {
-//   _id?: string;
-//   title?: string;
-//   address: {
-//     roomNumber?: string;
-//     wallNumber?: string;
-//     shelfNumber?: string;
-//     bookNumber?: string;
-//   };
-//   author: {
-//     name?: string,
-//     _id?: string
-//   };
-//   category: {
-//     title?: string,
-//     _id?: string
-//   };
-//   subject: {
-//     title?: string,
-//     _id?: string
-//   };
-//   numberOfVolumes?: number; // عدد الأجزاء
-//   publisher?: {
-//     title?: string,
-//     _id?: string
-//   };      // الدار
-//   publisher2?: {
-//     title?: string,
-//     _id?: string
-//   };      // الدار
-//   editor?: {
-//     name?: string,
-//     _id?: string
-//   };             // المحقق
-//   commentator?: {
-//     name?: string,
-//     _id?: string
-//   };             // المحقق
-//   caretaker: {
-//     name?: string,
-//     _id?: string
-//   };         // اعتنى به
-//   editionNumber?: number;   // رقم الطبعة
-//   publicationYear?: number; // سنة الطباعة
-//   pageCount?: number;       // عدد الصفحات
-//   imageUrl?: string;
-//   createdAt?: Date;
-//   updatedAt?: Date;
-// }
-
 export class Book {
   _id?: string;
   title?: string;
@@ -87,9 +37,12 @@ export class Book {
     name?: string,
     _id?: string
   }>;         // اعتنى به
+  muhashis?: { _id?: string; name: string }[];
+
   editionNumber?: number;   // رقم الطبعة
   publicationYear?: number; // سنة الطباعة
   pageCount?: number;       // عدد الصفحات
+  notes?: string;
   imageUrl?: string;
   createdAt?: Date;
   updatedAt?: Date;

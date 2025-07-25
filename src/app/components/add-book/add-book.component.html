@@ -21,7 +21,7 @@
         <div class="form-section">
           <div class="form-section-title">
             <i class="fas fa-user-edit"></i>
-            الماتنون
+            المؤلفون
           </div>
           <div class="search-dropdown-container">
             <input type="text" class="form-control" placeholder="ابحث عن ماتن أو أضف جديد"
@@ -135,6 +135,36 @@
             <li *ngFor="let caretaker of newBook.caretakers; let i = index">
               <span>{{ caretaker.name }}</span>
               <button type="button" class="btn-remove" (click)="removeCaretaker(i)">حذف</button>
+            </li>
+          </ul>
+        </div>
+
+        <!-- المحشّون -->
+        <div class="form-section">
+          <div class="form-section-title">
+            <i class="fas fa-pen-nib"></i>
+            المحشّون
+          </div>
+          <div class="search-dropdown-container">
+            <input type="text" class="form-control" placeholder="ابحث عن محشٍّ أو أضف جديد"
+              [(ngModel)]="muhashiSearchTerm" name="muhashiSearch" (input)="onMuhashiSearch(muhashiSearchTerm)"
+              (focus)="showMuhashiDropdown = true" />
+
+            <div class="dropdown-menu"
+              *ngIf="showMuhashiDropdown && (filteredMuhashis.length > 0 || muhashiSearchTerm.length > 0)">
+              <div class="dropdown-item" *ngFor="let muhashi of filteredMuhashis" (click)="selectMuhashi(muhashi)">
+                {{ muhashi.name }}
+              </div>
+              <div class="dropdown-item add-new" *ngIf="muhashiSearchTerm.length > 0" (click)="addNewMuhashi()">
+                <i class="fas fa-plus"></i> إضافة "{{ muhashiSearchTerm }}" كمحشٍّ جديد
+              </div>
+            </div>
+          </div>
+
+          <ul class="dynamic-list" *ngIf="newBook.muhashis?.length">
+            <li *ngFor="let muhashi of newBook.muhashis; let i = index">
+              <span>{{ muhashi.name }}</span>
+              <button type="button" class="btn-remove" (click)="removeMuhashi(i)">حذف</button>
             </li>
           </ul>
         </div>
@@ -315,6 +345,15 @@
               </div>
             </div>
           </div>
+        </div>
+
+        <div class="form-section">
+          <div class="form-section-title">
+            <i class="fas fa-sticky-note"></i>
+            ملاحظات
+          </div>
+          <textarea id="notes" class="form-control" placeholder="أضف ملاحظات" [(ngModel)]="newBook.notes" name="notes"
+            required></textarea>
         </div>
 
         <div class="text-center mt-4">
