@@ -22,7 +22,7 @@ export class Book {
   }; // Single object, not array
   numberOfVolumes?: number; // عدد الأجزاء
   publishers?: Array<{
-    name?: string,
+    title?: string,
     _id?: string
   }>;
   editors?: Array<{

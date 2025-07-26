@@ -204,7 +204,7 @@
 
           <ul class="dynamic-list" *ngIf="newBook.publishers?.length">
             <li *ngFor="let publisher of newBook.publishers; let i = index">
-              <span>{{ publisher.name }}</span>
+              <span>{{ publisher.title }}</span>
               <button type="button" class="btn-remove" (click)="removePublisher(i)">حذف</button>
             </li>
           </ul>

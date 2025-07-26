@@ -253,7 +253,7 @@ export class BookDetailComponent implements OnInit {
     this.editBook.publishers = this.editBook.publishers || [];
     this.editBook.publishers.push({
       _id: publisher._id,
-      name: publisher.name
+      title: publisher.title
     });
     this.publisherSearchTerm = '';
     this.showPublisherDropdown = false;
@@ -337,7 +337,7 @@ export class BookDetailComponent implements OnInit {
     if (this.publisherSearchTerm.trim()) {
       this.editBook.publishers = this.editBook.publishers || [];
       this.editBook.publishers.push({
-        name: this.publisherSearchTerm.trim()
+        title: this.publisherSearchTerm.trim()
       });
       this.publisherSearchTerm = '';
       this.showPublisherDropdown = false;
@@ -413,7 +413,7 @@ export class BookDetailComponent implements OnInit {
     if (!this.editBook.publishers) {
       this.editBook.publishers = [];
     }
-    this.editBook.publishers.push({ name: '' });
+    this.editBook.publishers.push({ title: '' });
   }
 
   removePublisher(index: number): void {
@@ -668,7 +668,7 @@ export class BookDetailComponent implements OnInit {
   }
 
   getPublishersNames(): string {
-    return this.book.publishers?.map(p => p.name).join('، ') || '';
+    return this.book.publishers?.map(p => p.title).join('، ') || '';
   }
 
   getMuhashisNames(): string {

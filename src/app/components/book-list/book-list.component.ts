@@ -23,6 +23,10 @@ export class BookListComponent implements OnInit {
     return list && list.length ? list.map(i => i.name).filter(Boolean).join(', ') : '—';
   }
 
+  getTitles(list?: { title?: string }[]): string {
+    return list && list.length ? list.map(i => i.title).filter(Boolean).join(', ') : '—';
+  }
+
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['addedBook'] && this.addedBook) {
       // Check if book already exists (avoid duplicates)

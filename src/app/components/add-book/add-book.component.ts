@@ -250,7 +250,7 @@ export class AddBookComponent implements OnInit {
   selectPublisher(publisher: any) {
     this.newBook.publishers = this.newBook.publishers || [];
     if (!this.newBook.publishers.find(p => p._id === publisher._id)) {
-      this.newBook.publishers.push({ _id: publisher._id, name: publisher.title });
+      this.newBook.publishers.push({ _id: publisher._id, title: publisher.title });
     }
     this.publisherSearchTerm = '';
     this.showPublisherDropdown = false;
@@ -306,7 +306,7 @@ export class AddBookComponent implements OnInit {
   addNewPublisher() {
     if (this.publisherSearchTerm.trim()) {
       this.newBook.publishers = this.newBook.publishers || [];
-      this.newBook.publishers.push({ name: this.publisherSearchTerm.trim() });
+      this.newBook.publishers.push({ title: this.publisherSearchTerm.trim() });
       this.publisherSearchTerm = '';
       this.showPublisherDropdown = false;
     }
