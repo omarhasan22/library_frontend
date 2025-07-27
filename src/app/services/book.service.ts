@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { Book } from '../models/book.model';
 import { Category } from '../models/category.model';
 import { Subject } from '../models/subject.model';
+import { Publisher } from '../models/publisher.model'; // Assuming you have this model
 import { environment } from 'src/environments/environment';
 
 @Injectable({
@@ -14,6 +15,7 @@ export class BookService {
 
   constructor(private http: HttpClient) { }
 
+  // --- Book Endpoints ---
   getAllBooks(query: string = ''): Observable<Book[]> {
     const params = query ? new HttpParams().set('q', query) : new HttpParams();
     return this.http.get<Book[]>(`${this.baseUrl}/books`, { params });
@@ -23,23 +25,9 @@ export class BookService {
     return this.http.get<Book>(`${this.baseUrl}/books/${id}`);
   }
 
-  createBook(book: Book): Observable<Book> {
-    return this.http.post<Book>(`${this.baseUrl}/books`, book);
-  }
-
-  getCategories(): Observable<Category[]> {
-    const d = this.http.get<Category[]>(`${this.baseUrl}/categories`);
-    return d;
-  }
-
-  getSubjects(): Observable<Category[]> {
-    const d = this.http.get<Subject[]>(`${this.baseUrl}/subjects`);
-    return d;
-  }
-
-  getPublishers(): Observable<Category[]> {
-    const d = this.http.get<Category[]>(`${this.baseUrl}/publishers`);
-    return d;
+  // Modified to accept FormData for image upload
+  createBook(bookData: FormData): Observable<Book> {
+    return this.http.post<Book>(`${this.baseUrl}/books`, bookData);
   }
 
   updateBook(id: string, book: Partial<Book>): Observable<Book> {
@@ -50,7 +38,55 @@ export class BookService {
     return this.http.delete(`${this.baseUrl}/books/${id}`);
   }
 
+  // --- People Endpoints (Authors, Commentators, Editors, Caretakers, Muhashis) ---
   getPeople(): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}/people`);
+  }
+
+  /**
+   * Creates a new person (author, commentator, editor, caretaker, muhashi).
+   * @param personData Object containing 'name' and 'type' (e.g., { name: 'New Author', type: 'author' })
+   */
+  createPerson(personData: { name: string; type: string }): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/people`, personData);
+  }
+
+  // --- Category Endpoints ---
+  getCategories(): Observable<Category[]> {
+    return this.http.get<Category[]>(`${this.baseUrl}/categories`);
+  }
+
+  /**
+   * Creates a new category.
+   * @param categoryData Object containing 'title' (e.g., { title: 'New Category' })
+   */
+  createCategory(categoryData: { title: string }): Observable<Category> {
+    return this.http.post<Category>(`${this.baseUrl}/categories`, categoryData);
+  }
+
+  // --- Subject Endpoints ---
+  getSubjects(): Observable<Subject[]> { // Corrected return type to Subject[]
+    return this.http.get<Subject[]>(`${this.baseUrl}/subjects`);
+  }
+
+  /**
+   * Creates a new subject.
+   * @param subjectData Object containing 'title' (e.g., { title: 'New Subject' })
+   */
+  createSubject(subjectData: { title: string }): Observable<Subject> {
+    return this.http.post<Subject>(`${this.baseUrl}/subjects`, subjectData);
+  }
+
+  // --- Publisher Endpoints ---
+  getPublishers(): Observable<Publisher[]> { // Corrected return type to Publisher[]
+    return this.http.get<Publisher[]>(`${this.baseUrl}/publishers`);
+  }
+
+  /**
+   * Creates a new publisher.
+   * @param publisherData Object containing 'title' (e.g., { title: 'New Publisher' })
+   */
+  createPublisher(publisherData: { title: string }): Observable<Publisher> {
+    return this.http.post<Publisher>(`${this.baseUrl}/publishers`, publisherData);
   }
 }

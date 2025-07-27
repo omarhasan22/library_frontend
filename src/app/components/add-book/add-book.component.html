@@ -5,9 +5,14 @@
     </div>
 
     <div class="book-content">
-      <form (ngSubmit)="addBook()" #bookForm="ngForm">
+      <div *ngIf="loading" class="loader-overlay">
+        <div class="spinner-border text-primary" role="status">
+          <span class="sr-only">Loading...</span>
+        </div>
+        <p>جاري إضافة الكتاب...</p>
+      </div>
 
-        <!-- عنوان الكتاب -->
+      <form (ngSubmit)="addBook()" #bookForm="ngForm">
         <div class="form-section">
           <div class="form-section-title">
             <i class="fas fa-book"></i>
@@ -17,7 +22,6 @@
             name="title" required />
         </div>
 
-        <!-- المؤلفون -->
         <div class="form-section">
           <div class="form-section-title">
             <i class="fas fa-user-edit"></i>
@@ -47,7 +51,6 @@
           </ul>
         </div>
 
-        <!-- الشارحون -->
         <div class="form-section">
           <div class="form-section-title">
             <i class="fas fa-chalkboard-teacher"></i>
@@ -78,7 +81,6 @@
           </ul>
         </div>
 
-        <!-- المحققون -->
         <div class="form-section">
           <div class="form-section-title">
             <i class="fas fa-search"></i>
@@ -108,7 +110,6 @@
           </ul>
         </div>
 
-        <!-- المعتنون -->
         <div class="form-section">
           <div class="form-section-title">
             <i class="fas fa-hands-helping"></i>
@@ -139,14 +140,13 @@
           </ul>
         </div>
 
-        <!-- المحشّون -->
         <div class="form-section">
           <div class="form-section-title">
             <i class="fas fa-pen-nib"></i>
             المحشّون
           </div>
           <div class="search-dropdown-container">
-            <input type="text" class="form-control" placeholder="ابحث عن محشٍّ أو أضف جديد"
+            <input type="text" class="form-control" placeholder="ابحث عن محشٍّ أو أضف جديد"
               [(ngModel)]="muhashiSearchTerm" name="muhashiSearch" (input)="onMuhashiSearch(muhashiSearchTerm)"
               (focus)="showMuhashiDropdown = true" />
 
@@ -156,7 +156,7 @@
                 {{ muhashi.name }}
               </div>
               <div class="dropdown-item add-new" *ngIf="muhashiSearchTerm.length > 0" (click)="addNewMuhashi()">
-                <i class="fas fa-plus"></i> إضافة "{{ muhashiSearchTerm }}" كمحشٍّ جديد
+                <i class="fas fa-plus"></i> إضافة "{{ muhashiSearchTerm }}" كمحشٍّ جديد
               </div>
             </div>
           </div>
@@ -169,7 +169,6 @@
           </ul>
         </div>
 
-        <!-- عدد الأجزاء -->
         <div class="info-item">
           <div class="info-label">
             <i class="fas fa-layer-group"></i>
@@ -179,7 +178,6 @@
             name="numberOfVolumes" min="1" required />
         </div>
 
-        <!-- الناشرون -->
         <div class="form-section">
           <div class="form-section-title">
             <i class="fas fa-building"></i>
@@ -210,7 +208,6 @@
           </ul>
         </div>
 
-        <!-- معلومات الطباعة -->
         <div class="form-section">
           <div class="form-section-title">
             <i class="fas fa-print"></i>
@@ -234,7 +231,6 @@
           </div>
         </div>
 
-        <!-- التصنيف -->
         <div class="form-section">
           <div class="form-section-title">
             <i class="fas fa-tags"></i>
@@ -262,7 +258,6 @@
           </div>
         </div>
 
-        <!-- التصنيف الفرعي -->
         <div class="form-section">
           <div class="form-section-title">
             <i class="fas fa-tag"></i>
@@ -290,17 +285,15 @@
           </div>
         </div>
 
-        <!-- عدد الصفحات -->
         <div class="info-item">
           <div class="info-label">
             <i class="fas fa-file-alt"></i>
             عدد الصفحات
           </div>
-          <input type="number" id="pageCount" class="form-control" [(ngModel)]="newBook.pageCount" name="pageCount"
-            min="1" required />
+          <input type="text" id="pageCount" class="form-control" [ngModel]="newBook.pageCount" name="pageCount"
+            (input)="onPageCountChange($event)" placeholder="مثال: 300 أو 100+50" required />
         </div>
 
-        <!-- صورة الكتاب -->
         <div class="info-item">
           <div class="info-label">
             <i class="fas fa-image"></i>
@@ -309,7 +302,6 @@
           <input type="file" id="image" class="form-control" (change)="onImageSelected($event)" accept="image/*" />
         </div>
 
-        <!-- العنوان (address) -->
         <div class="form-section">
           <div class="form-section-title">
             <i class="fas fa-map-marker-alt"></i>
@@ -357,9 +349,9 @@
         </div>
 
         <div class="text-center mt-4">
-          <button type="submit" class="btn-save">
+          <button type="submit" class="btn-save" [disabled]="loading">
             <i class="fas fa-plus-circle me-2"></i>
-            إضافة الكتاب
+            {{ loading ? 'جاري الإضافة...' : 'إضافة الكتاب' }}
           </button>
         </div>
       </form>
