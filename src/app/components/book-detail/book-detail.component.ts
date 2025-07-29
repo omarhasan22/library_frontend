@@ -523,10 +523,10 @@ export class BookDetailComponent implements OnInit {
     // Prepare publishers separately since they use 'title' instead of 'name'
     const preparePublishers = (items: any[]) => {
       return (items || [])
-        .filter(item => item?.name?.trim())
+        .filter(item => item?.title?.trim())
         .map(item => ({
           ...(item._id ? { _id: item._id } : {}),
-          title: item.name.trim()  // Map 'name' to 'title'
+          title: item.title.trim()  // Map 'name' to 'title'
         }));
     };
 
