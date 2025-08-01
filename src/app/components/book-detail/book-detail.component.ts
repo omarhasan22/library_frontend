@@ -3,7 +3,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { BookService } from '../../services/book.service';
 import { Book } from '../../models/book.model';
 import { Category } from '../../models/category.model';
-import { Subject } from '../../models/subject.model';
+import { SubjectCategory } from '../../models/subject.model';
 import { Publisher } from 'src/app/models/publisher.model';
 
 @Component({
@@ -22,7 +22,7 @@ export class BookDetailComponent implements OnInit {
 
   // For dropdowns
   categories: Category[] = [];
-  subjects: Subject[] = [];
+  subjects: SubjectCategory[] = [];
   publishers: Publisher[] = [];
   people: any[] = [];
   authors: any[] = [];

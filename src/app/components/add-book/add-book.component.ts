@@ -2,7 +2,7 @@ import { Component, EventEmitter, OnInit, Output } from '@angular/core';
 import { BookService } from '../../services/book.service';
 import { Book } from '../../models/book.model';
 import { Category } from '../../models/category.model';
-import { Subject } from '../../models/subject.model';
+import { SubjectCategory } from '../../models/subject.model';
 import { Publisher } from 'src/app/models/publisher.model';
 import { forkJoin } from 'rxjs'; // Import forkJoin for parallel API calls
 
@@ -13,7 +13,7 @@ import { forkJoin } from 'rxjs'; // Import forkJoin for parallel API calls
 })
 export class AddBookComponent implements OnInit {
   categories: Category[] = [];
-  subjects: Subject[] = [];
+  subjects: SubjectCategory[] = [];
   publishers: Publisher[] = [];
 
   people: any[] = [];

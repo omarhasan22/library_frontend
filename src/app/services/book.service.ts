@@ -3,7 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Book } from '../models/book.model';
 import { Category } from '../models/category.model';
-import { Subject } from '../models/subject.model';
+import { SubjectCategory } from '../models/subject.model';
 import { Publisher } from '../models/publisher.model'; // Assuming you have this model
 import { environment } from 'src/environments/environment';
 
@@ -65,16 +65,16 @@ export class BookService {
   }
 
   // --- Subject Endpoints ---
-  getSubjects(): Observable<Subject[]> { // Corrected return type to Subject[]
-    return this.http.get<Subject[]>(`${this.baseUrl}/subjects`);
+  getSubjects(): Observable<SubjectCategory[]> { // Corrected return type to Subject[]
+    return this.http.get<SubjectCategory[]>(`${this.baseUrl}/subjects`);
   }
 
   /**
    * Creates a new subject.
    * @param subjectData Object containing 'title' (e.g., { title: 'New Subject' })
    */
-  createSubject(subjectData: { title: string }): Observable<Subject> {
-    return this.http.post<Subject>(`${this.baseUrl}/subjects`, subjectData);
+  createSubject(subjectData: { title: string }): Observable<SubjectCategory> {
+    return this.http.post<SubjectCategory>(`${this.baseUrl}/subjects`, subjectData);
   }
 
   // --- Publisher Endpoints ---
