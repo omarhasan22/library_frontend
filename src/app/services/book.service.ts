@@ -15,9 +15,17 @@ export class BookService {
 
   constructor(private http: HttpClient) { }
 
-  // --- Book Endpoints ---
-  getAllBooks(query: string = ''): Observable<Book[]> {
-    const params = query ? new HttpParams().set('q', query) : new HttpParams();
+  // GET all books (with optional search)
+  getAllBooks(query: string = '', searchTerm: string = ''): Observable<Book[]> {
+    let params = new HttpParams();
+
+    if (query) {
+      params = params.set('q', query);
+    }
+
+    if (searchTerm) {
+      params = params.set('searchTerm', searchTerm);
+    }
     return this.http.get<Book[]>(`${this.baseUrl}/books`, { params });
   }
 

@@ -6,13 +6,27 @@
         <div class="container-fluid justify-content-center">
           <form class="d-flex align-items-center" style="max-width: 600px; width: 100%;">
             <div class="input-group w-100">
-              <div class="input-group-prepend">
-                <button type="submit" class="btn btn-search pe-1">
-                  <i class="fa fa-search search-icon"></i>
-                </button>
-              </div>
-              <input type="text" class="form-control" placeholder="ابحث بعنوان، مؤلف، ناشر، تصنيف..."
-                [(ngModel)]="searchQuery" (input)="onSearch()" name="search" />
+              <nav class="navbar navbar-header navbar-header-transparent navbar-expand-lg border-bottom" style="width: 100%;">
+                <div class="container-fluid">
+                  <div>
+                    <select class="form-select" [(ngModel)]="searchOption" name="searchSelect">
+                      <option selected [ngValue]="'all'">الكل</option>
+                      <option *ngFor="let c of categories" [ngValue]="c.key">{{ c.value }}</option>
+                    </select>
+                  </div>
+                  <nav class="navbar navbar-header-left navbar-expand-lg navbar-form nav-search p-0  d-lg-flex">
+                    <div class="input-group">
+                      <input type="text" class="form-control" name="search"
+                        placeholder="ابحث بعنوان، مؤلف، ناشر، تصنيف..." [(ngModel)]="searchQuery"/>
+                      <div class="input-group-prepend">
+                        <button (click)="loadBooks()" class="btn btn-search pe-1">
+                          <i class="fa fa-search search-icon"></i>
+                        </button>
+                      </div>
+                    </div>
+                  </nav>
+                </div>
+              </nav>
             </div>
           </form>
         </div>
@@ -33,20 +47,8 @@
                   <table id="basic-datatables" class="display table table-striped table-hover">
                     <thead>
                       <tr>
-                        <th>العنوان</th>
-                        <th>المؤلف</th>
-                        <th>عدد الأجزاء</th>
-                        <th>الناشرون</th>
-                        <th>المحققون</th>
-                        <th>الشارحون</th>
-                        <th>اعتنى به</th>
-                        <th>رقم الطبعة</th>
-                        <th>سنة الطباعة</th>
-                        <th>موضوع الكتاب</th>
-                        <th>موضوع الكتاب الفرعي</th>
-                        <th>رقم الغرفة</th>
-                        <th>رقم الرف</th>
-                        <th>رقم الكتاب</th>
+                        <th *ngFor="let col of categories">{{col.value}}</th>
+
                       </tr>
                     </thead>
                     <tbody>
