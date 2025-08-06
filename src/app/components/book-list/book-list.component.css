@@ -88,3 +88,15 @@
     color: #333;
     border-radius: 0 0.375rem 0.375rem 0;
 }
+
+table th {
+  position: sticky;
+  top: 0;
+  background-color: white;
+  z-index: 1;
+}
+
+.table-responsive {
+  max-height: 600px;
+  overflow-y: auto;
+}

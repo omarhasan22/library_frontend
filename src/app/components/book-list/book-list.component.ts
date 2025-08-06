@@ -14,25 +14,29 @@ export class BookListComponent implements OnInit {
   searchQuery: string = '';
   @Input() addedBook: Book | null = null;
 
+  totalBooks: number = 0;
+  uniqueAuthors: number = 0;
+  uniquePublishers: number = 0;
+
   searchOption: string = 'all';
   searchTerm: string = '';
   categories = [
-  { key: 'title', value: 'العنوان' },
-  { key: 'authors', value: 'المؤلف' },
-  { key: 'commentators', value: 'الشارحون' },
-  { key: 'editors', value: 'المحقق' },
-  { key: 'caretakers', value: 'من اعتنى بهم' },
-  { key: 'numberOfVolumes', value: 'عدد الأجزاء' },
-  { key: 'publishers', value: 'الدار' },
-  { key: 'editionNumber', value: 'رقم الطبعة' },
-  { key: 'publicationYear', value: 'سنة الطباعة' },
-  { key: 'category', value: 'التصنيف' },
-  { key: 'subcategory', value: 'التصنيف الفرعي' },
-  { key: 'roomNumber', value: 'رقم الغرفة' },    
-  { key: 'shelfNumber', value: 'رقم الرف' },     
-  { key: 'wallNumber', value: 'رقم الجدار' },     
-  { key: 'bookNumber', value: 'الكتاب رقم' }     
-];
+    { key: 'title', value: 'العنوان' },
+    { key: 'authors', value: 'المؤلف' },
+    { key: 'commentators', value: 'الشارحون' },
+    { key: 'editors', value: 'المحقق' },
+    { key: 'caretakers', value: 'من اعتنى بهم' },
+    { key: 'numberOfVolumes', value: 'عدد الأجزاء' },
+    { key: 'publishers', value: 'الدار' },
+    { key: 'editionNumber', value: 'رقم الطبعة' },
+    { key: 'publicationYear', value: 'سنة الطباعة' },
+    { key: 'category', value: 'التصنيف' },
+    { key: 'subcategory', value: 'التصنيف الفرعي' },
+    { key: 'roomNumber', value: 'رقم الغرفة' },
+    { key: 'shelfNumber', value: 'رقم الرف' },
+    { key: 'wallNumber', value: 'رقم الجدار' },
+    { key: 'bookNumber', value: 'الكتاب رقم' }
+  ];
   private refreshSub!: Subscription;
 
   constructor(private bookService: BookService, private router: Router) { }
@@ -40,7 +44,6 @@ export class BookListComponent implements OnInit {
   ngOnInit(): void {
     this.loadBooks();
   }
-
   getNames(list?: { name?: string }[]): string {
     return list && list.length ? list.map(i => i.name).filter(Boolean).join(', ') : '—';
   }
@@ -51,17 +54,24 @@ export class BookListComponent implements OnInit {
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['addedBook'] && this.addedBook) {
-      // Check if book already exists (avoid duplicates)
       const exists = this.books.some(book => book._id === this.addedBook!._id);
       if (!exists) {
-        this.books.unshift(this.addedBook); // Add to top
+        this.books.unshift(this.addedBook);
+        this.totalBooks++;
+        this.uniqueAuthors += this.addedBook.authors?.length || 0;
+        this.uniquePublishers += this.addedBook.publishers?.length || 0;
       }
     }
   }
 
   loadBooks(): void {
     this.bookService.getAllBooks(this.searchOption, this.searchQuery).subscribe(
-      (data) => (this.books = data),
+      (res) => {
+        this.books = res.books;
+        this.totalBooks = res.totalBooks;
+        this.uniqueAuthors = res.uniqueAuthors;
+        this.uniquePublishers = res.uniquePublishers;
+      },
       (error) => console.error('Error fetching books:', error)
     );
   }
@@ -70,4 +80,27 @@ export class BookListComponent implements OnInit {
   viewBook(id: string): void {
     this.router.navigate(['/books', id]);
   }
+
+  renderValue(book: any, key: string): string {
+    const value = book[key];
+
+    if (['authors', 'editors', 'commentators', 'caretakers', 'muhashis'].includes(key)) {
+      return this.getNames(value);
+    }
+
+    if (key === 'publishers') {
+      return this.getTitles(value);
+    }
+
+    if (key === 'category' || key === 'subcategory') {
+      return book[key]?.title || '—';
+    }
+
+    if (['roomNumber', 'shelfNumber', 'wallNumber', 'bookNumber'].includes(key)) {
+      return book.address?.[key] ?? '—';
+    }
+
+    return value !== undefined && value !== null ? value : '—';
+  }
+
 }

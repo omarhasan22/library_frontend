@@ -6,7 +6,8 @@
         <div class="container-fluid justify-content-center">
           <form class="d-flex align-items-center" style="max-width: 600px; width: 100%;">
             <div class="input-group w-100">
-              <nav class="navbar navbar-header navbar-header-transparent navbar-expand-lg border-bottom" style="width: 100%;">
+              <nav class="navbar navbar-header navbar-header-transparent navbar-expand-lg border-bottom"
+                style="width: 100%;">
                 <div class="container-fluid">
                   <div>
                     <select class="form-select" [(ngModel)]="searchOption" name="searchSelect">
@@ -17,7 +18,7 @@
                   <nav class="navbar navbar-header-left navbar-expand-lg navbar-form nav-search p-0  d-lg-flex">
                     <div class="input-group">
                       <input type="text" class="form-control" name="search"
-                        placeholder="ابحث بعنوان، مؤلف، ناشر، تصنيف..." [(ngModel)]="searchQuery"/>
+                        placeholder="ابحث بعنوان، مؤلف، ناشر، تصنيف..." [(ngModel)]="searchQuery" />
                       <div class="input-group-prepend">
                         <button (click)="loadBooks()" class="btn btn-search pe-1">
                           <i class="fa fa-search search-icon"></i>
@@ -40,10 +41,17 @@
           <div class="col-md-12">
             <div class="card">
               <div class="card-header">
-                <h4 class="card-title">أساسي</h4>
+                <div class="mb-3">
+                  <div class="d-flex gap-3 justify-content-center flex-wrap">
+                    <span class="badge bg-primary">عدد الكتب: {{ totalBooks }}</span>
+                    <span class="badge bg-success">عدد المؤلفين: {{ uniqueAuthors }}</span>
+                    <span class="badge bg-warning text-dark">عدد الناشرين: {{ uniquePublishers }}</span>
+                  </div>
+                </div>
               </div>
               <div class="card-body">
                 <div class="table-responsive">
+
                   <table id="basic-datatables" class="display table table-striped table-hover">
                     <thead>
                       <tr>
@@ -53,21 +61,9 @@
                     </thead>
                     <tbody>
                       <tr *ngFor="let book of books" (click)="viewBook(book._id)" style="cursor: pointer;">
-                        <td>{{ book.title }}</td>
-                        <td>{{ getNames(book.authors) }}</td>
-                        <td>{{ book.numberOfVolumes ?? '—' }}</td>
-                        <td>{{ getTitles(book.publishers) }}</td>
-                        <td>{{ getNames(book.editors) }}</td>
-                        <td>{{ getNames(book.commentators) }}</td>
-                        <td>{{ getNames(book.caretakers) }}</td>
-                        <td>{{ book.editionNumber ?? '—' }}</td>
-                        <td>{{ book.publicationYear ?? '—' }}</td>
-                        <td>{{ book.category?.title ?? '—' }}</td>
-                        <td>{{ book.subject?.title ?? '—' }}</td>
-                        <td>{{ book.address?.roomNumber ?? '—' }}</td>
-                        <td>{{ book.address?.wallNumber ?? '—' }}</td>
-                        <td>{{ book.address?.shelfNumber ?? '—' }}</td>
-                        <td>{{ book.address?.bookNumber ?? '—' }}</td>
+                        <td *ngFor="let col of categories">
+                          {{ renderValue(book, col.key) }}
+                        </td>
                       </tr>
                     </tbody>
                   </table>

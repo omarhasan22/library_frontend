@@ -16,7 +16,7 @@ export class BookService {
   constructor(private http: HttpClient) { }
 
   // GET all books (with optional search)
-  getAllBooks(query: string = '', searchTerm: string = ''): Observable<Book[]> {
+  getAllBooks(query: string = '', searchTerm: string = ''): Observable<any> {
     let params = new HttpParams();
 
     if (query) {
