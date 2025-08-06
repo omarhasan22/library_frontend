@@ -20,6 +20,9 @@ export class BookListComponent implements OnInit {
 
   searchOption: string = 'all';
   searchTerm: string = '';
+  searchFilters = [
+    { field: 'all', value: '' } // default empty search
+  ];
   categories = [
     { key: 'title', value: 'العنوان' },
     { key: 'authors', value: 'المؤلف' },
@@ -42,8 +45,13 @@ export class BookListComponent implements OnInit {
   constructor(private bookService: BookService, private router: Router) { }
 
   ngOnInit(): void {
+    const saved = localStorage.getItem('bookSearchFilters');
+    if (saved) {
+      this.searchFilters = JSON.parse(saved);
+    }
     this.loadBooks();
   }
+
   getNames(list?: { name?: string }[]): string {
     return list && list.length ? list.map(i => i.name).filter(Boolean).join(', ') : '—';
   }
@@ -65,17 +73,25 @@ export class BookListComponent implements OnInit {
   }
 
   loadBooks(): void {
-    this.bookService.getAllBooks(this.searchOption, this.searchQuery).subscribe(
+    const filters = this.searchFilters.filter(f => f.value?.trim());
+
+    const isAdvanced = filters.length > 1 || (filters.length === 1 && filters[0].field !== 'all' && filters[0].value.trim() !== '');
+
+    const query = isAdvanced ? 'advanced' : '';
+    const searchTerm = isAdvanced ? JSON.stringify(filters) : '';
+
+    localStorage.setItem('bookSearchFilters', JSON.stringify(this.searchFilters));
+
+    this.bookService.getAllBooks(query, searchTerm).subscribe(
       (res) => {
         this.books = res.books;
         this.totalBooks = res.totalBooks;
         this.uniqueAuthors = res.uniqueAuthors;
         this.uniquePublishers = res.uniquePublishers;
       },
-      (error) => console.error('Error fetching books:', error)
+      (error) => console.error('Error loading books', error)
     );
   }
-
 
   viewBook(id: string): void {
     this.router.navigate(['/books', id]);
@@ -101,6 +117,22 @@ export class BookListComponent implements OnInit {
     }
 
     return value !== undefined && value !== null ? value : '—';
+  }
+
+  resetSearch(): void {
+    this.searchFilters = [{ field: 'all', value: '' }];
+    localStorage.removeItem('bookSearchFilters');
+    this.loadBooks();
+  }
+
+  addFilter(): void {
+    this.searchFilters.push({ field: 'title', value: '' });
+  }
+
+  removeFilter(index: number): void {
+    if (this.searchFilters.length > 1) {
+      this.searchFilters.splice(index, 1);
+    }
   }
 
 }

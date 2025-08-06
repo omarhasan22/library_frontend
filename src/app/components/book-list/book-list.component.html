@@ -9,23 +9,25 @@
               <nav class="navbar navbar-header navbar-header-transparent navbar-expand-lg border-bottom"
                 style="width: 100%;">
                 <div class="container-fluid">
-                  <div>
-                    <select class="form-select" [(ngModel)]="searchOption" name="searchSelect">
-                      <option selected [ngValue]="'all'">الكل</option>
-                      <option *ngFor="let c of categories" [ngValue]="c.key">{{ c.value }}</option>
-                    </select>
-                  </div>
-                  <nav class="navbar navbar-header-left navbar-expand-lg navbar-form nav-search p-0  d-lg-flex">
-                    <div class="input-group">
-                      <input type="text" class="form-control" name="search"
-                        placeholder="ابحث بعنوان، مؤلف، ناشر، تصنيف..." [(ngModel)]="searchQuery" />
-                      <div class="input-group-prepend">
-                        <button (click)="loadBooks()" class="btn btn-search pe-1">
-                          <i class="fa fa-search search-icon"></i>
-                        </button>
-                      </div>
+                  <div class="mb-3">
+                    <div *ngFor="let filter of searchFilters; let i = index"
+                      class="d-flex gap-2 align-items-center mb-2">
+                      <select class="form-select" [(ngModel)]="filter.field" name="searchField{{i}}"
+                        style="min-width: 150px;">
+                        <option [ngValue]="'all'">الكل</option>
+                        <option *ngFor="let c of categories" [ngValue]="c.key">{{ c.value }}</option>
+                      </select>
+                      <input class="form-control" [(ngModel)]="filter.value" name="searchValue{{i}}"
+                        placeholder="القيمة..." />
+                      <button class="btn btn-danger btn-sm" (click)="removeFilter(i)"
+                        *ngIf="searchFilters.length > 1">×</button>
                     </div>
-                  </nav>
+                    <div class="d-flex gap-2">
+                      <button class="btn btn-sm btn-success" (click)="addFilter()">إضافة شرط</button>
+                      <button class="btn btn-primary" (click)="loadBooks()">بحث</button>
+                      <button class="btn btn-secondary" (click)="resetSearch()">إعادة ضبط</button>
+                    </div>
+                  </div>
                 </div>
               </nav>
             </div>

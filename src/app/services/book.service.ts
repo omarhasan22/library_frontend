@@ -26,8 +26,10 @@ export class BookService {
     if (searchTerm) {
       params = params.set('searchTerm', searchTerm);
     }
-    return this.http.get<Book[]>(`${this.baseUrl}/books`, { params });
+
+    return this.http.get<any>(`${this.baseUrl}/books`, { params });
   }
+
 
   getBookById(id: string): Observable<Book> {
     return this.http.get<Book>(`${this.baseUrl}/books/${id}`);
