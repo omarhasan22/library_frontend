@@ -170,8 +170,8 @@
               <span
                 *ngIf="book?.address?.roomNumber || book?.address?.shelfNumber || book?.address?.wallNumber || book?.address?.bookNumber">
                 غرفة: {{ book?.address?.roomNumber || 'غير محدد' }} |
+                استاند: {{ book?.address?.wallNumber || 'غير محدد' }} |
                 رف: {{ book?.address?.shelfNumber || 'غير محدد' }} |
-                جدار: {{ book?.address?.wallNumber || 'غير محدد' }} |
                 ترقيم: {{ book?.address?.bookNumber || 'غير محدد' }}
               </span>
               <span
