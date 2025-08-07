@@ -43,18 +43,27 @@
           <div class="col-md-12">
             <div class="card">
               <div class="card-header">
-                <div class="mb-3">
-                  <div class="d-flex gap-3 justify-content-center flex-wrap">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+
+                  <!-- Scroll Buttons -->
+                  <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-outline-primary" (click)="scrollToTop()">🔼 أعلى</button>
+                    <button class="btn btn-sm btn-outline-secondary" (click)="scrollToBottom()">🔽 آخر كتاب</button>
+                  </div>
+
+                  <!-- Book Stats -->
+                  <div class="d-flex gap-3 flex-wrap justify-content-center">
                     <span class="badge bg-primary">عدد الكتب: {{ totalBooks }}</span>
                     <span class="badge bg-success">عدد المؤلفين: {{ uniqueAuthors }}</span>
                     <span class="badge bg-warning text-dark">عدد الناشرين: {{ uniquePublishers }}</span>
                   </div>
                 </div>
               </div>
+
               <div class="card-body">
                 <div class="table-responsive">
 
-                  <table id="basic-datatables" class="display table table-striped table-hover">
+                  <table id="book-table" class="display table table-striped table-hover">
                     <thead>
                       <tr>
                         <th *ngFor="let col of categories">{{col.value}}</th>
@@ -62,7 +71,8 @@
                       </tr>
                     </thead>
                     <tbody>
-                      <tr *ngFor="let book of books" (click)="viewBook(book._id)" style="cursor: pointer;">
+                      <tr *ngFor="let book of books" (click)="viewBook(book._id)" [id]="'book-' + book._id"
+                        style="cursor: pointer;" [id]="'book-' + book._id">
                         <td *ngFor="let col of categories">
                           {{ renderValue(book, col.key) }}
                         </td>

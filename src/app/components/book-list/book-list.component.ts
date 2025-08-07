@@ -35,10 +35,10 @@ export class BookListComponent implements OnInit {
     { key: 'publicationYear', value: 'سنة الطباعة' },
     { key: 'category', value: 'التصنيف' },
     { key: 'subcategory', value: 'التصنيف الفرعي' },
-    { key: 'roomNumber', value: 'رقم الغرفة' },
-    { key: 'shelfNumber', value: 'رقم الرف' },
-    { key: 'wallNumber', value: 'رقم الجدار' },
-    { key: 'bookNumber', value: 'الكتاب رقم' }
+    { key: 'roomNumber', value: ' الغرفة' },
+    { key: 'wallNumber', value: ' الاستاند' },
+    { key: 'shelfNumber', value: ' الرف' },
+    { key: 'bookNumber', value: 'الكتاب ' }
   ];
   private refreshSub!: Subscription;
 
@@ -88,14 +88,29 @@ export class BookListComponent implements OnInit {
         this.totalBooks = res.totalBooks;
         this.uniqueAuthors = res.uniqueAuthors;
         this.uniquePublishers = res.uniquePublishers;
+
+        // Scroll to last viewed book
+        setTimeout(() => {
+          const lastViewedBookId = localStorage.getItem('lastViewedBookId');
+          if (lastViewedBookId) {
+            const el = document.getElementById(`book-${lastViewedBookId}`);
+            if (el) {
+              el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              localStorage.removeItem('lastViewedBookId');
+            }
+          }
+        }, 10); // Slight delay to ensure DOM is rendered
       },
       (error) => console.error('Error loading books', error)
     );
   }
 
+
   viewBook(id: string): void {
+    localStorage.setItem('lastViewedBookId', id);
     this.router.navigate(['/books', id]);
   }
+
 
   renderValue(book: any, key: string): string {
     const value = book[key];
@@ -134,5 +149,23 @@ export class BookListComponent implements OnInit {
       this.searchFilters.splice(index, 1);
     }
   }
+
+  scrollToTop(): void {
+    const table = document.getElementById('book-table');
+    if (table) {
+      table.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
+
+  scrollToBottom(): void {
+    if (this.books.length > 0) {
+      const lastBookId = this.books[this.books.length - 1]._id;
+      const el = document.getElementById(`book-${lastBookId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      }
+    }
+  }
+
 
 }
