@@ -97,6 +97,30 @@ table th {
 }
 
 .table-responsive {
-  max-height: 600px;
   overflow-y: auto;
+  max-height: calc(100vh - 200px); 
+  overflow-y: auto;
+}
+
+/* Full width for the container */
+.page-inner, .card, .card-body {
+  width: 100%;
+}
+
+/* Make the card-header sticky */
+.card-header {
+  position: sticky;
+  top: 0;
+  z-index: 1020;
+  background-color: white;
+  border-bottom: 1px solid #dee2e6;
+}
+
+/* Make the table head sticky */
+table thead th {
+  position: sticky;
+  /* top: 50px; */
+  z-index: 1010;
+  background-color: #f8f9fa;
+  border-bottom: 2px solid #dee2e6;
 }
