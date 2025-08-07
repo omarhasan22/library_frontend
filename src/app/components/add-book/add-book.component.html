@@ -290,8 +290,14 @@
             <i class="fas fa-file-alt"></i>
             عدد الصفحات
           </div>
-          <input type="text" id="pageCount" class="form-control" [ngModel]="newBook.pageCount" name="pageCount"
-            (input)="onPageCountChange($event)" placeholder="مثال: 300 أو 100+50" required />
+          <input type="text" id="pageCount" class="form-control" [(ngModel)]="pageCountInput" name="pageCount"
+            (ngModelChange)="onPageCountChange($event)" placeholder="مثال: 300 أو 100+50 أو 250*5" required />
+          <small *ngIf="pageCountTotal !== null">
+            الإجمالي: {{ pageCountTotal }}
+          </small>
+          <small *ngIf="pageCountTotal === null && pageCountInput">
+            صيغة غير صحيحة
+          </small>
         </div>
 
         <div class="info-item">

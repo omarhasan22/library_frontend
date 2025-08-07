@@ -88,6 +88,12 @@ export class AddBookComponent implements OnInit {
       notes: ''
     };
 
+  // for the input’s raw text
+  pageCountInput = '';
+
+  // computed total, or null if invalid
+  pageCountTotal: number | null = null;
+
   @Output() newBookAdded = new EventEmitter<Book>();
 
   constructor(private bookService: BookService) { }
@@ -102,7 +108,6 @@ export class AddBookComponent implements OnInit {
       }
     });
   }
-
   // --- Initial Data Loading ---
   loadAllInitialData(): void {
     this.loading = true; // Set loading to true while fetching initial data
@@ -505,28 +510,37 @@ export class AddBookComponent implements OnInit {
     }
   }
 
-  // --- Page Count Calculation ---
-  onPageCountChange(event: Event) {
-    const inputElement = event.target as HTMLInputElement;
-    const value = inputElement.value;
+  /** Called whenever the input string changes */
+  onPageCountChange(expr: string): void {
+    this.pageCountInput = expr.trim();
 
-    if (value.includes('+')) {
-      try {
-        const sum = value.split('+').reduce((acc, numStr) => {
-          const num = parseInt(numStr.trim(), 10);
-          return isNaN(num) ? acc : acc + num;
-        }, 0);
-        this.newBook.pageCount = sum;
-      } catch (e) {
-        // Handle invalid expressions if necessary, though parseInt handles basic errors
-        console.error('Invalid page count expression:', value);
-        this.newBook.pageCount = 0; // Or keep previous valid value
-      }
+    // try to calculate it
+    const total = this.calculateExpression(this.pageCountInput);
+
+    if (total !== null) {
+      this.pageCountTotal = total;
+      this.newBook.pageCount = total;    // ← store only the numeric result
     } else {
-      const num = parseInt(value, 10);
-      this.newBook.pageCount = isNaN(num) ? 0 : num; // Set to 0 if not a valid number
+      this.pageCountTotal = null;
+      // optionally: leave newBook.pageCount unchanged or reset to 0
     }
   }
+
+  /** exactly as before: only digits/operators allowed */
+  private calculateExpression(expr: string): number | null {
+    if (!expr || !/^[0-9+\-*/().\s]+$/.test(expr)) {
+      return null;
+    }
+    try {
+      // tslint:disable-next-line:no-function-constructor-with-string-args
+      const fn = new Function(`return ${expr}`);
+      const result = fn();
+      return typeof result === 'number' && isFinite(result) ? result : null;
+    } catch {
+      return null;
+    }
+  }
+
 
   // --- Add Book Submission ---
   addBook(): void {
