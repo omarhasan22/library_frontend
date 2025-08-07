@@ -21,6 +21,7 @@ export class Book {
     _id?: string
   }; // Single object, not array
   numberOfVolumes?: number; // عدد الأجزاء
+  numberOfFolders?: number; // عدد المجلدات
   publishers?: Array<{
     title?: string,
     _id?: string

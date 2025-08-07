@@ -533,6 +533,7 @@ export class BookDetailComponent implements OnInit {
     const payload: any = {
       title: this.editBook.title,
       numberOfVolumes: this.editBook.numberOfVolumes,
+      numberOfFolders: this.editBook.numberOfFolders,
       editionNumber: this.editBook.editionNumber,
       publicationYear: this.editBook.publicationYear,
       pageCount: this.editBook.pageCount,

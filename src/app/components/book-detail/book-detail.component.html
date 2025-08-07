@@ -92,6 +92,16 @@
               {{ book?.numberOfVolumes || 'غير محدد' }}
             </div>
           </div>
+
+          <div class="info-item">
+            <div class="info-label">
+              <i class="fas fa-layer-group"></i>
+              عدد المجلدات
+            </div>
+            <div class="info-value">
+              {{ book?.numberOfFolders || 'غير محدد' }}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -376,6 +386,16 @@
             </div>
             <input type="number" id="numberOfVolumes" class="form-control" [(ngModel)]="editBook.numberOfVolumes"
               name="numberOfVolumes" min="1" required />
+          </div>
+
+          <!-- عدد المجدات -->
+          <div class="info-item">
+            <div class="info-label">
+              <i class="fas fa-layer-group"></i>
+              عدد المجلدات
+            </div>
+            <input type="number" id="numberOfFolders" class="form-control" [(ngModel)]="editBook.numberOfFolders"
+              name="numberOfFolders" min="1" required />
           </div>
 
           <!-- الناشرون -->

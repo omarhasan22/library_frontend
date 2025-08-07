@@ -30,6 +30,7 @@ export class BookListComponent implements OnInit {
     { key: 'editors', value: 'المحقق' },
     { key: 'caretakers', value: 'من اعتنى بهم' },
     { key: 'numberOfVolumes', value: 'عدد الأجزاء' },
+    { key: 'numberOfFolders', value: 'عدد المجلدات' },
     { key: 'publishers', value: 'الدار' },
     { key: 'editionNumber', value: 'رقم الطبعة' },
     { key: 'publicationYear', value: 'سنة الطباعة' },
