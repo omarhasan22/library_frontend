@@ -35,7 +35,7 @@ export class BookListComponent implements OnInit {
     { key: 'editionNumber', value: 'رقم الطبعة' },
     { key: 'publicationYear', value: 'سنة الطباعة' },
     { key: 'category', value: 'التصنيف' },
-    { key: 'subcategory', value: 'التصنيف الفرعي' },
+    { key: 'subject', value: 'التصنيف الفرعي' },
     { key: 'roomNumber', value: ' الغرفة' },
     { key: 'wallNumber', value: ' الاستاند' },
     { key: 'shelfNumber', value: ' الرف' },
@@ -124,7 +124,7 @@ export class BookListComponent implements OnInit {
       return this.getTitles(value);
     }
 
-    if (key === 'category' || key === 'subcategory') {
+    if (key === 'category' || key === 'subject') {
       return book[key]?.title || '—';
     }
 
