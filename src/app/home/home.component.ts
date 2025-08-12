@@ -7,6 +7,8 @@ import { Book } from '../models/book.model';
   selector: 'app-home',
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.css'],
+  standalone: false
+
 })
 export class HomeComponent implements OnInit, OnDestroy {
   addedBook: Book | null = null;

@@ -5,13 +5,14 @@ import { filter } from 'rxjs/operators';
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
-  styleUrls: ['./app.component.css']
+  styleUrls: ['./app.component.css'],
+  standalone: false
 })
 export class AppComponent {
   title = 'UI';
   isHomePage: boolean = true;
 
-  constructor(    private router: Router,
+  constructor(private router: Router,
     private renderer: Renderer2) {
     this.router.events
       .pipe(filter(e => e instanceof NavigationEnd))
@@ -30,7 +31,7 @@ export class AppComponent {
         }
       });
   }
-  }
+}
 
-  
+
 

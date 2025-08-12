@@ -9,7 +9,9 @@ import { Publisher } from 'src/app/models/publisher.model';
 @Component({
   selector: 'app-book-detail',
   templateUrl: './book-detail.component.html',
-  styleUrls: ['./book-detail.component.css']
+  styleUrls: ['./book-detail.component.css'],
+  standalone: false
+
 })
 export class BookDetailComponent implements OnInit {
   book!: Book;

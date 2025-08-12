@@ -6,11 +6,12 @@ import { RegistrationService } from '../services/registration.service';
 @Component({
   selector: 'app-register',
   templateUrl: './register.component.html',
-  styleUrls: ['./register.component.css']
+  styleUrls: ['./register.component.css'],
+  standalone: false,
 })
 export class RegisterComponent implements OnInit {
 
-  registerForm : FormGroup
+  registerForm: FormGroup
   success = false;
   errMessage = ''
 
@@ -22,18 +23,20 @@ export class RegisterComponent implements OnInit {
 
   ngOnInit(): void {
     this.registerForm = this.formBuilder.group({
-      username:['',Validators.required],
-      password:['',Validators.required]
-    }) 
+      username: ['', Validators.required],
+      password: ['', Validators.required]
+    })
   }
 
-  register(){
+  register() {
     const formValue = this.registerForm.value
-    this.registerService.register(formValue.username,formValue.password).subscribe({next:() => {
-      this.success = true
-    },error : (err) =>{
-        this.errMessage= err.error
-    }})
+    this.registerService.register(formValue.username, formValue.password).subscribe({
+      next: () => {
+        this.success = true
+      }, error: (err) => {
+        this.errMessage = err.error
+      }
+    })
   }
 
 }
