@@ -574,32 +574,32 @@ export class AddBookComponent implements OnInit {
     }
 
     // Handle image upload (assuming your backend handles file uploads for 'image' field)
-    const formData = new FormData();
-    for (const key in payload) {
-      if (payload.hasOwnProperty(key)) {
-        if (Array.isArray(payload[key])) {
-          payload[key].forEach((item: any) => {
-            formData.append(`${key}[]`, JSON.stringify(item)); // Append each item as a string
-          });
-        } else if (typeof payload[key] === 'object' && payload[key] !== null && !(payload[key] instanceof File)) {
-          formData.append(key, JSON.stringify(payload[key])); // Stringify nested objects
-        } else if (key === 'image' && this.selectedImageFile) {
-          formData.append('image', this.selectedImageFile, this.selectedImageFile.name);
-        } else {
-          formData.append(key, payload[key]);
-        }
-      }
-    }
+    // const formData = new FormData();
+    // for (const key in payload) {
+    //   if (payload.hasOwnProperty(key)) {
+    //     if (Array.isArray(payload[key])) {
+    //       payload[key].forEach((item: any) => {
+    //         formData.append(`${key}[]`, JSON.stringify(item)); // Append each item as a string
+    //       });
+    //     } else if (typeof payload[key] === 'object' && payload[key] !== null && !(payload[key] instanceof File)) {
+    //       formData.append(key, JSON.stringify(payload[key])); // Stringify nested objects
+    //     } else if (key === 'image' && this.selectedImageFile) {
+    //       formData.append('image', this.selectedImageFile, this.selectedImageFile.name);
+    //     } else {
+    //       formData.append(key, payload[key]);
+    //     }
+    //   }
+    // }
 
 
-    this.bookService.createBook(formData).subscribe(
+    this.bookService.createBook(payload).subscribe(
       createdBook => {
         alert('تم إضافة الكتاب بنجاح!');
         this.loading = false; // Hide loader
 
         const curr = parseInt(this.newBook.address.bookNumber, 10) || 0;
         this.newBook.address.bookNumber = String(curr + 1);
-
+        const addedBook = this.newBook
         // Reset fields after successful submission
         this.newBook = {
           title: '',
@@ -608,8 +608,8 @@ export class AddBookComponent implements OnInit {
           editors: [],
           caretakers: [],
           muhashis: [],
-          category: { title: '', _id: '' },
-          subject: { title: '', _id: '' },
+          category: addedBook.category,
+          subject: addedBook.subject,
           numberOfVolumes: 1,
           numberOfFolders: 1,
           publishers: [],
@@ -617,9 +617,9 @@ export class AddBookComponent implements OnInit {
           publicationYear: new Date().getFullYear(),
           pageCount: 1,
           address: {
-            roomNumber: '',
-            shelfNumber: '',
-            wallNumber: '',
+            roomNumber: addedBook.address.roomNumber,
+            shelfNumber: addedBook.address.shelfNumber,
+            wallNumber: addedBook.address.wallNumber,
             bookNumber: String(curr + 1), // Increment for the next book
           },
           imageUrl: '',

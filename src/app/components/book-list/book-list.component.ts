@@ -102,7 +102,7 @@ export class BookListComponent implements OnInit {
               localStorage.removeItem('lastViewedBookId');
             }
           }
-        }, 10); // Slight delay to ensure DOM is rendered
+        }, 0); // Slight delay to ensure DOM is rendered
       },
       (error) => console.error('Error loading books', error)
     );
