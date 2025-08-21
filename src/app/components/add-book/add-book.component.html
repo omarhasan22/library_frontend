@@ -364,7 +364,12 @@
         </div>
 
         <div class="text-center mt-4">
-          <button type="submit" class="btn-save" [disabled]="loading">
+          <!-- <button type="submit" class="btn-save" [disabled]="loading">
+            <i class="fas fa-plus-circle me-2"></i>
+            {{ loading ? 'جاري الإضافة...' : 'إضافة الكتاب' }}
+          </button> -->
+          <button type="button" class="btn-save" [disabled]="loading" (click)="addBook()">
+            <!-- إضافة الكتاب -->
             <i class="fas fa-plus-circle me-2"></i>
             {{ loading ? 'جاري الإضافة...' : 'إضافة الكتاب' }}
           </button>

@@ -596,6 +596,14 @@ export class AddBookComponent implements OnInit {
       createdBook => {
         alert('تم إضافة الكتاب بنجاح!');
         this.loading = false; // Hide loader
+        // Scroll to top of the page
+        window.scrollTo(0, 0);
+
+        // Or with smooth animation
+        window.scrollTo({
+          top: 0,
+          behavior: 'smooth'
+        });
 
         const curr = parseInt(this.newBook.address.bookNumber, 10) || 0;
         this.newBook.address.bookNumber = String(curr + 1);
@@ -614,7 +622,7 @@ export class AddBookComponent implements OnInit {
           numberOfFolders: 1,
           publishers: [],
           editionNumber: 1,
-          publicationYear: new Date().getFullYear(),
+          publicationYear: 1,
           pageCount: 1,
           address: {
             roomNumber: addedBook.address.roomNumber,
@@ -636,7 +644,8 @@ export class AddBookComponent implements OnInit {
         this.categorySearchTerm = '';
         this.subjectSearchTerm = '';
         this.muhashiSearchTerm = '';
-
+        this.pageCountInput = '';
+        this.pageCountTotal = 0;
         this.newBookAdded.emit(createdBook);
       },
       err => {
