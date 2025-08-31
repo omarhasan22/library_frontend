@@ -77,7 +77,7 @@ export class AddBookComponent implements OnInit {
       numberOfFolders: 1,
       publishers: [],
       editionNumber: 1,
-      publicationYear: new Date().getFullYear(),
+      // publicationYear: 1,
       pageCount: 1,
       address: {
         roomNumber: '',
@@ -109,6 +109,33 @@ export class AddBookComponent implements OnInit {
       }
     });
   }
+
+  private normalizeArabicText(text: string): string {
+    if (!text) return '';
+
+    return text
+      // Remove all diacritics (tashkeel)
+      .replace(/[\u064B-\u0652\u0670\u0640]/g, '')
+      // Normalize different forms of alef
+      .replace(/[\u0622\u0623\u0625\u0627]/g, 'ا')
+      // Normalize alef maksura to ya
+      .replace(/\u0649/g, 'ي')
+      // Normalize taa marbouta to haa
+      .replace(/\u0629/g, 'ه')
+      // Remove hamza above and below
+      .replace(/[\u0654\u0655]/g, '')
+      // Normalize waw with hamza
+      .replace(/\u0624/g, 'و')
+      // Normalize ya with hamza
+      .replace(/\u0626/g, 'ي')
+      // Remove standalone hamza
+      .replace(/\u0621/g, '')
+      // Remove extra whitespace
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
+  }
+
   // --- Initial Data Loading ---
   loadAllInitialData(): void {
     this.loading = true; // Set loading to true while fetching initial data
@@ -202,68 +229,93 @@ export class AddBookComponent implements OnInit {
   // --- Search Functionality ---
   onAuthorSearch(term: string) {
     this.authorSearchTerm = term;
-    this.filteredAuthors = this.authors.filter(author =>
-      author.name.toLowerCase().includes(term.toLowerCase())
-    );
-    this.showAuthorDropdown = true; // Always show when typing
+    const normalizedSearchTerm = this.normalizeArabicText(term);
+
+    this.filteredAuthors = this.authors.filter(author => {
+      // If the author object has normalizedName from backend, use it
+      // Otherwise, normalize the name on the fly
+      const normalizedAuthorName = author.normalizedName || this.normalizeArabicText(author.name);
+      return normalizedAuthorName.includes(normalizedSearchTerm);
+    });
+    this.showAuthorDropdown = true;
   }
 
   onCommentatorSearch(term: string) {
     this.commentatorSearchTerm = term;
-    this.filteredCommentators = this.commentators.filter(commentator =>
-      commentator.name.toLowerCase().includes(term.toLowerCase())
-    );
+    const normalizedSearchTerm = this.normalizeArabicText(term);
+
+    this.filteredCommentators = this.commentators.filter(commentator => {
+      const normalizedCommentatorName = commentator.normalizedName || this.normalizeArabicText(commentator.name);
+      return normalizedCommentatorName.includes(normalizedSearchTerm);
+    });
     this.showCommentatorDropdown = true;
   }
 
   onEditorSearch(term: string) {
     this.editorSearchTerm = term;
-    this.filteredEditors = this.editors.filter(editor =>
-      editor.name.toLowerCase().includes(term.toLowerCase())
-    );
+    const normalizedSearchTerm = this.normalizeArabicText(term);
+
+    this.filteredEditors = this.editors.filter(editor => {
+      const normalizedEditorName = editor.normalizedName || this.normalizeArabicText(editor.name);
+      return normalizedEditorName.includes(normalizedSearchTerm);
+    });
     this.showEditorDropdown = true;
   }
 
   onCaretakerSearch(term: string) {
     this.caretakerSearchTerm = term;
-    this.filteredCaretakers = this.caretakers.filter(caretaker =>
-      caretaker.name.toLowerCase().includes(term.toLowerCase())
-    );
+    const normalizedSearchTerm = this.normalizeArabicText(term);
+
+    this.filteredCaretakers = this.caretakers.filter(caretaker => {
+      const normalizedCaretakerName = caretaker.normalizedName || this.normalizeArabicText(caretaker.name);
+      return normalizedCaretakerName.includes(normalizedSearchTerm);
+    });
     this.showCaretakerDropdown = true;
   }
 
   onPublisherSearch(term: string) {
     this.publisherSearchTerm = term;
-    this.filteredPublishers = this.publishers.filter(publisher =>
-      publisher.title.toLowerCase().includes(term.toLowerCase())
-    );
+    const normalizedSearchTerm = this.normalizeArabicText(term);
+
+    this.filteredPublishers = this.publishers.filter(publisher => {
+      const normalizedPublisherTitle = publisher.normalizedTitle || this.normalizeArabicText(publisher.title);
+      return normalizedPublisherTitle.includes(normalizedSearchTerm);
+    });
     this.showPublisherDropdown = true;
   }
 
   onCategorySearch(term: string) {
     this.categorySearchTerm = term;
-    this.filteredCategories = this.categories.filter(category =>
-      category.title.toLowerCase().includes(term.toLowerCase())
-    );
+    const normalizedSearchTerm = this.normalizeArabicText(term);
+
+    this.filteredCategories = this.categories.filter(category => {
+      const normalizedCategoryTitle = category.normalizedTitle || this.normalizeArabicText(category.title);
+      return normalizedCategoryTitle.includes(normalizedSearchTerm);
+    });
     this.showCategoryDropdown = true;
   }
 
   onSubjectSearch(term: string) {
     this.subjectSearchTerm = term;
-    this.filteredSubjects = this.subjects.filter(subject =>
-      subject.title.toLowerCase().includes(term.toLowerCase())
-    );
+    const normalizedSearchTerm = this.normalizeArabicText(term);
+
+    this.filteredSubjects = this.subjects.filter(subject => {
+      const normalizedSubjectTitle = subject.normalizedTitle || this.normalizeArabicText(subject.title);
+      return normalizedSubjectTitle.includes(normalizedSearchTerm);
+    });
     this.showSubjectDropdown = true;
   }
 
   onMuhashiSearch(term: string) {
     this.muhashiSearchTerm = term;
-    this.filteredMuhashis = this.muhashis.filter(m =>
-      m.name.toLowerCase().includes(term.toLowerCase())
-    );
+    const normalizedSearchTerm = this.normalizeArabicText(term);
+
+    this.filteredMuhashis = this.muhashis.filter(m => {
+      const normalizedMuhashiName = m.normalizedName || this.normalizeArabicText(m.name);
+      return normalizedMuhashiName.includes(normalizedSearchTerm);
+    });
     this.showMuhashiDropdown = true;
   }
-
   // --- Selection from Dropdowns ---
   selectAuthor(author: any) {
     if (!this.newBook.authors.some(a => a._id === author._id)) {

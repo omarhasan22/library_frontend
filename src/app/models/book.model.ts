@@ -1,11 +1,12 @@
 export class Book {
   _id?: string;
   title?: string;
+  normalizeTile?: string;
   address: {
-    roomNumber?: string;
-    wallNumber?: string;
-    shelfNumber?: string;
-    bookNumber?: string;
+    roomNumber: string;
+    wallNumber: string;
+    shelfNumber: string;
+    bookNumber: string;
   };
   // Arrays to support multiple entries
   authors: Array<{
