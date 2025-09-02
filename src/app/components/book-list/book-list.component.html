@@ -1,91 +1,279 @@
-<div class="wrapper">
-  <div class="main-panel">
-    <div class="main-header">
-      <!-- Navbar Header -->
-      <nav class="navbar navbar-expand-lg navbar-header navbar-header-transparent border-bottom">
-        <div class="container-fluid justify-content-center">
-          <form class="d-flex align-items-center" style="max-width: 600px; width: 100%;">
-            <div class="input-group w-100">
-              <nav class="navbar navbar-header navbar-header-transparent navbar-expand-lg border-bottom"
-                style="width: 100%;">
-                <div class="container-fluid">
-                  <div class="mb-3">
-                    <div *ngFor="let filter of searchFilters; let i = index"
-                      class="d-flex gap-2 align-items-center mb-2">
-                      <select class="form-select" [(ngModel)]="filter.field" name="searchField{{i}}"
-                        style="min-width: 150px;">
-                        <option [ngValue]="'all'">الكل</option>
-                        <option *ngFor="let c of categories" [ngValue]="c.key">{{ c.value }}</option>
-                      </select>
-                      <input class="form-control" [(ngModel)]="filter.value" name="searchValue{{i}}"
-                        placeholder="القيمة..." />
-                      <button class="btn btn-danger btn-sm" (click)="removeFilter(i)"
-                        *ngIf="searchFilters.length > 1">×</button>
-                    </div>
-                    <div class="d-flex gap-2">
-                      <button class="btn btn-sm btn-success" (click)="addFilter()">إضافة شرط</button>
-                      <button class="btn btn-primary" (click)="loadBooks()">بحث</button>
-                      <button class="btn btn-secondary" (click)="resetSearch()">إعادة ضبط</button>
-                    </div>
-                  </div>
-                </div>
-              </nav>
-            </div>
-          </form>
-        </div>
-      </nav>
-      <!-- End Navbar -->
-    </div>
+<!-- Navigation -->
+<app-navbar></app-navbar>
 
+<!-- Full Screen Book List -->
+<div class="books-container">
+  <!-- Page Header -->
+  <!-- <div class="page-header">
     <div class="container-fluid">
-      <div class="page-inner">
-        <div class="row">
-          <div class="col-12"> <!-- use col-12 to allow full width -->
-            <div class="card">
+      <div class="row align-items-center">
+        <div class="col-md-6">
+          <h1 class="page-title">
+            <i class="fas fa-books me-2"></i>
+            قائمة الكتب
+          </h1>
+          <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+              <li class="breadcrumb-item"><a routerLink="/">الرئيسية</a></li>
+              <li class="breadcrumb-item active">الكتب</li>
+            </ol>
+          </nav>
+        </div>
+        <div class="col-md-6 text-end">
+          <button class="btn btn-primary" *ngIf="isAdmin" routerLink="/add-book">
+            <i class="fas fa-plus-circle me-2"></i>
+            إضافة كتاب جديد
+          </button>
+        </div>
+      </div>
+    </div>
+  </div> -->
 
-              <div class="card-header">
-                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+  <!-- Statistics Bar -->
+  <div class="stats-bar">
+    <div class="container-fluid">
+      <div class="stats-wrapper">
+        <div class="stat-card">
+          <i class="fas fa-books"></i>
+          <div class="stat-info">
+            <span class="stat-value">{{ totalBooks }}</span>
+            <span class="stat-label">إجمالي الكتب</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <i class="fas fa-user-edit"></i>
+          <div class="stat-info">
+            <span class="stat-value">{{ uniqueAuthors }}</span>
+            <span class="stat-label">عدد المؤلفين</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <i class="fas fa-building"></i>
+          <div class="stat-info">
+            <span class="stat-value">{{ uniquePublishers }}</span>
+            <span class="stat-label">دور النشر</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <i class="fas fa-filter"></i>
+          <div class="stat-info">
+            <span class="stat-value">{{ filteredCount }}</span>
+            <span class="stat-label">النتائج الحالية</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
-                  <!-- Scroll Buttons -->
-                  <div class="d-flex gap-2">
-                    <button class="btn btn-sm btn-outline-primary" (click)="scrollToTop()">🔼 أعلى</button>
-                    <button class="btn btn-sm btn-outline-secondary" (click)="scrollToBottom()">🔽 آخر كتاب</button>
-                  </div>
+  <!-- Advanced Search Section -->
+  <div class="search-section">
+    <div class="container-fluid">
+      <div class="search-card">
+        <div class="search-header">
+          <h5>
+            <i class="fas fa-search me-2"></i>
+            البحث والتصفية
+          </h5>
+          <button class="btn btn-sm btn-outline-secondary" (click)="toggleAdvancedSearch()">
+            {{ showAdvancedSearch ? 'إخفاء البحث المتقدم' : 'بحث متقدم' }}
+            <i class="fas fa-chevron-down ms-2" [class.rotate-180]="showAdvancedSearch"></i>
+          </button>
+        </div>
 
-                  <!-- Book Stats -->
-                  <div class="d-flex gap-3 flex-wrap justify-content-center">
-                    <span class="badge bg-primary">عدد الكتب: {{ totalBooks }}</span>
-                    <span class="badge bg-success">عدد المؤلفين: {{ uniqueAuthors }}</span>
-                    <span class="badge bg-warning text-dark">عدد الناشرين: {{ uniquePublishers }}</span>
-                  </div>
+        <!-- Simple Search -->
+        <div class="simple-search">
+          <div class="input-group">
+            <span class="input-group-text">
+              <i class="fas fa-search"></i>
+            </span>
+            <input type="text" class="form-control form-control-lg" placeholder="ابحث بالعنوان، المؤلف، الناشر..."
+              [(ngModel)]="simpleSearchTerm" (keyup.enter)="performSimpleSearch()">
+            <button class="btn btn-primary" (click)="performSimpleSearch()">
+              بحث
+            </button>
+          </div>
+        </div>
+
+        <!-- Advanced Search (Collapsible) -->
+        <div class="advanced-search" *ngIf="showAdvancedSearch">
+          <div class="filter-groups">
+            <div *ngFor="let filter of searchFilters; let i = index" class="filter-row">
+              <select class="form-select" [(ngModel)]="filter.field">
+                <option value="all">جميع الحقول</option>
+                <option *ngFor="let cat of categories" [value]="cat.key">{{ cat.value }}</option>
+              </select>
+              <input type="text" class="form-control" [(ngModel)]="filter.value" placeholder="أدخل قيمة البحث...">
+              <button class="btn btn-danger" (click)="removeFilter(i)" *ngIf="searchFilters.length > 1">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+          </div>
+          <div class="filter-actions">
+            <button class="btn btn-success" (click)="addFilter()">
+              <i class="fas fa-plus me-2"></i>
+              إضافة شرط
+            </button>
+            <button class="btn btn-primary" (click)="loadBooks()">
+              <i class="fas fa-search me-2"></i>
+              بحث متقدم
+            </button>
+            <button class="btn btn-secondary" (click)="resetSearch()">
+              <i class="fas fa-redo me-2"></i>
+              إعادة تعيين
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- View Toggle and Actions -->
+  <div class="table-actions">
+    <div class="container-fluid">
+      <div class="d-flex justify-content-between align-items-center">
+        <div class="view-toggle">
+          <button class="btn btn-sm" [class.active]="viewMode === 'table'" (click)="viewMode = 'table'">
+            <i class="fas fa-table"></i>
+            عرض جدول
+          </button>
+          <button class="btn btn-sm" [class.active]="viewMode === 'grid'" (click)="viewMode = 'grid'">
+            <i class="fas fa-th-large"></i>
+            عرض بطاقات
+          </button>
+        </div>
+        <div class="quick-actions">
+          <button class="btn btn-sm btn-outline-primary" (click)="scrollToTop()">
+            <i class="fas fa-arrow-up"></i>
+            الأعلى
+          </button>
+          <button class="btn btn-sm btn-outline-primary" (click)="scrollToBottom()">
+            <i class="fas fa-arrow-down"></i>
+            الأسفل
+          </button>
+          <button class="btn btn-sm btn-outline-success" (click)="exportData()">
+            <i class="fas fa-download"></i>
+            تصدير
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Books Table View -->
+  <div class="table-container" *ngIf="viewMode === 'table'">
+    <div class="container-fluid">
+      <div class="table-responsive">
+        <table class="table table-hover modern-table">
+          <thead>
+            <tr>
+              <th>الرقم</th>
+              <th *ngFor="let col of visibleColumns" [class.sortable]="col.sortable" (click)="sort(col.key)">
+                {{ col.value }}
+                <i class="fas fa-sort ms-1" *ngIf="col.sortable"></i>
+              </th>
+              <th>الإجراءات</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let book of books; let i = index" [id]="'book-' + book._id" class="book-row">
+              <td>{{ i + 1 }}</td>
+              <td *ngFor="let col of visibleColumns">
+                <span [innerHTML]="renderValue(book, col.key)"></span>
+              </td>
+              <td>
+                <div class="action-buttons">
+                  <button class="btn btn-sm btn-primary" (click)="viewBook(book._id)" title="عرض">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                  <button class="btn btn-sm btn-warning" *ngIf="isAdmin" (click)="editBook(book._id)" title="تعديل">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <button class="btn btn-sm btn-danger" *ngIf="isAdmin" (click)="deleteBook(book._id)" title="حذف">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <div class="pagination-wrapper" *ngIf="totalPages > 1">
+        <nav>
+          <ul class="pagination justify-content-center">
+            <li class="page-item" [class.disabled]="currentPage === 1">
+              <a class="page-link" (click)="goToPage(currentPage - 1)">السابق</a>
+            </li>
+            <li class="page-item" *ngFor="let page of getPageNumbers()" [class.active]="page === currentPage">
+              <a class="page-link" (click)="goToPage(page)">{{ page }}</a>
+            </li>
+            <li class="page-item" [class.disabled]="currentPage === totalPages">
+              <a class="page-link" (click)="goToPage(currentPage + 1)">التالي</a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </div>
+  </div>
+
+  <!-- Books Grid View -->
+  <div class="grid-container" *ngIf="viewMode === 'grid'">
+    <div class="container-fluid">
+      <div class="row g-4">
+        <div class="col-xl-3 col-lg-4 col-md-6" *ngFor="let book of books">
+          <div class="book-grid-card">
+            <div class="book-cover">
+              <img [src]="book.imageUrl || 'assets/img/book-placeholder.jpg'" [alt]="book.title">
+              <div class="book-overlay">
+                <div class="overlay-actions">
+                  <button class="btn btn-light btn-sm" (click)="viewBook(book._id)">
+                    <i class="fas fa-eye me-1"></i>
+                    عرض
+                  </button>
+                  <button class="btn btn-warning btn-sm" *ngIf="isAdmin" (click)="editBook(book._id)">
+                    <i class="fas fa-edit me-1"></i>
+                    تعديل
+                  </button>
                 </div>
               </div>
-
-              <div class="card-body">
-                <div class="table-responsive">
-
-                  <table id="book-table" class="display table table-striped table-hover">
-                    <thead>
-                      <tr>
-                        <th *ngFor="let col of categories">{{col.value}}</th>
-
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr *ngFor="let book of books" (click)="viewBook(book._id)" [id]="'book-' + book._id"
-                        style="cursor: pointer;" [id]="'book-' + book._id">
-                        <td *ngFor="let col of categories">
-                          {{ renderValue(book, col.key) }}
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
+            </div>
+            <div class="book-details">
+              <h5 class="book-title">{{ book.title }}</h5>
+              <p class="book-meta">
+                <i class="fas fa-user me-1"></i>
+                {{ getNames(book.authors) }}
+              </p>
+              <p class="book-meta">
+                <i class="fas fa-building me-1"></i>
+                {{ getTitles(book.publishers) }}
+              </p>
+              <div class="book-badges">
+                <span class="badge bg-primary">{{ book.category?.title || 'غير مصنف' }}</span>
+                <span class="badge bg-secondary">{{ book.publicationYear }}</span>
               </div>
             </div>
           </div>
         </div>
       </div>
     </div>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="loading">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">جاري التحميل...</span>
+    </div>
+    <p>جاري تحميل الكتب...</p>
+  </div>
+
+  <!-- Empty State -->
+  <div class="empty-state" *ngIf="!loading && books.length === 0">
+    <i class="fas fa-inbox fa-4x text-muted mb-3"></i>
+    <h4>لا توجد نتائج</h4>
+    <p class="text-muted">لم يتم العثور على كتب مطابقة لبحثك</p>
+    <button class="btn btn-primary" (click)="resetSearch()">
+      إعادة تعيين البحث
+    </button>
   </div>
 </div>

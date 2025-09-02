@@ -1,47 +1,37 @@
-import { Component, OnInit } from '@angular/core';
-import { AuthService } from '../services/auth.service';
+import { Component, OnInit, HostListener } from '@angular/core';
 import { Router } from '@angular/router';
+import { AuthService } from '../services/auth.service';
 
 @Component({
   selector: 'app-navbar',
   templateUrl: './navbar.component.html',
-  styleUrls: ['./navbar.component.css'],
-  standalone: false
-
+  styleUrls: ['./navbar.component.css']
 })
 export class NavbarComponent implements OnInit {
+  isLoggedIn: boolean = false;
+  isAdmin: boolean = false;
+  isScrolled: boolean = false;
 
-  isLoggedIn = false;
-  isAdmin = true;
-  isSidebarCollapsed = false;
-
-
-
-  constructor(private authService: AuthService, private router: Router,) {
-  }
+  constructor(
+    private authService: AuthService,
+    private router: Router
+  ) { }
 
   ngOnInit(): void {
-    this.authService.isLoggedIn$.subscribe((status) => {
-      this.isLoggedIn = status;
-    });
+    // Check authentication status
+    // this.authService.currentUser$.subscribe(user => {
+    //   this.isLoggedIn = !!user;
+    //   this.isAdmin = user?.role === 'admin';
+    // });
+  }
 
-    //       this.authService.getUserData().subscribe((data: {
-    //         user: any; role: string; 
-    // }) => {
-    //         console.log("data ",data);
-
-    //       this.isAdmin = data.user.role == 'admin';
-    //     }, (error: any) => {
-    //       console.error('Error fetching user data:', error);
-    //       this.isAdmin = false; // Default to false if there's an error
-    //     });
+  @HostListener('window:scroll', [])
+  onWindowScroll() {
+    this.isScrolled = window.scrollY > 50;
   }
 
   logout(): void {
     this.authService.logout();
-    this.router.navigate(['/login']);
-
+    this.router.navigate(['/']);
   }
-
-
 }

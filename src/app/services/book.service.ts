@@ -1,102 +1,320 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { Book } from '../models/book.model';
-import { Category } from '../models/category.model';
-import { SubjectCategory } from '../models/subject.model';
-import { Publisher } from '../models/publisher.model'; // Assuming you have this model
-import { environment } from 'src/environments/environment';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class BookService {
-  private baseUrl = environment.apiUrl;
+  private apiUrl = `${environment.apiUrl}`;
 
   constructor(private http: HttpClient) { }
 
-  // GET all books (with optional search)
-  getAllBooks(query: string = '', searchTerm: string = ''): Observable<any> {
+  // ============== BOOK ROUTES ==============
+
+  // Get all books matching your backend implementation
+  getAllBooks(
+    query: string = '',
+    searchTerm: string = '',
+    page: number = 1,
+    limit: number = 20,
+    sortField: string = '',
+    sortDirection: 'asc' | 'desc' = 'asc'
+  ): Observable<{
+    books: Book[];
+    totalBooks: number;
+    filteredCount: number;
+    uniqueAuthors: number;
+    uniquePublishers: number;
+  }> {
     let params = new HttpParams();
 
-    if (query) {
-      params = params.set('q', query);
+    // Add all parameters that your backend expects
+    params = params.set('query', query);
+    params = params.set('searchTerm', searchTerm);
+    params = params.set('page', page.toString());
+    params = params.set('limit', limit.toString());
+
+    if (sortField) {
+      params = params.set('sortField', sortField);
+      params = params.set('sortDirection', sortDirection);
     }
 
-    if (searchTerm) {
-      params = params.set('searchTerm', searchTerm);
-    }
-
-    return this.http.get<any>(`${this.baseUrl}/books`, { params });
+    return this.http.get<any>(`${this.apiUrl}/books`, { params });
   }
 
+  // Search books with simple query
+  searchBooks(searchTerm: string, field: string = 'all'): Observable<any> {
+    // For simple search, pass the field as query and the search term
+    return this.getAllBooks(field, searchTerm, 1, 20);
+  }
 
+  // Advanced search with multiple filters
+  advancedSearch(filters: Array<{ field: string, value: string }>, page: number = 1, limit: number = 20): Observable<any> {
+    // Convert filters to JSON string as expected by backend
+    const searchTerm = JSON.stringify(filters);
+    return this.getAllBooks('advanced', searchTerm, page, limit);
+  }
+
+  // Get book by ID
   getBookById(id: string): Observable<Book> {
-    return this.http.get<Book>(`${this.baseUrl}/books/${id}`);
+    return this.http.get<Book>(`${this.apiUrl}/books/${id}`);
   }
 
-  // Modified to accept FormData for image upload
-  createBook(bookData: FormData): Observable<Book> {
-    return this.http.post<Book>(`${this.baseUrl}/books`, bookData);
+  // Create new book
+  createBook(book: any): Observable<Book> {
+    const bookData = this.prepareBookData(book);
+    return this.http.post<Book>(`${this.apiUrl}/books`, bookData);
   }
 
-  updateBook(id: string, book: Partial<Book>): Observable<Book> {
-    return this.http.put<Book>(`${this.baseUrl}/books/${id}`, book);
+  // Update book
+  updateBook(id: string, book: any): Observable<Book> {
+    const bookData = this.prepareBookData(book);
+    return this.http.put<Book>(`${this.apiUrl}/books/${id}`, bookData);
   }
 
-  deleteBook(id: any): Observable<any> {
-    return this.http.delete(`${this.baseUrl}/books/${id}`);
+  // Delete book
+  deleteBook(id: string): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/books/${id}`);
   }
 
-  // --- People Endpoints (Authors, Commentators, Editors, Caretakers, Muhashis) ---
+  // Helper method to prepare book data for API
+  private prepareBookData(book: any): any {
+    const bookData: any = { ...book };
+
+    // Process people arrays - send only IDs or objects for new creation
+    ['authors', 'commentators', 'editors', 'caretakers', 'muhashis'].forEach(field => {
+      if (bookData[field] && Array.isArray(bookData[field])) {
+        bookData[field] = bookData[field].map((item: any) => {
+          // If it has an _id, send just the ID
+          if (item._id) return item._id;
+          // If it's a string (new name), send as object
+          if (typeof item === 'string') return { name: item };
+          // Otherwise send as is
+          return item;
+        });
+      }
+    });
+
+    // Process publishers - similar logic
+    if (bookData.publishers && Array.isArray(bookData.publishers)) {
+      bookData.publishers = bookData.publishers.map((item: any) => {
+        if (item._id) return item._id;
+        if (typeof item === 'string') return { title: item };
+        return item;
+      });
+    }
+
+    // Process category - send ID or object for new
+    if (bookData.category) {
+      if (bookData.category._id) {
+        bookData.category = bookData.category._id;
+      } else if (typeof bookData.category === 'string') {
+        bookData.category = { title: bookData.category };
+      }
+    }
+
+    // Process subject - same as category
+    if (bookData.subject) {
+      if (bookData.subject._id) {
+        bookData.subject = bookData.subject._id;
+      } else if (typeof bookData.subject === 'string') {
+        bookData.subject = { title: bookData.subject };
+      }
+    }
+
+    return bookData;
+  }
+
+  // Get recent books
+  getRecentBooks(limit: number = 8): Observable<Book[]> {
+    // Get books sorted by creation date (you might need to add this to backend)
+    return this.getAllBooks('', '', 1, limit, '_id', 'desc').pipe(
+      map(response => response.books)
+    );
+  }
+
+  // Get books by category
+  getBooksByCategory(categoryId: string): Observable<Book[]> {
+    const filters = [{ field: 'category', value: categoryId }];
+    return this.advancedSearch(filters).pipe(
+      map(response => response.books)
+    );
+  }
+
+  // Get statistics from the dedicated statistics endpoint
+  getStatistics(): Observable<{
+    totalBooks: number;
+    totalAuthors: number;
+    totalPublishers: number;
+  }> {
+    return this.http.get<any>(`${this.apiUrl}/books/statistics`).pipe(
+      map(response => ({
+        totalBooks: response.totalBooks || 0,
+        totalAuthors: response.totalAuthors || response.uniqueAuthors || 0,
+        totalPublishers: response.totalPublishers || response.uniquePublishers || 0
+      }))
+    );
+  }
+
+  // ============== CATEGORY ROUTES ==============
+
+  getCategories(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/categories`);
+  }
+
+  getCategoryById(id: string): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/categories/${id}`);
+  }
+
+  createCategory(category: any): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/categories`, category);
+  }
+
+  // Get categories with book count
+  getCategoriesWithCount(): Observable<any[]> {
+    return this.getCategories().pipe(
+      map(categories => {
+        // For each category, we'd need to get count from backend
+        // This is a simplified version - you might want to add a specific endpoint
+        return categories.map(cat => ({
+          ...cat,
+          bookCount: 0 // You'll need to implement this in backend
+        }));
+      })
+    );
+  }
+
+  // ============== SUBJECT ROUTES ==============
+
+  getSubjects(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/subjects`);
+  }
+
+  createSubject(subject: any): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/subjects`, subject);
+  }
+
+  // ============== PUBLISHER ROUTES ==============
+
+  getPublishers(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/publishers`);
+  }
+
+  createPublisher(publisher: any): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/publishers`, publisher);
+  }
+
+  // ============== PEOPLE ROUTES ==============
+
   getPeople(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.baseUrl}/people`);
+    return this.http.get<any[]>(`${this.apiUrl}/people`);
   }
 
-  /**
-   * Creates a new person (author, commentator, editor, caretaker, muhashi).
-   * @param personData Object containing 'name' and 'type' (e.g., { name: 'New Author', type: 'author' })
-   */
-  createPerson(personData: { name: string; type: string }): Observable<any> {
-    return this.http.post<any>(`${this.baseUrl}/people`, personData);
+  createPerson(person: any): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/people`, person);
   }
 
-  // --- Category Endpoints ---
-  getCategories(): Observable<Category[]> {
-    return this.http.get<Category[]>(`${this.baseUrl}/categories`);
+  // Get people by type (filter on frontend)
+  getPeopleByType(type: string): Observable<any[]> {
+    return this.getPeople().pipe(
+      map(people => people.filter(p => p.type === type))
+    );
   }
 
-  /**
-   * Creates a new category.
-   * @param categoryData Object containing 'title' (e.g., { title: 'New Category' })
-   */
-  createCategory(categoryData: { title: string }): Observable<Category> {
-    return this.http.post<Category>(`${this.baseUrl}/categories`, categoryData);
+  // ============== EXPORT FUNCTIONALITY ==============
+
+  exportBooks(format: 'csv' | 'excel' | 'pdf' = 'csv'): Observable<Blob> {
+    // Get all books without pagination for export
+    return this.getAllBooks('', '', 1, 10000).pipe(
+      map(response => {
+        const books = response.books;
+
+        if (format === 'csv') {
+          const csv = this.convertToCSV(books);
+          return new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        }
+
+        // For other formats, you'd need backend support
+        // This is a placeholder
+        const csv = this.convertToCSV(books);
+        return new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      })
+    );
   }
 
-  // --- Subject Endpoints ---
-  getSubjects(): Observable<SubjectCategory[]> { // Corrected return type to Subject[]
-    return this.http.get<SubjectCategory[]>(`${this.baseUrl}/subjects`);
+  private convertToCSV(books: any[]): string {
+    if (!books || !books.length) return '';
+
+    // Define headers in Arabic
+    const headers = [
+      'العنوان',
+      'المؤلفون',
+      'الشارحون',
+      'المحققون',
+      'الناشرون',
+      'التصنيف',
+      'التصنيف الفرعي',
+      'سنة النشر',
+      'رقم الطبعة',
+      'عدد الأجزاء',
+      'عدد الصفحات',
+      'الغرفة',
+      'الاستاند',
+      'الرف',
+      'رقم الكتاب'
+    ];
+
+    // Create CSV rows
+    const rows = books.map(book => [
+      book.title || '',
+      this.extractNames(book.authors),
+      this.extractNames(book.commentators),
+      this.extractNames(book.editors),
+      this.extractTitles(book.publishers),
+      book.category?.title || '',
+      book.subject?.title || '',
+      book.publicationYear || '',
+      book.editionNumber || '',
+      book.numberOfVolumes || '',
+      book.pageCount || '',
+      book.address?.roomNumber || '',
+      book.address?.wallNumber || '',
+      book.address?.shelfNumber || '',
+      book.address?.bookNumber || ''
+    ]);
+
+    // Combine headers and rows
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+    ].join('\n');
+
+    // Add BOM for UTF-8 Arabic support
+    return '\ufeff' + csvContent;
   }
 
-  /**
-   * Creates a new subject.
-   * @param subjectData Object containing 'title' (e.g., { title: 'New Subject' })
-   */
-  createSubject(subjectData: { title: string }): Observable<SubjectCategory> {
-    return this.http.post<SubjectCategory>(`${this.baseUrl}/subjects`, subjectData);
+  private extractNames(list: any[]): string {
+    if (!list || !list.length) return '';
+    return list.map(item => item.name || item).filter(Boolean).join('; ');
   }
 
-  // --- Publisher Endpoints ---
-  getPublishers(): Observable<Publisher[]> { // Corrected return type to Publisher[]
-    return this.http.get<Publisher[]>(`${this.baseUrl}/publishers`);
+  private extractTitles(list: any[]): string {
+    if (!list || !list.length) return '';
+    return list.map(item => item.title || item).filter(Boolean).join('; ');
   }
 
-  /**
-   * Creates a new publisher.
-   * @param publisherData Object containing 'title' (e.g., { title: 'New Publisher' })
-   */
-  createPublisher(publisherData: { title: string }): Observable<Publisher> {
-    return this.http.post<Publisher>(`${this.baseUrl}/publishers`, publisherData);
+  // ============== HELPER METHODS ==============
+
+  // Download file helper
+  downloadFile(blob: Blob, filename: string): void {
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.click();
+    window.URL.revokeObjectURL(url);
   }
 }

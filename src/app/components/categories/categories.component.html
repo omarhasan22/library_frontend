@@ -1,103 +1,103 @@
-<div class="container">
-<div class="title-wrapper">
-  <h2>القائمة</h2>
-  <hr class="anim-line">
-</div>
+<!-- Navigation -->
+<!-- <app-navbar></app-navbar> -->
 
-  <div class="row" style="height: 20rem;">
-<div class="col-sm-6 col-md-4 col-lg-3">
-  <div 
-    class="card categories card-hover mb-4"
-    style="
-      background: linear-gradient(to bottom right, #209c90, #67d8d4);
-    ">
-    <div class="card-body d-flex justify-content-between align-items-center p-4">
-      <div class="d-flex">
-        <div class="ms-3 text-end">
-          <h4 class="mb-1 p-0" style="color: #fff;">
-            <a>فقه</a>
-          </h4>
-          <p class="mb-0 fs-6" style="color: #fff;">
-            <span class="me-2">
-              <span class="fw-medium">180</span> عدد الكتب
-            </span>
-          </p>
-        </div>
-      </div>
+<!-- Categories Page -->
+<div class="categories-container">
+  <!-- Page Header -->
+  <!-- <div class="page-header">
+    <div class="container">
+      <h1 class="page-title">أقسام المكتبة</h1>
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a routerLink="/">الرئيسية</a></li>
+          <li class="breadcrumb-item active">الأقسام</li>
+        </ol>
+      </nav>
+    </div>
+  </div> -->
+  <div class="section-header">
+    <h2 class="section-title">أقسام المكتبة</h2>
+    <p class="section-subtitle">اختر القسم المناسب لتصفح الكتب</p>
+  </div>
+
+  <div class="container search-container">
+    <div class="search-box" dir="rtl">
+      <input type="text" class="form-control" placeholder="بحث في الأقسام..." [(ngModel)]="searchTerm"
+        (input)="filterCategories()" aria-label="بحث في الأقسام">
+      <!-- <i class="fas fa-search" aria-hidden="true"></i> -->
     </div>
   </div>
-</div>
-<div class="col-sm-6 col-md-4 col-lg-3">
-  <div 
-    class="card categories card-hover mb-4"
-    style="
-      border: 2px solid #209c90;
-      background: linear-gradient(to bottom right, #209c90, #67d8d4);
-    ">
-    <div class="card-body d-flex justify-content-between align-items-center p-4">
-      <div class="d-flex">
-        <div class="ms-3 text-end">
-          <h4 class="mb-1 p-0" style="color: #fff;">
-            <a>فقه</a>
-          </h4>
-          <p class="mb-0 fs-6" style="color: #fff;">
-            <span class="me-2">
-              <span class="fw-medium">180</span> عدد الكتب
-            </span>
-          </p>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-<div class="col-sm-6 col-md-4 col-lg-3">
-  <div 
-    class="card categories card-hover mb-4"
-    style="
-      border: 2px solid #209c90;
-      background: linear-gradient(to bottom right, #209c90, #67d8d4);
-    ">
-    <div class="card-body d-flex justify-content-between align-items-center p-4">
-      <div class="d-flex">
-        <div class="ms-3 text-end">
-          <h4 class="mb-1 p-0" style="color: #fff;">
-            <a>فقه</a>
-          </h4>
-          <p class="mb-0 fs-6" style="color: #fff;">
-            <span class="me-2">
-              <span class="fw-medium">180</span> عدد الكتب
-            </span>
-          </p>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-<div class="col-sm-6 col-md-4 col-lg-3">
-  <div 
-    class="card categories card-hover mb-4"
-    style="
-      border: 2px solid #209c90;
-      background: linear-gradient(to bottom right, #209c90, #67d8d4);
-    ">
-    <div class="card-body d-flex justify-content-between align-items-center p-4">
-      <div class="d-flex">
-        <div class="ms-3 text-end">
-          <h4 class="mb-1 p-0" style="color: #fff;">
-            <a>فقه</a>
-          </h4>
-          <p class="mb-0 fs-6" style="color: #fff;">
-            <span class="me-2">
-              <span class="fw-medium">180</span> عدد الكتب
-            </span>
-          </p>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
 
 
-   
+  <!-- Categories List -->
+  <div class="container categories-list">
+    <div class="category-item" *ngFor="let category of filteredCategories; let i = index">
+      <div class="category-header" (click)="toggleCategory(category._id)"
+        [class.active]="expandedCategories[category._id]">
+        <div class="category-info">
+          <span class="category-number">{{ i + 1 }}.</span>
+          <span class="category-name">{{ category.title }}</span>
+          <span class="category-count">{{ category.subjectsCount || 0 }}</span>
+        </div>
+        <div class="category-toggle">
+          <i class="fas fa-chevron-down" [class.rotated]="expandedCategories[category._id]"></i>
+        </div>
+      </div>
+
+      <!-- Subjects Dropdown -->
+      <div class="subjects-dropdown" [class.expanded]="expandedCategories[category._id]">
+        <div class="subjects-list" *ngIf="categorySubjects[category._id]?.length > 0">
+          <div class="subject-item" *ngFor="let subject of categorySubjects[category._id]"
+            (click)="navigateToSubject(category.title, subject._id, subject.title)">
+            <i class="fas fa-bookmark"></i>
+            <span class="subject-name">{{ subject.title }}</span>
+            <!-- <span class="subject-count">{{ subject.bookCount || 0 }}</span> -->
+            <i class="fas fa-arrow-left navigate-icon"></i>
+          </div>
+        </div>
+
+        <!-- View All Books in Category -->
+        <div class="view-all-section">
+          <button class="btn-view-all" (click)="navigateToCategory(category.title, category.title)">
+            <i class="fas fa-books"></i>
+            عرض جميع كتب {{ category.title }}
+            <i class="fas fa-arrow-left ms-2"></i>
+          </button>
+        </div>
+
+        <!-- Loading State -->
+        <div class="subjects-loading" *ngIf="loadingSubjects[category._id]">
+          <div class="spinner-border spinner-border-sm text-primary" role="status">
+            <span class="visually-hidden">جاري التحميل...</span>
+          </div>
+          <span>جاري تحميل التصنيفات الفرعية...</span>
+        </div>
+
+        <!-- Empty State -->
+        <div class="subjects-empty"
+          *ngIf="!loadingSubjects[category._id] && categorySubjects[category._id]?.length === 0">
+          <i class="fas fa-folder-open"></i>
+          <p>لا توجد تصنيفات فرعية</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty State for Categories -->
+  <div class="empty-state" *ngIf="filteredCategories.length === 0 && !loading">
+    <i class="fas fa-search fa-3x text-muted"></i>
+    <h4>لا توجد نتائج</h4>
+    <p class="text-muted">لم يتم العثور على أقسام مطابقة للبحث</p>
+    <button class="btn btn-primary" (click)="resetSearch()">
+      إعادة تعيين البحث
+    </button>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="loading">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">جاري التحميل...</span>
+    </div>
+    <p>جاري تحميل الأقسام...</p>
   </div>
 </div>

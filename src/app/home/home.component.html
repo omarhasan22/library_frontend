@@ -1,33 +1,158 @@
-<body id="page-top">
-    <!-- <app-navbar></app-navbar> -->
-    <header class="masthead">
-        <div class="container">
-            <div class="masthead-subheading">أهلا وسهلا</div>
-            <!-- <div class="masthead-heading text-uppercase">It's Nice To Meet You</div> -->
-            <!-- <a class="btn btn-primary btn-xl text-uppercase" href="#services">Tell Me More</a> -->
-        </div>
-    </header>
-    <!-- <section class="page-section" id="services">
-            <div class="container">
-                <app-categories></app-categories>
+<!-- Navigation -->
+<app-navbar></app-navbar>
+
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="hero-overlay"></div>
+    <div class="container">
+        <div class="hero-content">
+            <h1 class="hero-title animate-fade-in">
+                <i class="fas fa-book-open mb-3"></i><br>
+                مكتبة دار المصطفى
+            </h1>
+            <!-- <p class="hero-subtitle animate-fade-in-delay">
+                اكتشف آلاف الكتب والمراجع في مكان واحد
+            </p> -->
+            <div class="hero-stats animate-fade-in-delay-2">
+                <div class="stat-item">
+                    <span class="stat-number">{{ totalBooks }}</span>
+                    <span class="stat-label">كتاب</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">{{ totalCategories }}</span>
+                    <span class="stat-label">تصنيف</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">{{ totalAuthors }}</span>
+                    <span class="stat-label">مؤلف</span>
+                </div>
             </div>
-          </section> -->
-    <section class="page-section bg-light" id="portfolio">
-        <div class="container">
-            <app-add-book (newBookAdded)="appendBook($event)"></app-add-book>
+            <div class="hero-actions animate-fade-in-delay-3">
+                <button class="btn btn-primary btn-lg" routerLink="/books">
+                    <i class="fas fa-search me-2"></i>
+                    تصفح المكتبة
+                </button>
+                <button class="btn btn-outline-light btn-lg" *ngIf="isAdmin" routerLink="/add-book">
+                    <i class="fas fa-plus-circle me-2"></i>
+                    إضافة كتاب جديد
+                </button>
+            </div>
         </div>
-    </section>
+    </div>
+    <div class="hero-wave">
+        <svg viewBox="0 0 1440 320" preserveAspectRatio="none">
+            <path fill="#ffffff" fill-opacity="1"
+                d="M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,122.7C672,117,768,139,864,154.7C960,171,1056,181,1152,165.3C1248,149,1344,107,1392,85.3L1440,64L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z">
+            </path>
+        </svg>
+    </div>
+</section>
 
-    <section class="page-section bg-light" id="portfolio">
-        <div class="container">
-            <app-book-list [addedBook]="addedBook"></app-book-list>
+<!-- Quick Search Section -->
+<section class="quick-search-section">
+    <div class="container">
+        <div class="search-box-container">
+            <div class="search-box">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" class="form-control search-input" placeholder="ابحث عن كتاب، مؤلف، أو ناشر..."
+                    [(ngModel)]="quickSearchTerm" (keyup.enter)="quickSearch()">
+                <button class="btn btn-primary search-btn" (click)="quickSearch()">
+                    بحث
+                </button>
+            </div>
         </div>
-    </section>
+    </div>
+</section>
 
-    <section class="page-section bg-light" id="portfolio">
-        <div class="container">
-            <router-outlet></router-outlet>
+<!-- Categories Section -->
+<!-- <section class="categories-section">
+    <div class="container">
+        <div class="section-header">
+            <h2 class="section-title">أقسام المكتبة</h2>
+            <p class="section-subtitle">اختر القسم المناسب لتصفح الكتب</p>
         </div>
-    </section>
 
-</body>
+        <div class="categories-grid">
+            <div class="category-card-item" *ngFor="let category of categories; let i = index">
+                <div class="category-card-header" (click)="toggleCategoryExpand(category._id)"
+                    [class.expanded]="expandedCategory === category._id">
+                    <div class="category-card-content">
+                        <div class="category-number">{{ category.bookCount || 0 }}</div>
+                        <div class="category-title">{{ i + 1 }}. {{ category.title }}</div>
+                    </div>
+                    <i class="fas fa-chevron-down expand-icon" [class.rotated]="expandedCategory === category._id"></i>
+                </div>
+
+                <div class="subjects-panel" [class.show]="expandedCategory === category._id">
+                    <div class="subjects-content" *ngIf="categorySubjects[category._id]">
+                        <div class="subject-pill" *ngFor="let subject of categorySubjects[category._id]"
+                            (click)="navigateToCategorySubject(category._id, subject._id)">
+                            {{ subject.title }}
+                            <span class="subject-count">({{ subject.bookCount || 0 }})</span>
+                        </div>
+                    </div>
+                    <button class="btn-view-category" (click)="navigateToCategory(category)">
+                        عرض جميع كتب القسم
+                        <i class="fas fa-arrow-left ms-2"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="category-card-item view-all">
+                <div class="category-card-header" routerLink="/categories">
+                    <div class="category-card-content">
+                        <i class="fas fa-th-large category-icon-large"></i>
+                        <div class="category-title">جميع الأقسام</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section> -->
+<app-categories></app-categories>
+
+<!-- Recent Books Section (Optional) -->
+<section class="recent-books-section" *ngIf="recentBooks.length > 0">
+    <div class="container">
+        <div class="section-header">
+            <h2 class="section-title">أحدث الكتب المضافة</h2>
+            <a routerLink="/books" class="view-all-link">
+                عرض الكل
+                <i class="fas fa-arrow-left ms-2"></i>
+            </a>
+        </div>
+
+        <div class="row g-4" style="margin: 0 4vw 0 4vw">
+            <div class="col-lg-3 col-md-4 col-sm-6 mb-4 px-2" *ngFor="let book of recentBooks">
+                <div class="book-card h-100" (click)="viewBook(book._id)">
+                    <div class="book-cover">
+                        <img [src]="book.imageUrl || 'assets/img/book-placeholder.jpg'" [alt]="book.title">
+                        <div class="book-overlay">
+                            <button class="btn btn-light btn-sm">عرض التفاصيل</button>
+                        </div>
+                    </div>
+                    <div class="book-info">
+                        <h5 class="book-title">{{ book.title }}</h5>
+                        <p class="book-author">{{ getAuthorsNames(book.authors) }}</p>
+                        <span class="book-category badge bg-primary">{{ book.category?.title }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6">
+                <h5> مكتبة دار المصطفى</h5>
+                <p>نظام متكامل لإدارة المكتبات والكتب</p>
+            </div>
+            <div class="col-md-6 text-end">
+                <p class="mb-0">© 2024 جميع الحقوق محفوظة</p>
+            </div>
+        </div>
+    </div>
+</footer>
