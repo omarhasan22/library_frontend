@@ -599,6 +599,7 @@ export class AddBookComponent implements OnInit {
   addBook(): void {
     this.loading = true; // Show loader
     const payload: any = { ...this.newBook };
+    console.log('Payload before processing:', payload);
 
     // Clean up temporary _id if new items were added without an _id from the backend (should be handled by backend, but good for safety)
     payload.authors = payload.authors.map((p: any) => p._id ? p._id : { name: p.name });

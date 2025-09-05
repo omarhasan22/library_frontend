@@ -100,10 +100,17 @@ export class BookListComponent implements OnInit {
         this.simpleSearchTerm = params['search'];
         this.performSimpleSearch();
       }
-      if (params['category']) {
+      // if (params['category']) {
+      //   this.searchFilters = [{
+      //     field: 'category',
+      //     value: params['category']
+      //   }];
+      //   this.loadBooks();
+      // }
+      if (params['subjectTitle']) {
         this.searchFilters = [{
-          field: 'category',
-          value: params['category']
+          field: 'subject',
+          value: params['subjectTitle']
         }];
         this.loadBooks();
       }

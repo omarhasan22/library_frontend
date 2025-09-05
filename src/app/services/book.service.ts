@@ -65,14 +65,14 @@ export class BookService {
 
   // Create new book
   createBook(book: any): Observable<Book> {
-    const bookData = this.prepareBookData(book);
-    return this.http.post<Book>(`${this.apiUrl}/books`, bookData);
+    // const bookData = this.prepareBookData(book);
+    return this.http.post<Book>(`${this.apiUrl}/books`, book);
   }
 
   // Update book
   updateBook(id: string, book: any): Observable<Book> {
-    const bookData = this.prepareBookData(book);
-    return this.http.put<Book>(`${this.apiUrl}/books/${id}`, bookData);
+    // const bookData = this.prepareBookData(book);
+    return this.http.put<Book>(`${this.apiUrl}/books/${id}`, book);
   }
 
   // Delete book
@@ -80,53 +80,53 @@ export class BookService {
     return this.http.delete(`${this.apiUrl}/books/${id}`);
   }
 
-  // Helper method to prepare book data for API
-  private prepareBookData(book: any): any {
-    const bookData: any = { ...book };
+  // // Helper method to prepare book data for API
+  // private prepareBookData(book: any): any {
+  //   const bookData: any = { ...book };
 
-    // Process people arrays - send only IDs or objects for new creation
-    ['authors', 'commentators', 'editors', 'caretakers', 'muhashis'].forEach(field => {
-      if (bookData[field] && Array.isArray(bookData[field])) {
-        bookData[field] = bookData[field].map((item: any) => {
-          // If it has an _id, send just the ID
-          if (item._id) return item._id;
-          // If it's a string (new name), send as object
-          if (typeof item === 'string') return { name: item };
-          // Otherwise send as is
-          return item;
-        });
-      }
-    });
+  //   // Process people arrays - send only IDs or objects for new creation
+  //   ['authors', 'commentators', 'editors', 'caretakers', 'muhashis'].forEach(field => {
+  //     if (bookData[field] && Array.isArray(bookData[field])) {
+  //       bookData[field] = bookData[field].map((item: any) => {
+  //         // If it has an _id, send just the ID
+  //         if (item._id) return item._id;
+  //         // If it's a string (new name), send as object
+  //         if (typeof item === 'string') return { name: item };
+  //         // Otherwise send as is
+  //         return item;
+  //       });
+  //     }
+  //   });
 
-    // Process publishers - similar logic
-    if (bookData.publishers && Array.isArray(bookData.publishers)) {
-      bookData.publishers = bookData.publishers.map((item: any) => {
-        if (item._id) return item._id;
-        if (typeof item === 'string') return { title: item };
-        return item;
-      });
-    }
+  //   // Process publishers - similar logic
+  //   if (bookData.publishers && Array.isArray(bookData.publishers)) {
+  //     bookData.publishers = bookData.publishers.map((item: any) => {
+  //       if (item._id) return item._id;
+  //       if (typeof item === 'string') return { title: item };
+  //       return item;
+  //     });
+  //   }
 
-    // Process category - send ID or object for new
-    if (bookData.category) {
-      if (bookData.category._id) {
-        bookData.category = bookData.category._id;
-      } else if (typeof bookData.category === 'string') {
-        bookData.category = { title: bookData.category };
-      }
-    }
+  //   // Process category - send ID or object for new
+  //   if (bookData.category) {
+  //     if (bookData.category._id) {
+  //       bookData.category = bookData.category._id;
+  //     } else if (typeof bookData.category === 'string') {
+  //       bookData.category = { title: bookData.category };
+  //     }
+  //   }
 
-    // Process subject - same as category
-    if (bookData.subject) {
-      if (bookData.subject._id) {
-        bookData.subject = bookData.subject._id;
-      } else if (typeof bookData.subject === 'string') {
-        bookData.subject = { title: bookData.subject };
-      }
-    }
+  //   // Process subject - same as category
+  //   if (bookData.subject) {
+  //     if (bookData.subject._id) {
+  //       bookData.subject = bookData.subject._id;
+  //     } else if (typeof bookData.subject === 'string') {
+  //       bookData.subject = { title: bookData.subject };
+  //     }
+  //   }
 
-    return bookData;
-  }
+  //   return bookData;
+  // }
 
   // Get recent books
   getRecentBooks(limit: number = 8): Observable<Book[]> {
@@ -224,97 +224,5 @@ export class BookService {
     );
   }
 
-  // ============== EXPORT FUNCTIONALITY ==============
 
-  exportBooks(format: 'csv' | 'excel' | 'pdf' = 'csv'): Observable<Blob> {
-    // Get all books without pagination for export
-    return this.getAllBooks('', '', 1, 10000).pipe(
-      map(response => {
-        const books = response.books;
-
-        if (format === 'csv') {
-          const csv = this.convertToCSV(books);
-          return new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        }
-
-        // For other formats, you'd need backend support
-        // This is a placeholder
-        const csv = this.convertToCSV(books);
-        return new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      })
-    );
-  }
-
-  private convertToCSV(books: any[]): string {
-    if (!books || !books.length) return '';
-
-    // Define headers in Arabic
-    const headers = [
-      'العنوان',
-      'المؤلفون',
-      'الشارحون',
-      'المحققون',
-      'الناشرون',
-      'التصنيف',
-      'التصنيف الفرعي',
-      'سنة النشر',
-      'رقم الطبعة',
-      'عدد الأجزاء',
-      'عدد الصفحات',
-      'الغرفة',
-      'الاستاند',
-      'الرف',
-      'رقم الكتاب'
-    ];
-
-    // Create CSV rows
-    const rows = books.map(book => [
-      book.title || '',
-      this.extractNames(book.authors),
-      this.extractNames(book.commentators),
-      this.extractNames(book.editors),
-      this.extractTitles(book.publishers),
-      book.category?.title || '',
-      book.subject?.title || '',
-      book.publicationYear || '',
-      book.editionNumber || '',
-      book.numberOfVolumes || '',
-      book.pageCount || '',
-      book.address?.roomNumber || '',
-      book.address?.wallNumber || '',
-      book.address?.shelfNumber || '',
-      book.address?.bookNumber || ''
-    ]);
-
-    // Combine headers and rows
-    const csvContent = [
-      headers.join(','),
-      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
-    ].join('\n');
-
-    // Add BOM for UTF-8 Arabic support
-    return '\ufeff' + csvContent;
-  }
-
-  private extractNames(list: any[]): string {
-    if (!list || !list.length) return '';
-    return list.map(item => item.name || item).filter(Boolean).join('; ');
-  }
-
-  private extractTitles(list: any[]): string {
-    if (!list || !list.length) return '';
-    return list.map(item => item.title || item).filter(Boolean).join('; ');
-  }
-
-  // ============== HELPER METHODS ==============
-
-  // Download file helper
-  downloadFile(blob: Blob, filename: string): void {
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    link.click();
-    window.URL.revokeObjectURL(url);
-  }
 }

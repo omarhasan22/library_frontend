@@ -69,15 +69,15 @@ export class HomeComponent implements OnInit {
     this.bookService.getCategories().subscribe(
       categories => {
         // Get book count for each category
-        categories.forEach(category => {
-          // Get count of books in this category
-          const filters = [{ field: 'category', value: category._id }];
-          this.bookService.advancedSearch(filters, 1, 1).subscribe(
-            response => {
-              category.bookCount = response.filteredCount || 0;
-            }
-          );
-        });
+        // categories.forEach(category => {
+        //   // Get count of books in this category
+        //   const filters = [{ field: 'category', value: category._id }];
+        //   this.bookService.advancedSearch(filters, 1, 1).subscribe(
+        //     response => {
+        //       category.bookCount = response.filteredCount || 0;
+        //     }
+        //   );
+        // });
 
         this.categories = categories.slice(0, 12); // Show first 12 categories
         this.totalCategories = categories.length;
@@ -110,18 +110,18 @@ export class HomeComponent implements OnInit {
         );
 
         // Get book count for each subject
-        categorySubjects.forEach(subject => {
-          const filters = [
-            { field: 'category', value: categoryId },
-            { field: 'subject', value: subject._id }
-          ];
+        // categorySubjects.forEach(subject => {
+        //   const filters = [
+        //     { field: 'category', value: categoryId },
+        //     { field: 'subject', value: subject._id }
+        //   ];
 
-          this.bookService.advancedSearch(filters, 1, 1).subscribe(
-            response => {
-              subject.bookCount = response.filteredCount || 0;
-            }
-          );
-        });
+        //   this.bookService.advancedSearch(filters, 1, 1).subscribe(
+        //     response => {
+        //       subject.bookCount = response.filteredCount || 0;
+        //     }
+        //   );
+        // });
 
         this.categorySubjects[categoryId] = categorySubjects;
       },

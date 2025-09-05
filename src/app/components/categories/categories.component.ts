@@ -46,15 +46,15 @@ export class CategoriesComponent implements OnInit {
     this.bookService.getCategories().subscribe(
       async (categories) => {
         // For each category, get the book count
-        for (const category of categories) {
-          // Get books count for this category
-          const filters = [{ field: 'category', value: category._id }];
-          this.bookService.advancedSearch(filters, 1, 1).subscribe(
-            (response) => {
-              category.bookCount = response.filteredCount || 0;
-            }
-          );
-        }
+        // for (const category of categories) {
+        //   // Get books count for this category
+        //   const filters = [{ field: 'category', value: category._id }];
+        //   this.bookService.advancedSearch(filters, 1, 1).subscribe(
+        //     (response) => {
+        //       category.bookCount = response.filteredCount || 0;
+        //     }
+        //   );
+        // }
 
         this.categories = categories;
         this.filteredCategories = categories;
@@ -68,6 +68,8 @@ export class CategoriesComponent implements OnInit {
   }
 
   toggleCategory(categoryId: string): void {
+    console.log(123);
+
     this.expandedCategories[categoryId] = !this.expandedCategories[categoryId];
 
     // Load subjects if expanding and not already loaded
@@ -87,21 +89,21 @@ export class CategoriesComponent implements OnInit {
       const categorySubjects = category.subjects || [];
 
       // Get book count for each subject
-      categorySubjects.forEach(subject => {
-        const filters = [
-          { field: 'category', value: categoryId },
-          { field: 'subject', value: subject._id }
-        ];
+      // categorySubjects.forEach(subject => {
+      //   const filters = [
+      //     { field: 'category', value: categoryId },
+      //     { field: 'subject', value: subject._id }
+      //   ];
 
-        this.bookService.advancedSearch(filters, 1, 1).subscribe(
-          (response) => {
-            subject.bookCount = response.filteredCount || 0;
-          },
-          (error) => {
-            subject.bookCount = 0;
-          }
-        );
-      });
+      //   this.bookService.advancedSearch(filters, 1, 1).subscribe(
+      //     (response) => {
+      //       subject.bookCount = response.filteredCount || 0;
+      //     },
+      //     (error) => {
+      //       subject.bookCount = 0;
+      //     }
+      //   );
+      // });
 
       this.categorySubjects[categoryId] = categorySubjects;
       this.loadingSubjects[categoryId] = false;
@@ -132,6 +134,8 @@ export class CategoriesComponent implements OnInit {
   }
 
   navigateToCategory(categoryId: string, categoryTitle: string): void {
+    console.log(456);
+
     // Navigate to books page with category filter
     this.router.navigate(['/books'], {
       queryParams: {
@@ -145,8 +149,8 @@ export class CategoriesComponent implements OnInit {
     // Navigate to books page with both category and subject filters
     this.router.navigate(['/books'], {
       queryParams: {
-        category: categoryId,
-        subject: subjectId,
+        // category: categoryId,
+        // subject: subjectId,
         subjectTitle: subjectTitle
       }
     });
