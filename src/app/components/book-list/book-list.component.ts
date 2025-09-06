@@ -96,22 +96,36 @@ export class BookListComponent implements OnInit {
     this.route.queryParams.subscribe(params => {
       console.log("params ", params);
 
+      // Initialize search filters array
+      this.searchFilters = [];
+
+      // Check if search parameter exists
       if (params['search']) {
         this.simpleSearchTerm = params['search'];
-        this.performSimpleSearch();
+        this.searchFilters.push({
+          field: 'search',
+          value: params['search']
+        });
       }
-      // if (params['category']) {
-      //   this.searchFilters = [{
-      //     field: 'category',
-      //     value: params['category']
-      //   }];
-      //   this.loadBooks();
-      // }
+
+      // Check if category parameter exists
+      if (params['category']) {
+        this.searchFilters.push({
+          field: 'category',
+          value: params['category']
+        });
+      }
+
+      // Check if subjectTitle parameter exists
       if (params['subjectTitle']) {
-        this.searchFilters = [{
+        this.searchFilters.push({
           field: 'subject',
           value: params['subjectTitle']
-        }];
+        });
+      }
+
+      // Load books with all filters applied (AND condition)
+      if (this.searchFilters.length > 0) {
         this.loadBooks();
       }
     });

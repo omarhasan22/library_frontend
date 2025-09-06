@@ -149,7 +149,7 @@ export class CategoriesComponent implements OnInit {
     // Navigate to books page with both category and subject filters
     this.router.navigate(['/books'], {
       queryParams: {
-        // category: categoryId,
+        category: categoryId,
         // subject: subjectId,
         subjectTitle: subjectTitle
       }
