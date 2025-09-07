@@ -66,7 +66,7 @@ export class BookListComponent implements OnInit {
     { key: 'roomNumber', value: 'الغرفة', sortable: false },
     { key: 'wallNumber', value: 'الاستاند', sortable: false },
     { key: 'shelfNumber', value: 'الرف', sortable: false },
-    { key: 'bookNumber', value: 'الكتاب', sortable: false }
+    { key: 'bookNumber', value: 'الكتاب', sortable: true }
   ];
 
 
@@ -81,11 +81,38 @@ export class BookListComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-    // this.checkAuth();
+    // load query params / url state if you have any
     this.loadQueryParams();
+
+    // restore saved filters from localStorage BEFORE loading books
+    const saved = this.getSavedFiltersFromLocalStorage();
+    if (saved && saved.length) {
+      this.searchFilters = saved;
+      // if you're restoring advanced filters, clear simple term
+      this.simpleSearchTerm = '';
+    }
+
     this.loadBooks();
   }
-
+  /** Read saved filters safely from localStorage */
+  private getSavedFiltersFromLocalStorage(): Array<{ field: string, value: string }> | null {
+    try {
+      const raw = localStorage.getItem('bookSearchFilters');
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return null;
+      // Normalize entries and ensure values are strings
+      return parsed.map(f => ({
+        field: f.field ?? 'all',
+        value: (f.value ?? '').toString()
+      }));
+    } catch (err) {
+      console.warn('Could not parse saved bookSearchFilters from localStorage:', err);
+      // corrupt value: remove it so future loads are clean
+      localStorage.removeItem('bookSearchFilters');
+      return null;
+    }
+  }
   // checkAuth(): void {
   //   this.authService.currentUser$.subscribe(user => {
   //     this.isAdmin = user?.role === 'admin';
@@ -134,16 +161,23 @@ export class BookListComponent implements OnInit {
   loadBooks(): void {
     this.loading = true;
 
-    const filters = this.searchFilters.filter(f => f.value?.trim());
+    // trim and take only filters with a non-empty value
+    const filters = this.searchFilters
+      .map(f => ({ ...f, value: (f.value ?? '').toString().trim() }))
+      .filter(f => f.value !== '');
+
     const isAdvanced = filters.length > 1 ||
-      (filters.length === 1 && filters[0].field !== 'all' && filters[0].value.trim() !== '');
+      (filters.length === 1 && filters[0].field !== 'all' && filters[0].value !== '');
 
     const query = isAdvanced ? 'advanced' : '';
     const searchTerm = isAdvanced ? JSON.stringify(filters) : this.simpleSearchTerm;
 
-    // Save filters to localStorage
+    // Save only the active/trimmed filters
     if (filters.length > 0) {
-      localStorage.setItem('bookSearchFilters', JSON.stringify(this.searchFilters));
+      localStorage.setItem('bookSearchFilters', JSON.stringify(filters));
+    } else {
+      // If user cleared filters, remove saved state
+      localStorage.removeItem('bookSearchFilters');
     }
 
     this.bookService.getAllBooks(query, searchTerm, this.currentPage, this.itemsPerPage, this.sortField, this.sortDirection)
