@@ -1,68 +1,58 @@
-<!-- <div  class="form-signin">
-  <h2>Login</h2>
-  <form [formGroup]="loginForm" (ngSubmit)="login()">
-    <div>
-      <label for="username">Username:</label>
-      <input type="text" id="username" formControlName="username" />
+<section class="gradient-strip" aria-label="تسجيل الدخول">
+  <div class="auth-card" role="region" aria-labelledby="loginTitle">
+    <div class="header">
+      <h2 id="loginTitle">مرحباً بعودتك</h2>
+      <p>سجّل الدخول لمتابعة حسابك</p>
     </div>
 
-    <div>
-      <label for="password">Password:</label>
-      <input type="password" id="password" formControlName="password" />
-    </div>
+    <!-- تنبيهات -->
+    <div *ngIf="message && !isSuccess" class="alert alert-danger" role="alert">{{ message }}</div>
+    <div *ngIf="message && isSuccess" class="alert alert-success" role="alert">{{ message }}</div>
 
-    <div *ngIf="message" class="error-message">
-      {{ message }}
-    </div>
+    <form [formGroup]="loginForm" (ngSubmit)="login()" novalidate>
 
-    <button type="submit" [disabled]="isLoading">
-      {{ isLoading ? 'Logging in...' : 'Login' }}
-    </button>
-  </form>
-</div> -->
+      <div class="form-group">
+        <input type="text" id="emailOrUsername" class="form-control" formControlName="emailOrUsername"
+          placeholder="البريد الإلكتروني أو اسم المستخدم" autocomplete="username"
+          [class.is-invalid]="loginForm.get('emailOrUsername')?.invalid && loginForm.get('emailOrUsername')?.touched"
+          aria-label="البريد الإلكتروني أو اسم المستخدم">
+      </div>
 
-<section class="vh-100 "
- >
-  <div class="mask d-flex align-items-center h-100 ">
-    <div class="container h-100">
-      <div class="row d-flex justify-content-center align-items-center h-100">
-        <div class="col-12 col-md-9 col-lg-7 col-xl-6">
-          <div class="card bg-image" style="border-radius: 15px;">
-            <div class="card-body p-5">
-              <h2 class="text-uppercase text-center mb-5">Log In</h2>
+      <div class="form-group">
+        <input type="password" id="password" class="form-control" formControlName="password" placeholder="كلمة المرور"
+          autocomplete="current-password"
+          [class.is-invalid]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
+          aria-label="كلمة المرور">
+      </div>
 
-              <form [formGroup]="loginForm" (ngSubmit)="login()" >
-                <div data-mdb-input-init class="form-outline mb-4">
-                  <input  id="username" formControlName="username" type="text" class="form-control form-control-lg" />
-                  <label for="username" class="form-label" >Username</label>
-                </div>
+      <div class="d-flex justify-content-between align-items-center" style="margin-bottom:.9rem;">
+        <!-- <label class="form-check" style="margin:0;">
+          <input type="checkbox" class="form-check-input" formControlName="rememberMe" id="rememberMe">
+          <span style="font-size:.95rem;">تذكرني</span>
+        </label> -->
 
-                <div data-mdb-input-init class="form-outline mb-4">
-                  <input type="password" id="password" formControlName="password" id="form3Example4cg" class="form-control form-control-lg" />
-                  <label for="password" class="form-label">Password</label>
-                </div>
+        <!-- <a href="#" class="small-link primary">هل نسيت كلمة المرور؟</a> -->
+      </div>
 
-    <div *ngIf="message" class="error-message">
-      {{ message }}
-    </div>
+      <div style="position:relative;">
+        <button type="submit" class="btn-primary" [disabled]="loginForm.invalid || isLoading"
+          style="background: #2ea297;">
+          <ng-container *ngIf="!isLoading">تسجيل الدخول</ng-container>
+          <ng-container *ngIf="isLoading">جاري الدخول...</ng-container>
+        </button>
 
-                <!-- <div class="d-flex justify-content-center">
-                  <button  type="submit" 
-                    class="btn btn-success btn-block btn-lg gradient-custom-4 text-body">Log In</button>
-                </div> -->
-    <button type="submit" class="btn btn-block btn-lg text-body " style="background-color: #209c90; color: white !important;"
-     [disabled]="isLoading">
-      {{ isLoading ? 'Logging in...' : 'Login' }}
-    </button>
-                <p class="text-center text-muted mt-5 mb-0">Have already an account? <a routerLink="/register"   
-                class="fw-bold text-body"><u>Login here</u></a></p>
-
-              </form>
-
-            </div>
-          </div>
+        <div *ngIf="isLoading" class="loading-overlay" style="background: #2ea297;">
+          <div aria-hidden="true" style="color: white;">...تحميل</div>
         </div>
       </div>
-    </div>
+
+    </form>
+
+    <hr style="margin:1rem 0; border:none; border-top:1px solid #eef2ff;">
+
+    <p style="text-align:center; font-size:.95rem; color:#6b7280; margin:0;">
+      ليس لديك حساب؟
+      <a routerLink="/register" class="small-link primary">أنشئ حسابًا</a>
+    </p>
   </div>
 </section>

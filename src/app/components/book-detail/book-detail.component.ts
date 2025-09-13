@@ -5,6 +5,8 @@ import { Book } from '../../models/book.model';
 import { Category } from '../../models/category.model';
 import { SubjectCategory } from '../../models/subject.model';
 import { Publisher } from 'src/app/models/publisher.model';
+import { AuthService } from 'src/app/services/auth.service';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-book-detail',
@@ -14,6 +16,11 @@ import { Publisher } from 'src/app/models/publisher.model';
 
 })
 export class BookDetailComponent implements OnInit {
+  isLoggedIn = false;
+  isAdmin = false;
+  currentUser: any = null;
+  private subscription: Subscription;
+
   book!: Book;
   editBook!: Book & { address: { roomNumber: string; shelfNumber: string; wallNumber: string; bookNumber: string } };
   originalBook!: Book;
@@ -68,10 +75,19 @@ export class BookDetailComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private bookService: BookService
+    private bookService: BookService,
+    private authService: AuthService,
+
   ) { }
 
   ngOnInit(): void {
+    this.subscription = this.authService.currentUser$.subscribe(user => {
+      this.currentUser = user;
+      this.isLoggedIn = !!user;
+      if (this.currentUser?.user.role == 'admin') {
+        this.isAdmin = true;
+      }
+    });
     const bookId = this.route.snapshot.paramMap.get('id');
     if (bookId) {
       this.bookService.getBookById(bookId).subscribe(

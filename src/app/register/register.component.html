@@ -1,62 +1,62 @@
-<!-- <form class="form-signin" [formGroup]='registerForm' (submit)="register()">
-    <h1 class="h3 mb-3 fw-normal">Register</h1>
-  
-    <div class="form-floating">
-      <input class="form-control" id="floatingInput" formControlName="username">
-      <label for="floatingInput">Username</label>
+<section class="gradient-strip" aria-label="إنشاء حساب">
+  <div class="auth-card" role="region" aria-labelledby="registerTitle">
+    <div class="header">
+      <h2 id="registerTitle">إنشاء حساب جديد</h2>
+      <p>ابدأ باستخدام حسابك الآن</p>
     </div>
-    <div class="form-floating">
-      <input type="password" class="form-control" id="floatingPassword" formControlName="password">
-      <label for="floatingPassword">Password</label>
-    </div>
-    <button class="w-100 btn btn-lg btn-primary" type="submit" [disabled]="!registerForm.valid">Register</button>
-    <br>
-    <br>
-    <div *ngIf="success" style="color: green;">Registration Successful!! Please <a routerLink="/login">Login</a></div>
-    <p *ngIf="errMessage" class="alert alert-danger alert-dismissible fade show">{{errMessage}}</p>
-</form> -->
 
-<section class="vh-100"
- >
-  <div class="mask d-flex align-items-center h-100 ">
-    <div class="container h-100">
-      <div class="row d-flex justify-content-center align-items-center h-100">
-        <div class="col-12 col-md-9 col-lg-7 col-xl-6">
-          <div class="card bg-image" style="border-radius: 15px;">
-            <div class="card-body p-5">
-              <h2 class="text-uppercase text-center mb-5">Create an account</h2>
+    <div *ngIf="success" class="alert alert-success">تم التسجيل بنجاح. جاري التحويل...</div>
+    <div *ngIf="errMessage" class="alert alert-danger">{{ errMessage }}</div>
 
-              <form>
+    <form [formGroup]="registerForm" (ngSubmit)="register()" novalidate>
 
-                <div data-mdb-input-init class="form-outline mb-4">
-                  <input type="text" id="form3Example1cg" class="form-control form-control-lg" />
-                  <label class="form-label" for="form3Example1cg">Your Name</label>
-                </div>
+      <div class="form-group">
+        <input type="text" id="username" class="form-control" formControlName="username" placeholder="اسم المستخدم"
+          autocomplete="username"
+          [class.is-invalid]="registerForm.get('username')?.invalid && registerForm.get('username')?.touched"
+          aria-label="اسم المستخدم">
+      </div>
 
-                <div data-mdb-input-init class="form-outline mb-4">
-                  <input type="email" id="form3Example3cg" class="form-control form-control-lg" />
-                  <label class="form-label" for="form3Example3cg">Your Email</label>
-                </div>
+      <div class="form-group">
+        <input type="email" id="email" class="form-control" formControlName="email" placeholder="البريد الإلكتروني"
+          autocomplete="email"
+          [class.is-invalid]="registerForm.get('email')?.invalid && registerForm.get('email')?.touched"
+          aria-label="البريد الإلكتروني">
+      </div>
 
-                <div data-mdb-input-init class="form-outline mb-4">
-                  <input type="password" id="form3Example4cg" class="form-control form-control-lg" />
-                  <label class="form-label" for="form3Example4cg">Password</label>
-                </div>
+      <div class="form-group">
+        <input type="password" id="password" class="form-control" formControlName="password" placeholder="كلمة المرور"
+          autocomplete="new-password"
+          [class.is-invalid]="registerForm.get('password')?.invalid && registerForm.get('password')?.touched"
+          aria-label="كلمة المرور">
+      </div>
 
-                <div class="d-flex justify-content-center">
-                  <button  type="button" data-mdb-button-init
-                    data-mdb-ripple-init class="btn btn-success btn-block btn-lg gradient-custom-4 text-body">Register</button>
-                </div>
+      <div class="form-group">
+        <input type="password" id="confirmPassword" class="form-control" formControlName="confirmPassword"
+          placeholder="تأكيد كلمة المرور"
+          [class.is-invalid]="registerForm.get('confirmPassword')?.invalid && registerForm.get('confirmPassword')?.touched"
+          aria-label="تأكيد كلمة المرور">
+      </div>
 
-                <p class="text-center text-muted mt-5 mb-0">Have already an account? <a routerLink="/login"
-                    class="fw-bold text-body"><u>Login here</u></a></p>
+      <div style="position:relative;">
+        <button type="submit" class="btn-primary" [disabled]="registerForm.invalid || isLoading"
+          style="background: #2ea297;">
+          <ng-container *ngIf="!isLoading">إنشاء الحساب</ng-container>
+          <ng-container *ngIf="isLoading">جاري الإنشاء...</ng-container>
+        </button>
 
-              </form>
-
-            </div>
-          </div>
+        <div *ngIf="isLoading" class="loading-overlay">
+          <div aria-hidden="true">...تحميل</div>
         </div>
       </div>
-    </div>
+
+    </form>
+
+    <hr style="margin:1rem 0; border:none; border-top:1px solid #eef2ff;">
+
+    <p style="text-align:center; font-size:.95rem; color:#6b7280; margin:0;">
+      لديك حساب بالفعل؟
+      <a routerLink="/login" class="small-link primary">سجّل الدخول</a>
+    </p>
   </div>
 </section>

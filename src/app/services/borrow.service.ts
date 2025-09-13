@@ -10,12 +10,12 @@ import { environment } from 'src/environments/environment';
 export class BorrowService {
   private baseUrl = environment.apiUrl;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
-borrowBook(book: string, startDate: string, endDate: string): Observable<any> {
-  const payload = { book, startDate, endDate };
-  return this.http.post(`${this.baseUrl}/borrows/borrow`, payload);
-}
+  borrowBook(book: string, startDate: string, endDate: string): Observable<any> {
+    const payload = { book, startDate, endDate };
+    return this.http.post(`${this.baseUrl}/borrows/borrow`, payload);
+  }
 
   returnBook(borrowId: string): Observable<Borrow> {
     return this.http.put<Borrow>(`${this.baseUrl}/borrows/return/${borrowId}`, {});

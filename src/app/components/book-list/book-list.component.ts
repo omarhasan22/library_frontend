@@ -1,15 +1,17 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { BookService } from '../../services/book.service';
 import { Book } from '../../models/book.model';
 import { AuthService } from '../../services/auth.service';
+import { Subject, Subscription } from 'rxjs';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 @Component({
   selector: 'app-book-list',
   templateUrl: './book-list.component.html',
   styleUrls: ['./book-list.component.css']
 })
-export class BookListComponent implements OnInit {
+export class BookListComponent implements OnInit, OnDestroy {
   // Books data
   books: Book[] = [];
   loading: boolean = false;
@@ -41,6 +43,10 @@ export class BookListComponent implements OnInit {
 
   // Auth
   isAdmin: boolean = false;
+
+  // Debounce for search
+  private searchSubject = new Subject<void>();
+  private searchSubscription?: Subscription;
 
   // Table columns configuration
   // merged table columns configuration
@@ -81,6 +87,16 @@ export class BookListComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
+    // Setup debounced search
+    this.searchSubscription = this.searchSubject
+      .pipe(
+        debounceTime(300), // Wait 300ms after the last search trigger
+        distinctUntilChanged()
+      )
+      .subscribe(() => {
+        this.loadBooks();
+      });
+
     // load query params / url state if you have any
     this.loadQueryParams();
 
@@ -90,9 +106,20 @@ export class BookListComponent implements OnInit {
       this.searchFilters = saved;
       // if you're restoring advanced filters, clear simple term
       this.simpleSearchTerm = '';
+      // Load books only if we have saved filters and no query params
+      if (!this.route.snapshot.queryParams['search'] && !this.route.snapshot.queryParams['category'] && !this.route.snapshot.queryParams['subjectTitle']) {
+        this.loadBooks();
+      }
+    } else if (!this.route.snapshot.queryParams['search'] && !this.route.snapshot.queryParams['category'] && !this.route.snapshot.queryParams['subjectTitle']) {
+      // Only load books if no query params and no saved filters
+      this.loadBooks();
     }
+  }
 
-    this.loadBooks();
+  ngOnDestroy(): void {
+    if (this.searchSubscription) {
+      this.searchSubscription.unsubscribe();
+    }
   }
   /** Read saved filters safely from localStorage */
   private getSavedFiltersFromLocalStorage(): Array<{ field: string, value: string }> | null {
@@ -126,11 +153,11 @@ export class BookListComponent implements OnInit {
       // Initialize search filters array
       this.searchFilters = [];
 
-      // Check if search parameter exists
+      // Check if search parameter exists - treat as simple search
       if (params['search']) {
         this.simpleSearchTerm = params['search'];
         this.searchFilters.push({
-          field: 'search',
+          field: 'all',  // Changed from 'search' to 'all' for simple search
           value: params['search']
         });
       }
@@ -150,6 +177,7 @@ export class BookListComponent implements OnInit {
           value: params['subjectTitle']
         });
       }
+      console.log("this.searchFilters", this.searchFilters);
 
       // Load books with all filters applied (AND condition)
       if (this.searchFilters.length > 0) {
@@ -166,11 +194,17 @@ export class BookListComponent implements OnInit {
       .map(f => ({ ...f, value: (f.value ?? '').toString().trim() }))
       .filter(f => f.value !== '');
 
+    // Determine if this is advanced search
+    // Advanced search: multiple filters OR single filter that's not 'all' field
+    console.log("filters ", filters);
+
     const isAdvanced = filters.length > 1 ||
       (filters.length === 1 && filters[0].field !== 'all' && filters[0].value !== '');
 
     const query = isAdvanced ? 'advanced' : '';
     const searchTerm = isAdvanced ? JSON.stringify(filters) : this.simpleSearchTerm;
+
+    console.log('Search details:', { isAdvanced, query, searchTerm, filters });
 
     // Save only the active/trimmed filters
     if (filters.length > 0) {
@@ -219,6 +253,8 @@ export class BookListComponent implements OnInit {
     }];
     this.currentPage = 1;
     this.loadBooks();
+
+    // this.searchSubject.next(); // Trigger debounced search
   }
 
   toggleAdvancedSearch(): void {
@@ -232,7 +268,13 @@ export class BookListComponent implements OnInit {
   removeFilter(index: number): void {
     if (this.searchFilters.length > 1) {
       this.searchFilters.splice(index, 1);
+      this.searchSubject.next(); // Trigger search after removing filter
     }
+  }
+
+  onFilterChange(): void {
+    this.currentPage = 1; // Reset to first page when filters change
+    this.searchSubject.next(); // Trigger debounced search
   }
 
   resetSearch(): void {
@@ -240,7 +282,7 @@ export class BookListComponent implements OnInit {
     this.simpleSearchTerm = '';
     this.currentPage = 1;
     localStorage.removeItem('bookSearchFilters');
-    this.loadBooks();
+    this.searchSubject.next(); // Trigger debounced search
   }
 
   sort(field: string): void {
@@ -252,13 +294,13 @@ export class BookListComponent implements OnInit {
       this.sortField = field;
       this.sortDirection = 'asc';
     }
-    this.loadBooks();
+    this.searchSubject.next(); // Trigger debounced search
   }
 
   goToPage(page: number): void {
     if (page >= 1 && page <= this.totalPages) {
       this.currentPage = page;
-      this.loadBooks();
+      this.searchSubject.next(); // Trigger debounced search
       this.scrollToTop();
     }
   }

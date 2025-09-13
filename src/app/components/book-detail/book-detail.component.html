@@ -2,7 +2,7 @@
   <!-- View Mode -->
   <div *ngIf="!isEditMode" class="book-card fade-in" dir="rtl">
     <div class="book-header">
-      <div class="action-buttons">
+      <div class="action-buttons" *ngIf="isAdmin">
         <button class="btn btn-modern btn-edit" (click)="toggleEditMode()">
           <i class="fas fa-edit"></i> تعديل
         </button>
