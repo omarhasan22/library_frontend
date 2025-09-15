@@ -34,7 +34,7 @@ export class BookListComponent implements OnInit, OnDestroy {
 
   // Pagination
   currentPage: number = 1;
-  itemsPerPage: number = 20;
+  itemsPerPage: number = 30;
   totalPages: number = 1;
 
   // Sorting
@@ -299,6 +299,7 @@ export class BookListComponent implements OnInit, OnDestroy {
 
   goToPage(page: number): void {
     if (page >= 1 && page <= this.totalPages) {
+      this.loading = true;
       this.currentPage = page;
       this.searchSubject.next(); // Trigger debounced search
       this.scrollToTop();

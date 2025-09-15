@@ -162,7 +162,7 @@
   <!-- Books Table View -->
   <div class="table-container" *ngIf="viewMode === 'table' && !loading">
     <div class="container-fluid">
-      <div class="table-responsive">
+      <div class="table-responsive" style="scrollbar-width:none">
         <table class="table table-hover modern-table">
           <thead>
             <tr>
@@ -174,9 +174,9 @@
               <th>الإجراءات</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody *ngIf="!loading">
             <tr *ngFor="let book of books; let i = index" [id]="'book-' + book._id" class="book-row">
-              <td>{{ i + 1 }}</td>
+              <td>{{ 30 * (currentPage - 1) + i + 1 }}</td>
               <td *ngFor="let col of visibleColumns">
                 <span [innerHTML]="renderValue(book, col.key)"></span>
               </td>
