@@ -1,0 +1,222 @@
+<div class="author-dashboard-container">
+   <div class="container">
+      <div class="row">
+         <div class="col-12">
+            <div class="dashboard-header">
+               <h2><i class="fas fa-users me-2"></i>إدارة المؤلفين</h2>
+               <button class="btn btn-primary" (click)="openAddForm()">
+                  <i class="fas fa-plus me-1"></i>إضافة مؤلف
+               </button>
+            </div>
+
+            <!-- Message Display -->
+            <div *ngIf="message" class="alert" [class]="messageType === 'success' ? 'alert-success' : 'alert-danger'"
+               role="alert">
+               <i class="fas" [class]="messageType === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'"></i>
+               {{ message }}
+            </div>
+
+            <!-- Statistics Cards -->
+            <div class="row mb-4" *ngIf="stats">
+               <div class="col-md-3">
+                  <div class="stat-card">
+                     <div class="stat-icon">
+                        <i class="fas fa-users"></i>
+                     </div>
+                     <div class="stat-content">
+                        <h3>{{ stats.totalAuthors }}</h3>
+                        <p>إجمالي المؤلفين</p>
+                     </div>
+                  </div>
+               </div>
+               <div class="col-md-9">
+                  <div class="stat-card">
+                     <div class="stat-icon">
+                        <i class="fas fa-chart-pie"></i>
+                     </div>
+                     <div class="stat-content">
+                        <h5>توزيع المؤلفين حسب النوع</h5>
+                        <div class="type-stats">
+                           <span *ngFor="let typeStat of stats.authorsByType" class="type-badge">
+                              {{ getAuthorTypeLabel(typeStat._id) }}: {{ typeStat.count }}
+                           </span>
+                        </div>
+                     </div>
+                  </div>
+               </div>
+            </div>
+
+            <!-- Search and Filters -->
+            <div class="row mb-4">
+               <div class="col-md-6">
+                  <div class="search-box">
+                     <i class="fas fa-search"></i>
+                     <input type="text" [(ngModel)]="searchTerm" (keyup.enter)="onSearch()"
+                        placeholder="البحث في المؤلفين...">
+                     <button class="btn btn-outline-primary" (click)="onSearch()">بحث</button>
+                  </div>
+               </div>
+               <div class="col-md-3">
+                  <select class="form-select" [(ngModel)]="selectedType" (change)="onTypeFilter()">
+                     <option value="">جميع الأنواع</option>
+                     <option *ngFor="let type of authorTypes" [value]="type.value">
+                        {{ type.label }}
+                     </option>
+                  </select>
+               </div>
+               <div class="col-md-3">
+                  <select class="form-select" [(ngModel)]="limit" (change)="loadAuthors()">
+                     <option value="10">10 لكل صفحة</option>
+                     <option value="25">25 لكل صفحة</option>
+                     <option value="50">50 لكل صفحة</option>
+                  </select>
+               </div>
+            </div>
+
+            <!-- Authors Table -->
+            <div class="table-container">
+               <table class="table table-hover">
+                  <thead>
+                     <tr>
+                        <th>الاسم</th>
+                        <th>النوع</th>
+                        <th>تاريخ الميلاد</th>
+                        <th>تاريخ الوفاة</th>
+                        <th>الإجراءات</th>
+                     </tr>
+                  </thead>
+                  <tbody>
+                     <tr *ngFor="let author of authors">
+                        <td>
+                           <div class="author-name">
+                              <i class="fas fa-user me-2"></i>
+                              {{ author.name }}
+                           </div>
+                        </td>
+                        <td>
+                           <span class="type-badge">{{ getAuthorTypeLabel(author.type) }}</span>
+                        </td>
+                        <td>
+                           <span *ngIf="author.dateOfBirth">{{ formatDate(author.dateOfBirth) }}</span>
+                           <span *ngIf="!author.dateOfBirth" class="text-muted">غير محدد</span>
+                        </td>
+                        <td>
+                           <span *ngIf="author.dateOfDeath">{{ formatDate(author.dateOfDeath) }}</span>
+                           <span *ngIf="!author.dateOfDeath" class="text-muted">غير محدد</span>
+                        </td>
+                        <td>
+                           <div class="action-buttons">
+                              <button class="btn btn-sm btn-outline-primary" (click)="openEditForm(author)">
+                                 <i class="fas fa-edit"></i>
+                              </button>
+                              <button class="btn btn-sm btn-outline-danger" (click)="deleteAuthor(author)">
+                                 <i class="fas fa-trash"></i>
+                              </button>
+                           </div>
+                        </td>
+                     </tr>
+                  </tbody>
+               </table>
+
+               <!-- Loading -->
+               <div *ngIf="loading" class="text-center py-4">
+                  <div class="spinner-border text-primary" role="status">
+                     <span class="visually-hidden">جاري التحميل...</span>
+                  </div>
+               </div>
+
+               <!-- Empty State -->
+               <div *ngIf="!loading && authors.length === 0" class="empty-state">
+                  <i class="fas fa-users"></i>
+                  <h4>لا توجد مؤلفين</h4>
+                  <p>لم يتم العثور على أي مؤلفين</p>
+               </div>
+            </div>
+
+            <!-- Pagination -->
+            <div class="pagination-container" *ngIf="totalPages > 1">
+               <nav>
+                  <ul class="pagination">
+                     <li class="page-item" [class.disabled]="currentPage === 1">
+                        <button class="page-link" (click)="onPageChange(currentPage - 1)"
+                           [disabled]="currentPage === 1">
+                           السابق
+                        </button>
+                     </li>
+                     <li *ngFor="let page of getPaginationPages()" class="page-item"
+                        [class.active]="page === currentPage">
+                        <button class="page-link" (click)="onPageChange(page)">{{ page }}</button>
+                     </li>
+                     <li class="page-item" [class.disabled]="currentPage === totalPages">
+                        <button class="page-link" (click)="onPageChange(currentPage + 1)"
+                           [disabled]="currentPage === totalPages">
+                           التالي
+                        </button>
+                     </li>
+                  </ul>
+               </nav>
+            </div>
+         </div>
+      </div>
+   </div>
+
+   <!-- Author Form Modal -->
+   <div class="modal" [class.show]="isEditing || authorForm.get('name')?.value"
+      [style.display]="(isEditing || authorForm.get('name')?.value) ? 'block' : 'none'">
+      <div class="modal-dialog">
+         <div class="modal-content">
+            <div class="modal-header">
+               <h5 class="modal-title">
+                  {{ isEditing ? 'تعديل المؤلف' : 'إضافة مؤلف جديد' }}
+               </h5>
+               <button type="button" class="btn-close" (click)="closeForm()"></button>
+            </div>
+            <div class="modal-body">
+               <form [formGroup]="authorForm" (ngSubmit)="onSubmit()">
+                  <div class="mb-3">
+                     <label for="name" class="form-label">اسم المؤلف *</label>
+                     <input type="text" class="form-control" id="name" formControlName="name"
+                        [class.is-invalid]="authorForm.get('name')?.invalid && authorForm.get('name')?.touched">
+                     <div class="invalid-feedback"
+                        *ngIf="authorForm.get('name')?.invalid && authorForm.get('name')?.touched">
+                        اسم المؤلف مطلوب ويجب أن يكون حرفين على الأقل
+                     </div>
+                  </div>
+
+                  <div class="mb-3">
+                     <label for="type" class="form-label">نوع المؤلف *</label>
+                     <select class="form-select" id="type" formControlName="type">
+                        <option *ngFor="let type of authorTypes" [value]="type.value">
+                           {{ type.label }}
+                        </option>
+                     </select>
+                  </div>
+
+                  <div class="row">
+                     <div class="col-md-6">
+                        <div class="mb-3">
+                           <label for="dateOfBirth" class="form-label">تاريخ الميلاد</label>
+                           <input type="date" class="form-control" id="dateOfBirth" formControlName="dateOfBirth">
+                        </div>
+                     </div>
+                     <div class="col-md-6">
+                        <div class="mb-3">
+                           <label for="dateOfDeath" class="form-label">تاريخ الوفاة</label>
+                           <input type="date" class="form-control" id="dateOfDeath" formControlName="dateOfDeath">
+                        </div>
+                     </div>
+                  </div>
+               </form>
+            </div>
+            <div class="modal-footer">
+               <button type="button" class="btn btn-secondary" (click)="closeForm()">إلغاء</button>
+               <button type="button" class="btn btn-primary" (click)="onSubmit()"
+                  [disabled]="authorForm.invalid || loading">
+                  <span class="spinner-border spinner-border-sm me-1" *ngIf="loading"></span>
+                  {{ isEditing ? 'تحديث' : 'إضافة' }}
+               </button>
+            </div>
+         </div>
+      </div>
+   </div>
+</div>

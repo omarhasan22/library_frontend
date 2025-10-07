@@ -1,0 +1,206 @@
+<div class="user-profile-container">
+   <div class="container">
+      <div class="row justify-content-center">
+         <div class="col-lg-10">
+            <!-- Message Display -->
+            <div *ngIf="message" class="alert" [class]="messageType === 'success' ? 'alert-success' : 'alert-danger'"
+               role="alert">
+               <i class="fas" [class]="messageType === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'"></i>
+               {{ message }}
+               <button type="button" class="btn-close" (click)="clearMessage()"></button>
+            </div>
+
+            <!-- User Overview Card -->
+            <div class="row mb-4">
+               <div class="col-12">
+                  <div class="profile-overview-card">
+                     <div class="profile-avatar">
+                        <i class="fas fa-user-circle"></i>
+                     </div>
+                     <div class="profile-info">
+                        <h3>{{ currentUser?.username }}</h3>
+                        <p class="profile-email">{{ currentUser?.email }}</p>
+                        <span class="badge profile-badge"
+                           [class]="currentUser?.role === 'admin' ? 'bg-danger' : 'bg-primary'">
+                           {{ currentUser?.role === 'admin' ? 'مدير' : 'مستخدم' }}
+                        </span>
+                     </div>
+                  </div>
+               </div>
+            </div>
+
+            <div class="row">
+               <!-- Profile Information -->
+               <div class="col-md-6">
+                  <div class="profile-card">
+                     <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5><i class="fas fa-user me-2"></i>معلومات الملف الشخصي</h5>
+                        <button *ngIf="!isEditingProfile" class="btn btn-outline-light btn-sm"
+                           (click)="startEditingProfile()">
+                           <i class="fas fa-edit me-1"></i>تعديل
+                        </button>
+                     </div>
+                     <div class="card-body">
+                        <!-- Display Mode -->
+                        <div *ngIf="!isEditingProfile" class="user-info-display">
+                           <div class="info-item">
+                              <label class="info-label">اسم المستخدم:</label>
+                              <span class="info-value">{{ currentUser?.username }}</span>
+                           </div>
+                           <div class="info-item">
+                              <label class="info-label">البريد الإلكتروني:</label>
+                              <span class="info-value">{{ currentUser?.email }}</span>
+                           </div>
+                        </div>
+
+                        <!-- Edit Mode -->
+                        <form *ngIf="isEditingProfile" [formGroup]="profileForm" (ngSubmit)="onProfileSubmit()">
+                           <div class="mb-3">
+                              <label for="username" class="form-label">اسم المستخدم</label>
+                              <input type="text" class="form-control" id="username" formControlName="username"
+                                 [class.is-invalid]="profileForm.get('username')?.invalid && profileForm.get('username')?.touched">
+                              <div class="invalid-feedback">
+                                 {{ getFieldError('username') }}
+                              </div>
+                           </div>
+
+                           <div class="mb-3">
+                              <label for="email" class="form-label">البريد الإلكتروني</label>
+                              <input type="email" class="form-control" id="email" formControlName="email"
+                                 [class.is-invalid]="profileForm.get('email')?.invalid && profileForm.get('email')?.touched">
+                              <div class="invalid-feedback">
+                                 {{ getFieldError('email') }}
+                              </div>
+                           </div>
+
+                           <div class="d-flex gap-2">
+                              <button type="submit" class="btn btn-primary" [disabled]="profileForm.invalid || loading">
+                                 <i class="fas fa-save me-1" *ngIf="!loading"></i>
+                                 <span class="spinner-border spinner-border-sm me-1" *ngIf="loading"></span>
+                                 {{ loading ? 'جاري الحفظ...' : 'حفظ' }}
+                              </button>
+                              <button type="button" class="btn btn-secondary" (click)="cancelEditingProfile()"
+                                 [disabled]="loading">
+                                 <i class="fas fa-times me-1"></i>إلغاء
+                              </button>
+                           </div>
+                        </form>
+                     </div>
+                  </div>
+               </div>
+
+               <!-- Password Change -->
+               <div class="col-md-6">
+                  <div class="profile-card">
+                     <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5><i class="fas fa-lock me-2"></i>كلمة المرور</h5>
+                        <button *ngIf="!isEditingPassword" class="btn btn-outline-light btn-sm"
+                           (click)="startEditingPassword()">
+                           <i class="fas fa-key me-1"></i>تغيير
+                        </button>
+                     </div>
+                     <div class="card-body">
+                        <!-- Display Mode -->
+                        <div *ngIf="!isEditingPassword" class="password-info-display">
+                           <div class="info-item">
+                              <i class="fas fa-shield-alt text-muted me-2"></i>
+                              <span>كلمة المرور محمية</span>
+                           </div>
+                           <p class="text-muted small mt-2">انقر على "تغيير" لتحديث كلمة المرور</p>
+                        </div>
+
+                        <!-- Edit Mode -->
+                        <form *ngIf="isEditingPassword" [formGroup]="passwordForm" (ngSubmit)="onPasswordSubmit()">
+                           <div class="mb-3">
+                              <label for="currentPassword" class="form-label">كلمة المرور الحالية</label>
+                              <input type="password" class="form-control" id="currentPassword"
+                                 formControlName="currentPassword"
+                                 [class.is-invalid]="passwordForm.get('currentPassword')?.invalid && passwordForm.get('currentPassword')?.touched">
+                              <div class="invalid-feedback">
+                                 {{ getPasswordFieldError('currentPassword') }}
+                              </div>
+                           </div>
+
+                           <div class="mb-3">
+                              <label for="newPassword" class="form-label">كلمة المرور الجديدة</label>
+                              <input type="password" class="form-control" id="newPassword" formControlName="newPassword"
+                                 [class.is-invalid]="passwordForm.get('newPassword')?.invalid && passwordForm.get('newPassword')?.touched">
+                              <div class="invalid-feedback">
+                                 {{ getPasswordFieldError('newPassword') }}
+                              </div>
+                           </div>
+
+                           <div class="mb-3">
+                              <label for="confirmPassword" class="form-label">تأكيد كلمة المرور الجديدة</label>
+                              <input type="password" class="form-control" id="confirmPassword"
+                                 formControlName="confirmPassword"
+                                 [class.is-invalid]="passwordForm.get('confirmPassword')?.invalid && passwordForm.get('confirmPassword')?.touched">
+                              <div class="invalid-feedback">
+                                 {{ getPasswordFieldError('confirmPassword') }}
+                              </div>
+                           </div>
+
+                           <div class="d-flex gap-2">
+                              <button type="submit" class="btn btn-warning"
+                                 [disabled]="passwordForm.invalid || loading">
+                                 <i class="fas fa-key me-1" *ngIf="!loading"></i>
+                                 <span class="spinner-border spinner-border-sm me-1" *ngIf="loading"></span>
+                                 {{ loading ? 'جاري التحديث...' : 'تغيير' }}
+                              </button>
+                              <button type="button" class="btn btn-secondary" (click)="cancelEditingPassword()"
+                                 [disabled]="loading">
+                                 <i class="fas fa-times me-1"></i>إلغاء
+                              </button>
+                           </div>
+                        </form>
+                     </div>
+                  </div>
+               </div>
+            </div>
+
+            <!-- Account Information -->
+            <div class="row mt-4">
+               <div class="col-12">
+                  <div class="profile-card">
+                     <div class="card-header">
+                        <h5><i class="fas fa-info-circle me-2"></i>معلومات الحساب</h5>
+                     </div>
+                     <div class="card-body">
+                        <div class="row">
+                           <div class="col-md-4">
+                              <div class="account-info-item">
+                                 <i class="fas fa-calendar-alt text-primary me-2"></i>
+                                 <div>
+                                    <label>تاريخ الانضمام</label>
+                                    <span>{{ currentUser?.createdAt ? (currentUser.createdAt | date:'dd/MM/yyyy') : 'غير
+                                       محدد' }}</span>
+                                 </div>
+                              </div>
+                           </div>
+                           <div class="col-md-4">
+                              <div class="account-info-item">
+                                 <i class="fas fa-user-tag text-success me-2"></i>
+                                 <div>
+                                    <label>نوع المستخدم</label>
+                                    <span>{{ currentUser?.role === 'admin' ? 'مدير' : 'مستخدم' }}</span>
+                                 </div>
+                              </div>
+                           </div>
+                           <div class="col-md-4">
+                              <div class="account-info-item">
+                                 <i class="fas fa-envelope text-info me-2"></i>
+                                 <div>
+                                    <label>البريد الإلكتروني</label>
+                                    <span>{{ currentUser?.email }}</span>
+                                 </div>
+                              </div>
+                           </div>
+                        </div>
+                     </div>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </div>
+   </div>
+</div>

@@ -2,13 +2,56 @@
   <!-- View Mode -->
   <div *ngIf="!isEditMode" class="book-card fade-in" dir="rtl">
     <div class="book-header">
-      <div class="action-buttons" *ngIf="isAdmin">
-        <button class="btn btn-modern btn-edit" (click)="toggleEditMode()">
-          <i class="fas fa-edit"></i> تعديل
-        </button>
-        <button class="btn btn-modern btn-delete" (click)="deleteBook()">
-          <i class="fas fa-trash"></i> حذف
-        </button>
+      <div class="action-buttons">
+        <!-- Admin buttons -->
+        <div *ngIf="isAdmin">
+          <button class="btn btn-modern btn-edit" (click)="toggleEditMode()">
+            <i class="fas fa-edit"></i> تعديل
+          </button>
+          <button class="btn btn-modern btn-delete" (click)="deleteBook()">
+            <i class="fas fa-trash"></i> حذف
+          </button>
+        </div>
+
+        <!-- User borrow/return buttons -->
+        <div *ngIf="isLoggedIn && !isAdmin">
+          <!-- Borrow button (when book is not borrowed) -->
+          <button *ngIf="!isBookBorrowed" class="btn btn-modern btn-borrow" (click)="openBorrowForm()">
+            <i class="fas fa-book-open"></i>
+            استعارة
+          </button>
+
+          <!-- Return button (when book is borrowed by current user) -->
+          <div *ngIf="isBookBorrowed && currentUserBorrow" class="borrowed-status">
+            <div class="borrow-info">
+              <div class="borrow-details">
+                <span class="borrow-label">مُستعار حتى:</span>
+                <span class="due-date" [class.overdue]="isBookOverdue()">
+                  {{ currentUserBorrow.endDate | date:'yyyy/MM/dd' }}
+                </span>
+              </div>
+              <div class="days-remaining" [class.overdue]="isBookOverdue()">
+                <span *ngIf="isBookOverdue()">
+                  <i class="fas fa-exclamation-triangle"></i>
+                  متأخر {{ Math.abs(getDaysUntilDue()) }} يوم
+                </span>
+                <span *ngIf="!isBookOverdue() && getDaysUntilDue() <= 3">
+                  <i class="fas fa-clock"></i>
+                  باقي {{ getDaysUntilDue() }} يوم
+                </span>
+                <span *ngIf="!isBookOverdue() && getDaysUntilDue() > 3">
+                  <i class="fas fa-check"></i>
+                  باقي {{ getDaysUntilDue() }} يوم
+                </span>
+              </div>
+            </div>
+            <button class="btn btn-modern btn-return" (click)="returnBook()" [disabled]="borrowLoading">
+              <i class="fas fa-spinner fa-spin" *ngIf="borrowLoading"></i>
+              <i class="fas fa-undo" *ngIf="!borrowLoading"></i>
+              {{ borrowLoading ? 'جاري الإرجاع...' : 'إرجاع الكتاب' }}
+            </button>
+          </div>
+        </div>
       </div>
       <h1 class="book-title">{{ book?.title || 'بدون عنوان' }}</h1>
       <p class="book-subtitle">معلومات تفصيلية عن الكتاب</p>
@@ -580,6 +623,57 @@
             <button type="submit" class="btn-save">
               <i class="fas fa-save me-2"></i>
               حفظ التعديلات
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Borrow Form Popup -->
+  <div class="modal-overlay" *ngIf="showBorrowForm" (click)="closeBorrowForm()">
+    <div class="modal-content borrow-modal" (click)="$event.stopPropagation()" dir="rtl">
+      <div class="modal-header">
+        <h3>استعارة الكتاب</h3>
+        <button class="btn-close" (click)="closeBorrowForm()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="book-info">
+          <h4>{{ book?.title }}</h4>
+          <p>المؤلف: {{ getAuthorsNames() || 'غير محدد' }}</p>
+        </div>
+
+        <form (ngSubmit)="submitBorrowRequest()" #borrowForm="ngForm">
+          <div class="form-group">
+            <label for="borrowDuration">مدة الاستعارة (بالأيام)</label>
+            <select id="borrowDuration" class="form-control" [(ngModel)]="borrowDuration" name="borrowDuration"
+              (change)="onBorrowDurationChange()" required>
+              <option value="7">أسبوع واحد (7 أيام)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="borrowStartDate">تاريخ بداية الاستعارة</label>
+            <input type="date" id="borrowStartDate" class="form-control" [(ngModel)]="borrowStartDate"
+              name="borrowStartDate" (change)="onStartDateChange()" required>
+          </div>
+
+          <div class="form-group">
+            <label for="borrowEndDate">تاريخ الإرجاع المطلوب</label>
+            <input type="date" id="borrowEndDate" class="form-control" [(ngModel)]="borrowEndDate" name="borrowEndDate"
+              readonly required>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn btn-cancel" (click)="closeBorrowForm()" [disabled]="borrowLoading">
+              إلغاء
+            </button>
+            <button type="submit" class="btn btn-primary" [disabled]="borrowLoading || !borrowForm.valid">
+              <i class="fas fa-spinner fa-spin" *ngIf="borrowLoading"></i>
+              {{ borrowLoading ? 'جاري الإرسال...' : 'تأكيد الاستعارة' }}
             </button>
           </div>
         </form>

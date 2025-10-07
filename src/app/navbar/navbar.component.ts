@@ -32,6 +32,10 @@ export class NavbarComponent implements OnInit, AfterViewInit, OnDestroy {
       if (this.currentUser?.user.role == 'admin') {
         this.isAdmin = true;
       }
+      // Debug logging
+      console.log('Navbar - Current user:', user);
+      console.log('Navbar - User role:', user?.role);
+      console.log('Navbar - Is admin:', this.isAdmin);
     });
 
     // If user is logged in but data not loaded, trigger load
@@ -71,7 +75,7 @@ export class NavbarComponent implements OnInit, AfterViewInit, OnDestroy {
 
   logout(): void {
     this.authService.logout();
-    window.location.reload(); // Refreshes the current page
+    this.router.navigate(['/']); // Navigate to home page
   }
 
   private closeNavbar(): void {

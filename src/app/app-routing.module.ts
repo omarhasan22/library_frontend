@@ -7,6 +7,9 @@ import { BookListComponent } from './components/book-list/book-list.component';
 import { BookDetailComponent } from './components/book-detail/book-detail.component';
 import { AddBookComponent } from './components/add-book/add-book.component';
 import { CategoriesComponent } from './components/categories/categories.component';
+import { AdminBorrowsComponent } from './components/admin-borrows/admin-borrows.component';
+import { UserBorrowsComponent } from './components/user-borrows/user-borrows.component';
+import { UserProfileComponent } from './components/user-profile/user-profile.component';
 
 
 const routes: Routes = [
@@ -27,6 +30,25 @@ const routes: Routes = [
   {
     path: 'edit-book/:id',
     component: AddBookComponent,
+    // canActivate: [AuthGuard, AdminGuard]
+  },
+
+  // User routes
+  {
+    path: 'profile',
+    component: UserProfileComponent,
+    // canActivate: [AuthGuard]
+  },
+
+  // Borrow routes
+  {
+    path: 'my-borrows',
+    component: UserBorrowsComponent,
+    // canActivate: [AuthGuard]
+  },
+  {
+    path: 'admin/borrows',
+    component: AdminBorrowsComponent,
     // canActivate: [AuthGuard, AdminGuard]
   },
 

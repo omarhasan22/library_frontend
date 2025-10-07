@@ -1,0 +1,173 @@
+<div class="user-borrows-container" dir="rtl">
+   <div class="header">
+      <h1 class="page-title">
+         <i class="fas fa-user-book"></i>
+         استعاراتي
+      </h1>
+      <p class="page-subtitle">تتبع الكتب التي استعرتها وحالتها</p>
+   </div>
+
+   <!-- Statistics Summary -->
+   <div class="summary-cards">
+      <div class="summary-card active">
+         <div class="summary-icon">
+            <i class="fas fa-clock"></i>
+         </div>
+         <div class="summary-content">
+            <h3>{{ activeBorrows.length }}</h3>
+            <p>استعارة نشطة</p>
+         </div>
+      </div>
+
+      <div class="summary-card returned">
+         <div class="summary-icon">
+            <i class="fas fa-check-circle"></i>
+         </div>
+         <div class="summary-content">
+            <h3>{{ returnedBorrows.length }}</h3>
+            <p>كتاب مُرجع</p>
+         </div>
+      </div>
+
+      <div class="summary-card overdue">
+         <div class="summary-icon">
+            <i class="fas fa-exclamation-triangle"></i>
+         </div>
+         <div class="summary-content">
+            <h3>{{ getOverdueBorrowsCount() }}</h3>
+            <p>كتاب متأخر</p>
+         </div>
+      </div>
+   </div>
+
+   <!-- Tabs -->
+   <div class="tabs">
+      <button class="tab-button" [class.active]="activeTab === 'active'" (click)="setActiveTab('active')">
+         <i class="fas fa-clock"></i>
+         الاستعارات النشطة ({{ activeBorrows.length }})
+      </button>
+      <button class="tab-button" [class.active]="activeTab === 'returned'" (click)="setActiveTab('returned')">
+         <i class="fas fa-check-circle"></i>
+         الكتب المُرجعة ({{ returnedBorrows.length }})
+      </button>
+      <button class="tab-button" [class.active]="activeTab === 'all'" (click)="setActiveTab('all')">
+         <i class="fas fa-list"></i>
+         جميع الاستعارات ({{ borrows.length }})
+      </button>
+   </div>
+
+   <!-- Loading -->
+   <div class="loading" *ngIf="loading">
+      <i class="fas fa-spinner fa-spin"></i>
+      جاري التحميل...
+   </div>
+
+   <!-- Borrows List -->
+   <div class="borrows-grid" *ngIf="!loading">
+      <div class="borrow-card" *ngFor="let borrow of getCurrentBorrows()" [class]="getStatusClass(borrow)"
+         (click)="navigateToBook(borrow)">
+
+         <div class="card-header">
+            <div class="book-info">
+               <h3 class="book-title">{{ getBookTitle(borrow) }}</h3>
+               <p class="book-authors" *ngIf="getBookAuthors(borrow)">{{ getBookAuthors(borrow) }}</p>
+            </div>
+            <div class="status-badge" [class]="getStatusClass(borrow)">
+               {{ getStatusText(borrow) }}
+            </div>
+         </div>
+
+         <div class="card-body">
+            <div class="dates-info">
+               <div class="date-item">
+                  <i class="fas fa-calendar-plus"></i>
+                  <div>
+                     <span class="date-label">تاريخ الاستعارة</span>
+                     <span class="date-value">{{ borrow.startDate | date:'yyyy/MM/dd' }}</span>
+                  </div>
+               </div>
+
+               <div class="date-item">
+                  <i class="fas fa-calendar-check"></i>
+                  <div>
+                     <span class="date-label">تاريخ الإرجاع المطلوب</span>
+                     <span class="date-value" [class.overdue]="isOverdue(borrow.endDate) && !borrow.returned">
+                        {{ borrow.endDate | date:'yyyy/MM/dd' }}
+                     </span>
+                  </div>
+               </div>
+
+               <div class="date-item" *ngIf="borrow.returned">
+                  <i class="fas fa-calendar-times"></i>
+                  <div>
+                     <span class="date-label">تاريخ الإرجاع الفعلي</span>
+                     <span class="date-value">{{ borrow.returnedDate | date:'yyyy/MM/dd' }}</span>
+                  </div>
+               </div>
+            </div>
+
+            <!-- Progress Bar for Active Borrows -->
+            <div class="progress-section" *ngIf="!borrow.returned">
+               <div class="progress-info">
+                  <span *ngIf="isOverdue(borrow.endDate)" class="overdue-text">
+                     <i class="fas fa-exclamation-triangle"></i>
+                     متأخر {{ Math.abs(getDaysUntilDue(borrow.endDate)) }} يوم
+                  </span>
+                  <span *ngIf="!isOverdue(borrow.endDate) && getDaysUntilDue(borrow.endDate) <= 3" class="warning-text">
+                     <i class="fas fa-clock"></i>
+                     باقي {{ getDaysUntilDue(borrow.endDate) }} يوم
+                  </span>
+                  <span *ngIf="!isOverdue(borrow.endDate) && getDaysUntilDue(borrow.endDate) > 3" class="normal-text">
+                     <i class="fas fa-check"></i>
+                     باقي {{ getDaysUntilDue(borrow.endDate) }} يوم
+                  </span>
+               </div>
+
+               <div class="progress-bar">
+                  <div class="progress-fill" [style.width.%]="getProgressPercentage(borrow)"
+                     [class]="getStatusClass(borrow)">
+                  </div>
+               </div>
+            </div>
+
+            <!-- Return Button for Active Borrows -->
+            <div class="return-section" *ngIf="!borrow.returned">
+               <button class="btn btn-return" (click)="returnBook(borrow); $event.stopPropagation()">
+                  <i class="fas fa-undo"></i>
+                  إرجاع الكتاب
+               </button>
+            </div>
+
+            <!-- Returned Status -->
+            <div class="returned-section" *ngIf="borrow.returned">
+               <i class="fas fa-check-circle"></i>
+               <span>تم إرجاع الكتاب بنجاح</span>
+            </div>
+         </div>
+
+         <div class="card-footer">
+            <div class="borrow-duration">
+               <i class="fas fa-hourglass-half"></i>
+               <span>مدة الاستعارة: {{ getBorrowDurationDays(borrow) }} يوم</span>
+            </div>
+            <div class="view-book">
+               <i class="fas fa-eye"></i>
+               <span>عرض تفاصيل الكتاب</span>
+            </div>
+         </div>
+      </div>
+   </div>
+
+   <!-- Empty State -->
+   <div class="empty-state" *ngIf="!loading && getCurrentBorrows().length === 0">
+      <i class="fas fa-book-open"></i>
+      <h3>لا توجد استعارات</h3>
+      <p *ngIf="activeTab === 'active'">لم تقم بأي استعارة نشطة حتى الآن</p>
+      <p *ngIf="activeTab === 'returned'">لم تقم بإرجاع أي كتب حتى الآن</p>
+      <p *ngIf="activeTab === 'all'">لم تقم بأي استعارة حتى الآن</p>
+      <button class="btn btn-primary" routerLink="/books">
+         <i class="fas fa-search"></i>
+         تصفح الكتب
+      </button>
+   </div>
+</div>

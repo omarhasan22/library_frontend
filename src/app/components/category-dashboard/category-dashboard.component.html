@@ -1,0 +1,161 @@
+<div class="category-dashboard-container">
+   <div class="container">
+      <div class="row">
+         <div class="col-12">
+            <div class="dashboard-header">
+               <h2><i class="fas fa-th-large me-2"></i>إدارة التصنيفات</h2>
+               <button class="btn btn-primary" (click)="openAddForm()">
+                  <i class="fas fa-plus me-1"></i>إضافة تصنيف
+               </button>
+            </div>
+
+            <!-- Message Display -->
+            <div *ngIf="message" class="alert" [class]="messageType === 'success' ? 'alert-success' : 'alert-danger'"
+               role="alert">
+               <i class="fas" [class]="messageType === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'"></i>
+               {{ message }}
+            </div>
+
+            <!-- Statistics Cards -->
+            <div class="row mb-4" *ngIf="stats">
+               <div class="col-md-4">
+                  <div class="stat-card">
+                     <div class="stat-icon">
+                        <i class="fas fa-th-large"></i>
+                     </div>
+                     <div class="stat-content">
+                        <h3>{{ stats.totalCategories }}</h3>
+                        <p>إجمالي التصنيفات</p>
+                     </div>
+                  </div>
+               </div>
+            </div>
+
+            <!-- Search and Filters -->
+            <div class="row mb-4">
+               <div class="col-md-6">
+                  <div class="search-box">
+                     <i class="fas fa-search"></i>
+                     <input type="text" [(ngModel)]="searchTerm" (keyup.enter)="onSearch()"
+                        placeholder="البحث في التصنيفات...">
+                     <button class="btn btn-outline-primary" (click)="onSearch()">بحث</button>
+                  </div>
+               </div>
+               <div class="col-md-3">
+                  <select class="form-select" [(ngModel)]="limit" (change)="loadCategories()">
+                     <option value="10">10 لكل صفحة</option>
+                     <option value="25">25 لكل صفحة</option>
+                     <option value="50">50 لكل صفحة</option>
+                  </select>
+               </div>
+            </div>
+
+            <!-- Categories Table -->
+            <div class="table-container">
+               <table class="table table-hover">
+                  <thead>
+                     <tr>
+                        <th>اسم التصنيف</th>
+                        <th>الإجراءات</th>
+                     </tr>
+                  </thead>
+                  <tbody>
+                     <tr *ngFor="let category of categories">
+                        <td>
+                           <div class="category-name">
+                              <i class="fas fa-th-large me-2"></i>
+                              {{ category.title }}
+                           </div>
+                        </td>
+                        <td>
+                           <div class="action-buttons">
+                              <button class="btn btn-sm btn-outline-primary" (click)="openEditForm(category)">
+                                 <i class="fas fa-edit"></i>
+                              </button>
+                              <button class="btn btn-sm btn-outline-danger" (click)="deleteCategory(category)">
+                                 <i class="fas fa-trash"></i>
+                              </button>
+                           </div>
+                        </td>
+                     </tr>
+                  </tbody>
+               </table>
+
+               <!-- Loading -->
+               <div *ngIf="loading" class="text-center py-4">
+                  <div class="spinner-border text-primary" role="status">
+                     <span class="visually-hidden">جاري التحميل...</span>
+                  </div>
+               </div>
+
+               <!-- Empty State -->
+               <div *ngIf="!loading && categories.length === 0" class="empty-state">
+                  <i class="fas fa-th-large"></i>
+                  <h4>لا توجد تصنيفات</h4>
+                  <p>لم يتم العثور على أي تصنيفات</p>
+               </div>
+            </div>
+
+            <!-- Pagination -->
+            <div class="pagination-container" *ngIf="totalPages > 1">
+               <nav>
+                  <ul class="pagination">
+                     <li class="page-item" [class.disabled]="currentPage === 1">
+                        <button class="page-link" (click)="onPageChange(currentPage - 1)"
+                           [disabled]="currentPage === 1">
+                           السابق
+                        </button>
+                     </li>
+                     <li *ngFor="let page of getPaginationPages()" class="page-item"
+                        [class.active]="page === currentPage">
+                        <button class="page-link" (click)="onPageChange(page)">{{ page }}</button>
+                     </li>
+                     <li class="page-item" [class.disabled]="currentPage === totalPages">
+                        <button class="page-link" (click)="onPageChange(currentPage + 1)"
+                           [disabled]="currentPage === totalPages">
+                           التالي
+                        </button>
+                     </li>
+                  </ul>
+               </nav>
+            </div>
+         </div>
+      </div>
+   </div>
+
+   <!-- Category Form Modal -->
+   <div class="modal" [class.show]="isEditing || categoryForm.get('title')?.value"
+      [style.display]="(isEditing || categoryForm.get('title')?.value) ? 'block' : 'none'">
+      <div class="modal-dialog">
+         <div class="modal-content">
+            <div class="modal-header">
+               <h5 class="modal-title">
+                  {{ isEditing ? 'تعديل التصنيف' : 'إضافة تصنيف جديد' }}
+               </h5>
+               <button type="button" class="btn-close" (click)="closeForm()"></button>
+            </div>
+            <div class="modal-body">
+               <form [formGroup]="categoryForm" (ngSubmit)="onSubmit()">
+                  <div class="mb-3">
+                     <label for="title" class="form-label">اسم التصنيف *</label>
+                     <input type="text" class="form-control" id="title" formControlName="title"
+                        [class.is-invalid]="categoryForm.get('title')?.invalid && categoryForm.get('title')?.touched">
+                     <div class="invalid-feedback"
+                        *ngIf="categoryForm.get('title')?.invalid && categoryForm.get('title')?.touched">
+                        اسم التصنيف مطلوب ويجب أن يكون حرفين على الأقل
+                     </div>
+                  </div>
+               </form>
+            </div>
+            <div class="modal-footer">
+               <button type="button" class="btn btn-secondary" (click)="closeForm()">إلغاء</button>
+               <button type="button" class="btn btn-primary" (click)="onSubmit()"
+                  [disabled]="categoryForm.invalid || loading">
+                  <span class="spinner-border spinner-border-sm me-1" *ngIf="loading"></span>
+                  {{ isEditing ? 'تحديث' : 'إضافة' }}
+               </button>
+            </div>
+         </div>
+      </div>
+   </div>
+</div>

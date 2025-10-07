@@ -16,6 +16,9 @@ import { AddBookComponent } from './components/add-book/add-book.component';
 import { AuthService } from './services/auth.service';
 import { NavbarComponent } from './navbar/navbar.component';
 import { CategoriesComponent } from './components/categories/categories.component';
+import { AdminBorrowsComponent } from './components/admin-borrows/admin-borrows.component';
+import { UserBorrowsComponent } from './components/user-borrows/user-borrows.component';
+import { UserProfileComponent } from './components/user-profile/user-profile.component';
 import { CommonModule } from '@angular/common';
 
 
@@ -29,7 +32,10 @@ import { CommonModule } from '@angular/common';
         BookListComponent,
         AddBookComponent,
         NavbarComponent,
-        CategoriesComponent
+        CategoriesComponent,
+        AdminBorrowsComponent,
+        UserBorrowsComponent,
+        UserProfileComponent
     ],
     bootstrap: [AppComponent], imports: [BrowserModule,
         AppRoutingModule,

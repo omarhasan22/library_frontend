@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+   <title>Debug Authentication</title>
+</head>
+
+<body>
+   <h1>Debug Authentication Status</h1>
+
+   <script>
+      console.log('=== Authentication Debug ===');
+
+      // Check localStorage
+      const accessToken = localStorage.getItem('access_token');
+      const refreshToken = localStorage.getItem('refresh_token');
+      const currentUser = localStorage.getItem('current_user');
+
+      console.log('Access Token (localStorage):', accessToken);
+      console.log('Refresh Token (localStorage):', refreshToken);
+      console.log('Current User (localStorage):', currentUser);
+
+      // Check sessionStorage
+      const sessionAccessToken = sessionStorage.getItem('access_token');
+      const sessionRefreshToken = sessionStorage.getItem('refresh_token');
+
+      console.log('Access Token (sessionStorage):', sessionAccessToken);
+      console.log('Refresh Token (sessionStorage):', sessionRefreshToken);
+
+      // Display results on page
+      document.body.innerHTML += `
+            <h2>Storage Check:</h2>
+            <p><strong>Access Token (localStorage):</strong> ${accessToken ? 'EXISTS' : 'MISSING'}</p>
+            <p><strong>Access Token (sessionStorage):</strong> ${sessionAccessToken ? 'EXISTS' : 'MISSING'}</p>
+            <p><strong>Current User:</strong> ${currentUser ? 'EXISTS' : 'MISSING'}</p>
+            
+            <h2>Token Details:</h2>
+            <p><strong>Token:</strong> ${accessToken || sessionAccessToken || 'No token found'}</p>
+            
+            <h2>Instructions:</h2>
+            <ol>
+                <li>If no token exists, you need to log in first</li>
+                <li>Go to /login and enter valid credentials</li>
+                <li>After login, the token should appear here</li>
+                <li>Then try the borrow functionality</li>
+            </ol>
+        `;
+
+      // Test token validity
+      const token = accessToken || sessionAccessToken;
+      if (token) {
+         try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            const exp = payload.exp * 1000;
+            const now = Date.now();
+            const isValid = exp > now;
+
+            console.log('Token payload:', payload);
+            console.log('Token expires:', new Date(exp));
+            console.log('Token is valid:', isValid);
+
+            document.body.innerHTML += `
+                    <h2>Token Validation:</h2>
+                    <p><strong>Valid:</strong> ${isValid ? 'YES' : 'NO (EXPIRED)'}</p>
+                    <p><strong>Expires:</strong> ${new Date(exp).toLocaleString()}</p>
+                    <p><strong>User ID:</strong> ${payload.userId || 'Not found'}</p>
+                    <p><strong>Role:</strong> ${payload.role || 'Not found'}</p>
+                `;
+         } catch (error) {
+            console.error('Error parsing token:', error);
+            document.body.innerHTML += `<p><strong>Token Error:</strong> Invalid token format</p>`;
+         }
+      }
+   </script>
+</body>
+
+</html>

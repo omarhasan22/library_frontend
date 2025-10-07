@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { BookService } from '../../services/book.service';
+import { BorrowService } from '../../services/borrow.service';
 import { Book } from '../../models/book.model';
 import { Category } from '../../models/category.model';
 import { SubjectCategory } from '../../models/subject.model';
@@ -16,6 +17,8 @@ import { Subscription } from 'rxjs';
 
 })
 export class BookDetailComponent implements OnInit {
+  Math = Math; // Expose Math to template
+
   isLoggedIn = false;
   isAdmin = false;
   currentUser: any = null;
@@ -26,8 +29,13 @@ export class BookDetailComponent implements OnInit {
   originalBook!: Book;
 
   isEditMode = false;
-  borrowDuration: number = 1;
+  borrowDuration: number = 7; // Default 7 days (one week)
   showBorrowForm = false;
+  borrowStartDate: string = '';
+  borrowEndDate: string = '';
+  isBookBorrowed = false;
+  borrowLoading = false;
+  currentUserBorrow: any = null;
 
   // For dropdowns
   categories: Category[] = [];
@@ -76,6 +84,7 @@ export class BookDetailComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private bookService: BookService,
+    private borrowService: BorrowService,
     private authService: AuthService,
 
   ) { }
@@ -95,6 +104,7 @@ export class BookDetailComponent implements OnInit {
           this.book = b;
           this.originalBook = JSON.parse(JSON.stringify(b)); // Deep copy
           this.initializeEditBook();
+          this.checkIfBookBorrowed();
         },
         (err) => console.error('Failed to load book', err)
       );
@@ -692,5 +702,152 @@ export class BookDetailComponent implements OnInit {
 
   getMuhashisNames(): string {
     return this.book.muhashis?.map(m => m.name).join('، ') || '';
+  }
+
+  // Borrow functionality methods
+  checkIfBookBorrowed(): void {
+    if (!this.isLoggedIn) return;
+
+    this.borrowService.getMyBorrows('active').subscribe(
+      (borrows) => {
+        const userBorrow = borrows.find(borrow =>
+          (typeof borrow.book === 'string' ? borrow.book : borrow.book._id) === this.book._id
+        );
+
+        this.isBookBorrowed = !!userBorrow;
+        this.currentUserBorrow = userBorrow || null;
+      },
+      (err) => console.error('Error checking borrowed books:', err)
+    );
+  }
+
+  openBorrowForm(): void {
+    if (!this.isLoggedIn) {
+      alert('يرجى تسجيل الدخول أولاً');
+      this.router.navigate(['/login']);
+      return;
+    }
+
+    // Set default dates
+    const today = new Date();
+    const endDate = new Date(today);
+    endDate.setDate(today.getDate() + this.borrowDuration);
+
+    this.borrowStartDate = today.toISOString().split('T')[0];
+    this.borrowEndDate = endDate.toISOString().split('T')[0];
+    this.showBorrowForm = true;
+  }
+
+  closeBorrowForm(): void {
+    this.showBorrowForm = false;
+    this.borrowStartDate = '';
+    this.borrowEndDate = '';
+    this.borrowDuration = 7;
+  }
+
+  onBorrowDurationChange(): void {
+    if (this.borrowStartDate && this.borrowDuration > 0) {
+      const startDate = new Date(this.borrowStartDate);
+      const endDate = new Date(startDate);
+      endDate.setDate(startDate.getDate() + this.borrowDuration);
+      this.borrowEndDate = endDate.toISOString().split('T')[0];
+    }
+  }
+
+  onStartDateChange(): void {
+    if (this.borrowStartDate && this.borrowDuration > 0) {
+      const startDate = new Date(this.borrowStartDate);
+      const endDate = new Date(startDate);
+      endDate.setDate(startDate.getDate() + this.borrowDuration);
+      this.borrowEndDate = endDate.toISOString().split('T')[0];
+    }
+  }
+
+  submitBorrowRequest(): void {
+    if (!this.borrowStartDate || !this.borrowEndDate) {
+      alert('يرجى تحديد تاريخ البداية والنهاية');
+      return;
+    }
+
+    const startDate = new Date(this.borrowStartDate);
+    const endDate = new Date(this.borrowEndDate);
+
+    if (endDate <= startDate) {
+      alert('تاريخ الإرجاع يجب أن يكون بعد تاريخ الاستعارة');
+      return;
+    }
+
+    // Debug: Check authentication status
+    console.log('=== Borrow Request Debug ===');
+    console.log('Is logged in:', this.isLoggedIn);
+    console.log('Current user:', this.currentUser);
+    console.log('Access token:', localStorage.getItem('access_token') || sessionStorage.getItem('access_token'));
+
+    this.borrowLoading = true;
+
+    this.borrowService.borrowBook(
+      this.book._id!,
+      this.borrowStartDate,
+      this.borrowEndDate
+    ).subscribe(
+      (response) => {
+        this.borrowLoading = false;
+        this.isBookBorrowed = true;
+        this.closeBorrowForm();
+        alert('تم استعارة الكتاب بنجاح!');
+      },
+      (error) => {
+        this.borrowLoading = false;
+        console.error('Error borrowing book:', error);
+        alert(error.error?.error || 'حدث خطأ في استعارة الكتاب');
+      }
+    );
+  }
+
+  returnBook(): void {
+    if (!this.currentUserBorrow) {
+      alert('لا يمكن العثور على معلومات الاستعارة');
+      return;
+    }
+
+    const isOverdue = new Date(this.currentUserBorrow.endDate) < new Date();
+    const daysUntilDue = Math.ceil((new Date(this.currentUserBorrow.endDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+    const statusText = isOverdue ? `متأخر ${Math.abs(daysUntilDue)} يوم` : `باقي ${daysUntilDue} يوم`;
+
+    const confirmMessage = `هل أنت متأكد من إرجاع هذا الكتاب؟\n\nالكتاب: ${this.book.title}\nالحالة: ${statusText}`;
+
+    if (confirm(confirmMessage)) {
+      this.borrowLoading = true;
+
+      this.borrowService.returnBook(this.currentUserBorrow._id).subscribe(
+        () => {
+          this.borrowLoading = false;
+          this.isBookBorrowed = false;
+          this.currentUserBorrow = null;
+          alert('تم إرجاع الكتاب بنجاح!');
+        },
+        (error) => {
+          this.borrowLoading = false;
+          console.error('Error returning book:', error);
+          alert(error.error?.error || 'حدث خطأ في إرجاع الكتاب');
+        }
+      );
+    }
+  }
+
+  isBookOverdue(): boolean {
+    if (!this.currentUserBorrow) return false;
+    return new Date(this.currentUserBorrow.endDate) < new Date();
+  }
+
+  getDaysUntilDue(): number {
+    if (!this.currentUserBorrow) return 0;
+    return Math.ceil((new Date(this.currentUserBorrow.endDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+  }
+
+  ngOnDestroy(): void {
+    if (this.subscription) {
+      this.subscription.unsubscribe();
+    }
   }
 }

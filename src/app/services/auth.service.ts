@@ -7,13 +7,15 @@ import { Router } from '@angular/router';
 import { environment } from 'src/environments/environment';
 
 export interface User {
-  id: string;
+  _id?: string;
+  id?: string;
   email: string;
   username: string;
   role?: string;
   avatar?: string;
   createdAt?: Date;
   updatedAt?: Date;
+  __v?: number;
 }
 
 @Injectable({
@@ -101,43 +103,8 @@ export class AuthService {
       return throwError(() => new Error('No authentication token found'));
     }
 
-    const payload = this.tokenService.decodeToken(token);
-    console.log('Token payload:', payload);
-
-    // Try different payload properties for user ID
-    const userId = payload?.userId || payload?.sub;
-
-    if (!userId) {
-      console.error('No user ID found in token payload:', payload);
-      return throwError(() => new Error('Invalid token payload - no user ID'));
-    }
-
-    console.log('Fetching user data for ID:', userId);
-
-    return this.http.get<User>(`${this.baseUrl}/users/userId/${userId}`).pipe(
-      tap(user => {
-        console.log('User data fetched successfully:', user);
-        this.setUserInfo(user);
-      }),
-      catchError(error => {
-        console.error('Failed to fetch user data:', error);
-        // Try alternative endpoint if the first one fails
-        if (error.status === 404) {
-          // Try with just /users/{id} endpoint
-          return this.http.get<User>(`${this.baseUrl}/users/${userId}`).pipe(
-            tap(user => {
-              console.log('User data fetched from alternative endpoint:', user);
-              this.setUserInfo(user);
-            }),
-            catchError(err => {
-              console.error('Both user endpoints failed:', err);
-              return throwError(() => err);
-            })
-          );
-        }
-        return throwError(() => error);
-      })
-    );
+    // Use the new profile endpoint
+    return this.getProfile();
   }
 
   // Get user data - for backward compatibility
@@ -187,5 +154,36 @@ export class AuthService {
   // Clear stored user data
   private clearStoredUser(): void {
     localStorage.removeItem('current_user');
+  }
+
+  // Get user profile
+  getProfile(): Observable<User> {
+    return this.http.get<{ user: User }>(`${this.baseUrl}/auth/profile`).pipe(
+      map(response => response.user),
+      tap((user: User) => {
+        console.log('Profile fetched successfully:', user);
+        this.setUserInfo(user);
+      }),
+      catchError((error: HttpErrorResponse) => {
+        console.error('Failed to fetch profile:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  // Update user profile
+  updateProfile(profileData: { username?: string; email?: string; currentPassword?: string; newPassword?: string }): Observable<any> {
+    return this.http.put(`${this.baseUrl}/auth/profile`, profileData).pipe(
+      tap((response: any) => {
+        // Update current user data if profile was updated successfully
+        if (response.user) {
+          this.setUserInfo(response.user);
+        }
+      }),
+      catchError((error: HttpErrorResponse) => {
+        console.error('Profile update failed:', error);
+        return throwError(() => error);
+      })
+    );
   }
 }

@@ -1,0 +1,169 @@
+<div class="admin-borrows-container" dir="rtl">
+   <div class="header">
+      <h1 class="page-title">
+         <i class="fas fa-book-reader"></i>
+         إدارة الاستعارات
+      </h1>
+
+      <!-- Statistics Cards -->
+      <div class="stats-grid" *ngIf="!loadingStats">
+         <div class="stat-card stat-total">
+            <div class="stat-icon">
+               <i class="fas fa-book"></i>
+            </div>
+            <div class="stat-content">
+               <h3>{{ statistics.totalBorrows }}</h3>
+               <p>إجمالي الاستعارات</p>
+            </div>
+         </div>
+
+         <div class="stat-card stat-active">
+            <div class="stat-icon">
+               <i class="fas fa-clock"></i>
+            </div>
+            <div class="stat-content">
+               <h3>{{ statistics.activeBorrows }}</h3>
+               <p>الاستعارات النشطة</p>
+            </div>
+         </div>
+
+         <div class="stat-card stat-returned">
+            <div class="stat-icon">
+               <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-content">
+               <h3>{{ statistics.returnedBooks }}</h3>
+               <p>الكتب المُرجعة</p>
+            </div>
+         </div>
+
+         <div class="stat-card stat-overdue">
+            <div class="stat-icon">
+               <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div class="stat-content">
+               <h3>{{ statistics.overdueBooks }}</h3>
+               <p>الكتب المتأخرة</p>
+            </div>
+         </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="action-buttons">
+         <button class="btn btn-primary" (click)="sendDueDateReminders()">
+            <i class="fas fa-envelope"></i>
+            إرسال تذكيرات الإرجاع
+         </button>
+         <button class="btn btn-warning" (click)="sendOverdueNotifications()">
+            <i class="fas fa-exclamation-circle"></i>
+            إرسال تنبيهات التأخير
+         </button>
+      </div>
+   </div>
+
+   <!-- Filters -->
+   <div class="filters">
+      <div class="filter-group">
+         <label for="statusFilter">تصفية حسب الحالة:</label>
+         <select id="statusFilter" class="form-control" [(ngModel)]="statusFilter" (change)="onStatusFilterChange()">
+            <option value="all">جميع الاستعارات</option>
+            <option value="active">الاستعارات النشطة</option>
+            <option value="returned">الكتب المُرجعة</option>
+         </select>
+      </div>
+   </div>
+
+   <!-- Borrows Table -->
+   <div class="table-container">
+      <div class="loading" *ngIf="loading">
+         <i class="fas fa-spinner fa-spin"></i>
+         جاري التحميل...
+      </div>
+
+      <table class="borrows-table" *ngIf="!loading">
+         <thead>
+            <tr>
+               <th>الكتاب</th>
+               <th>المستعير</th>
+               <th>البريد الإلكتروني</th>
+               <th>تاريخ الاستعارة</th>
+               <th>تاريخ الإرجاع المطلوب</th>
+               <th>الحالة</th>
+               <th>الإجراءات</th>
+            </tr>
+         </thead>
+         <tbody>
+            <tr *ngFor="let borrow of borrows" [class]="getStatusClass(borrow)">
+               <td class="book-title">
+                  <strong>{{ getBookTitle(borrow) }}</strong>
+               </td>
+               <td>{{ getUserName(borrow) }}</td>
+               <td class="email">{{ getUserEmail(borrow) }}</td>
+               <td>{{ borrow.startDate | date:'yyyy/MM/dd' }}</td>
+               <td>
+                  <span [class.overdue]="isOverdue(borrow.endDate) && !borrow.returned">
+                     {{ borrow.endDate | date:'yyyy/MM/dd' }}
+                  </span>
+                  <div class="days-info" *ngIf="!borrow.returned">
+                     <span *ngIf="isOverdue(borrow.endDate)" class="overdue-text">
+                        متأخر {{ Math.abs(getDaysUntilDue(borrow.endDate)) }} يوم
+                     </span>
+                     <span *ngIf="!isOverdue(borrow.endDate) && getDaysUntilDue(borrow.endDate) <= 3"
+                        class="warning-text">
+                        باقي {{ getDaysUntilDue(borrow.endDate) }} يوم
+                     </span>
+                     <span *ngIf="!isOverdue(borrow.endDate) && getDaysUntilDue(borrow.endDate) > 3"
+                        class="normal-text">
+                        باقي {{ getDaysUntilDue(borrow.endDate) }} يوم
+                     </span>
+                  </div>
+               </td>
+               <td>
+                  <span class="status-badge" [class]="getStatusClass(borrow)">
+                     {{ getStatusText(borrow) }}
+                  </span>
+               </td>
+               <td class="actions">
+                  <button *ngIf="!borrow.returned" class="btn btn-sm btn-success" (click)="returnBook(borrow._id!)"
+                     title="إرجاع الكتاب">
+                     <i class="fas fa-undo"></i>
+                     إرجاع
+                  </button>
+                  <span *ngIf="borrow.returned" class="returned-date">
+                     أُرجع في: {{ borrow.returnedDate | date:'yyyy/MM/dd' }}
+                  </span>
+               </td>
+            </tr>
+         </tbody>
+      </table>
+
+      <!-- Empty State -->
+      <div class="empty-state" *ngIf="!loading && borrows.length === 0">
+         <i class="fas fa-book-open"></i>
+         <h3>لا توجد استعارات</h3>
+         <p>لا توجد استعارات تطابق المعايير المحددة</p>
+      </div>
+   </div>
+
+   <!-- Pagination -->
+   <div class="pagination" *ngIf="totalPages > 1">
+      <button class="btn btn-pagination" [disabled]="currentPage === 1" (click)="onPageChange(currentPage - 1)">
+         <i class="fas fa-chevron-right"></i>
+      </button>
+
+      <button *ngFor="let page of getPaginationPages()" class="btn btn-pagination" [class.active]="page === currentPage"
+         (click)="onPageChange(page)">
+         {{ page }}
+      </button>
+
+      <button class="btn btn-pagination" [disabled]="currentPage === totalPages"
+         (click)="onPageChange(currentPage + 1)">
+         <i class="fas fa-chevron-left"></i>
+      </button>
+   </div>
+
+   <div class="pagination-info">
+      عرض {{ (currentPage - 1) * limit + 1 }} - {{ Math.min(currentPage * limit, totalBorrows) }} من أصل {{ totalBorrows
+      }} استعارة
+   </div>
+</div>
