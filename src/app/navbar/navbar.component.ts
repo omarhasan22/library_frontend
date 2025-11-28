@@ -29,12 +29,12 @@ export class NavbarComponent implements OnInit, AfterViewInit, OnDestroy {
     this.subscription = this.authService.currentUser$.subscribe(user => {
       this.currentUser = user;
       this.isLoggedIn = !!user;
-      if (this.currentUser?.user.role == 'admin') {
-        this.isAdmin = true;
-      }
+      console.log('Navbar - Current user:', this.currentUser?.role);
+      // Always update isAdmin based on current user's role
+      this.isAdmin = this.currentUser?.role == 'admin';
       // Debug logging
       console.log('Navbar - Current user:', user);
-      console.log('Navbar - User role:', user?.role);
+      console.log('Navbar - User role:', this.currentUser?.user?.role);
       console.log('Navbar - Is admin:', this.isAdmin);
     });
 

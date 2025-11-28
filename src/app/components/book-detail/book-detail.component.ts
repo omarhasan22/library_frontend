@@ -93,9 +93,8 @@ export class BookDetailComponent implements OnInit {
     this.subscription = this.authService.currentUser$.subscribe(user => {
       this.currentUser = user;
       this.isLoggedIn = !!user;
-      if (this.currentUser?.user.role == 'admin') {
-        this.isAdmin = true;
-      }
+      // Always update isAdmin based on current user's role
+      this.isAdmin = this.currentUser?.user?.role === 'admin';
     });
     const bookId = this.route.snapshot.paramMap.get('id');
     if (bookId) {

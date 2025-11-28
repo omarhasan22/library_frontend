@@ -43,6 +43,7 @@ export class BookListComponent implements OnInit, OnDestroy {
 
   // Auth
   isAdmin: boolean = false;
+  private authSubscription?: Subscription;
 
   // Debounce for search
   private searchSubject = new Subject<void>();
@@ -87,6 +88,14 @@ export class BookListComponent implements OnInit, OnDestroy {
   ) { }
 
   ngOnInit(): void {
+    // Subscribe to user changes to check admin status
+    this.authSubscription = this.authService.currentUser$.subscribe((user: any) => {
+      console.log('BookList - Current user:', user);
+      console.log('BookList - User role:', user?.role);
+      this.isAdmin = user?.role == 'admin';
+      console.log('BookList - Is admin:', this.isAdmin);
+    });
+
     // Setup debounced search
     this.searchSubscription = this.searchSubject
       .pipe(
@@ -119,6 +128,9 @@ export class BookListComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     if (this.searchSubscription) {
       this.searchSubscription.unsubscribe();
+    }
+    if (this.authSubscription) {
+      this.authSubscription.unsubscribe();
     }
   }
   /** Read saved filters safely from localStorage */

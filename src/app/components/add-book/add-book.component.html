@@ -1,7 +1,7 @@
 <div class="main-container fade-in">
   <div class="book-card">
     <div class="book-header">
-      <h2 class="book-title text-center">إضافة كتاب جديد</h2>
+      <h2 class="book-title text-center">{{ isEditMode ? 'تعديل الكتاب' : 'إضافة كتاب جديد' }}</h2>
     </div>
 
     <div class="book-content">
@@ -9,7 +9,7 @@
         <div class="spinner-border text-primary" role="status">
           <span class="sr-only">Loading...</span>
         </div>
-        <p>جاري إضافة الكتاب...</p>
+        <p>{{ isEditMode ? 'جاري تحديث الكتاب...' : 'جاري إضافة الكتاب...' }}</p>
       </div>
 
       <form (ngSubmit)="addBook()" #bookForm="ngForm">
@@ -364,14 +364,9 @@
         </div>
 
         <div class="text-center mt-4">
-          <!-- <button type="submit" class="btn-save" [disabled]="loading">
-            <i class="fas fa-plus-circle me-2"></i>
-            {{ loading ? 'جاري الإضافة...' : 'إضافة الكتاب' }}
-          </button> -->
           <button type="button" class="btn-save" [disabled]="loading" (click)="addBook()">
-            <!-- إضافة الكتاب -->
-            <i class="fas fa-plus-circle me-2"></i>
-            {{ loading ? 'جاري الإضافة...' : 'إضافة الكتاب' }}
+            <i class="fas {{ isEditMode ? 'fa-save' : 'fa-plus-circle' }} me-2"></i>
+            {{ loading ? (isEditMode ? 'جاري التحديث...' : 'جاري الإضافة...') : (isEditMode ? 'تحديث الكتاب' : 'إضافة الكتاب') }}
           </button>
         </div>
       </form>

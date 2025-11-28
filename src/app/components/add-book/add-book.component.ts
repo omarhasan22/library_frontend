@@ -1,4 +1,5 @@
 import { Component, EventEmitter, OnInit, Output } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { BookService } from '../../services/book.service';
 import { Book } from '../../models/book.model';
 import { Category } from '../../models/category.model';
@@ -56,6 +57,10 @@ export class AddBookComponent implements OnInit {
   selectedImageFile: File | null = null;
   loading: boolean = false; // Added loading indicator
 
+  // Edit mode properties
+  isEditMode: boolean = false;
+  bookId: string | null = null;
+
   newBook: Book & {
     address: {
       roomNumber: string;
@@ -97,15 +102,65 @@ export class AddBookComponent implements OnInit {
 
   @Output() newBookAdded = new EventEmitter<Book>();
 
-  constructor(private bookService: BookService) { }
+  constructor(
+    private bookService: BookService,
+    private route: ActivatedRoute,
+    private router: Router
+  ) { }
 
   ngOnInit(): void {
+    // Check if we're in edit mode (has id in route)
+    this.bookId = this.route.snapshot.paramMap.get('id');
+    this.isEditMode = !!this.bookId;
+
     this.loadAllInitialData();
+
+    // If editing, load the book data
+    if (this.isEditMode && this.bookId) {
+      this.loadBookForEdit(this.bookId);
+    }
+
     // Add click listener to close dropdowns when clicking outside
     document.addEventListener('click', (event) => {
       const target = event.target as HTMLElement;
       if (!target.closest('.search-dropdown-container')) {
         this.closeAllDropdowns();
+      }
+    });
+  }
+
+  loadBookForEdit(bookId: string): void {
+    this.loading = true;
+    this.bookService.getBookById(bookId).subscribe({
+      next: (book) => {
+        this.newBook = {
+          ...book,
+          authors: book.authors || [],
+          commentators: book.commentators || [],
+          editors: book.editors || [],
+          caretakers: book.caretakers || [],
+          muhashis: book.muhashis || [],
+          publishers: book.publishers || [],
+          category: book.category || { title: '', _id: '' },
+          subject: book.subject || { title: '', _id: '' },
+          address: {
+            roomNumber: book.address?.roomNumber || '',
+            shelfNumber: book.address?.shelfNumber || '',
+            wallNumber: book.address?.wallNumber || '',
+            bookNumber: book.address?.bookNumber || ''
+          },
+          notes: book.notes || ''
+        };
+        // Set page count input for display
+        this.pageCountInput = book.pageCount?.toString() || '';
+        this.pageCountTotal = book.pageCount || null;
+        this.loading = false;
+      },
+      error: (err) => {
+        console.error('Error loading book for edit:', err);
+        alert('فشل في تحميل بيانات الكتاب');
+        this.loading = false;
+        this.router.navigate(['/books']);
       }
     });
   }
@@ -595,13 +650,12 @@ export class AddBookComponent implements OnInit {
   }
 
 
-  // --- Add Book Submission ---
-  addBook(): void {
-    this.loading = true; // Show loader
+  // --- Prepare Payload (shared between add and update) ---
+  private preparePayload(): any {
     const payload: any = { ...this.newBook };
     console.log('Payload before processing:', payload);
 
-    // Clean up temporary _id if new items were added without an _id from the backend (should be handled by backend, but good for safety)
+    // Clean up temporary _id if new items were added without an _id from the backend
     payload.authors = payload.authors.map((p: any) => p._id ? p._id : { name: p.name });
     payload.commentators = payload.commentators.map((p: any) => p._id ? p._id : { name: p.name });
     payload.editors = payload.editors.map((p: any) => p._id ? p._id : { name: p.name });
@@ -626,86 +680,86 @@ export class AddBookComponent implements OnInit {
       delete payload.subject;
     }
 
-    // Handle image upload (assuming your backend handles file uploads for 'image' field)
-    // const formData = new FormData();
-    // for (const key in payload) {
-    //   if (payload.hasOwnProperty(key)) {
-    //     if (Array.isArray(payload[key])) {
-    //       payload[key].forEach((item: any) => {
-    //         formData.append(`${key}[]`, JSON.stringify(item)); // Append each item as a string
-    //       });
-    //     } else if (typeof payload[key] === 'object' && payload[key] !== null && !(payload[key] instanceof File)) {
-    //       formData.append(key, JSON.stringify(payload[key])); // Stringify nested objects
-    //     } else if (key === 'image' && this.selectedImageFile) {
-    //       formData.append('image', this.selectedImageFile, this.selectedImageFile.name);
-    //     } else {
-    //       formData.append(key, payload[key]);
-    //     }
-    //   }
-    // }
+    return payload;
+  }
 
+  // --- Add or Update Book Submission ---
+  addBook(): void {
+    this.loading = true;
+    const payload = this.preparePayload();
 
-    this.bookService.createBook(payload).subscribe(
-      createdBook => {
-        alert('تم إضافة الكتاب بنجاح!');
-        this.loading = false; // Hide loader
-        // Scroll to top of the page
-        window.scrollTo(0, 0);
+    if (this.isEditMode && this.bookId) {
+      // Update existing book
+      this.bookService.updateBook(this.bookId, payload).subscribe({
+        next: (updatedBook) => {
+          alert('تم تحديث الكتاب بنجاح!');
+          this.loading = false;
+          this.router.navigate(['/books', this.bookId]);
+        },
+        error: (err) => {
+          console.error('Error updating book:', err);
+          alert('فشل في تحديث الكتاب. يرجى التحقق من المدخلات والمحاولة مرة أخرى.');
+          this.loading = false;
+        }
+      });
+    } else {
+      // Create new book
+      this.bookService.createBook(payload).subscribe({
+        next: (createdBook) => {
+          alert('تم إضافة الكتاب بنجاح!');
+          this.loading = false;
+          window.scrollTo({ top: 0, behavior: 'smooth' });
 
-        // Or with smooth animation
-        window.scrollTo({
-          top: 0,
-          behavior: 'smooth'
-        });
+          const curr = parseInt(this.newBook.address.bookNumber, 10) || 0;
+          this.newBook.address.bookNumber = String(curr + 1);
+          const addedBook = this.newBook;
 
-        const curr = parseInt(this.newBook.address.bookNumber, 10) || 0;
-        this.newBook.address.bookNumber = String(curr + 1);
-        const addedBook = this.newBook
-        // Reset fields after successful submission
-        this.newBook = {
-          title: '',
-          authors: [],
-          commentators: [],
-          editors: [],
-          caretakers: [],
-          muhashis: [],
-          category: addedBook.category,
-          subject: addedBook.subject,
-          numberOfVolumes: 1,
-          numberOfFolders: 1,
-          publishers: [],
-          editionNumber: 1,
-          publicationYear: 1,
-          pageCount: 1,
-          address: {
-            roomNumber: addedBook.address.roomNumber,
-            shelfNumber: addedBook.address.shelfNumber,
-            wallNumber: addedBook.address.wallNumber,
-            bookNumber: String(curr + 1), // Increment for the next book
-          },
-          imageUrl: '',
-          notes: ''
-        };
-        this.selectedImageFile = null;
+          // Reset fields after successful submission
+          this.newBook = {
+            title: '',
+            authors: [],
+            commentators: [],
+            editors: [],
+            caretakers: [],
+            muhashis: [],
+            category: addedBook.category,
+            subject: addedBook.subject,
+            numberOfVolumes: 1,
+            numberOfFolders: 1,
+            publishers: [],
+            editionNumber: 1,
+            publicationYear: 1,
+            pageCount: 1,
+            address: {
+              roomNumber: addedBook.address.roomNumber,
+              shelfNumber: addedBook.address.shelfNumber,
+              wallNumber: addedBook.address.wallNumber,
+              bookNumber: String(curr + 1),
+            },
+            imageUrl: '',
+            notes: ''
+          };
+          this.selectedImageFile = null;
 
-        // Reset search terms
-        this.authorSearchTerm = '';
-        this.commentatorSearchTerm = '';
-        this.editorSearchTerm = '';
-        this.caretakerSearchTerm = '';
-        this.publisherSearchTerm = '';
-        this.categorySearchTerm = '';
-        this.subjectSearchTerm = '';
-        this.muhashiSearchTerm = '';
-        this.pageCountInput = '';
-        this.pageCountTotal = 0;
-        this.newBookAdded.emit(createdBook);
-      },
-      err => {
-        console.error('Error adding book:', err);
-        alert('فشل في إضافة الكتاب. يرجى التحقق من المدخلات والمحاولة مرة أخرى.');
-        this.loading = false; // Hide loader even on error
-      }
-    );
+          // Reset search terms
+          this.authorSearchTerm = '';
+          this.commentatorSearchTerm = '';
+          this.editorSearchTerm = '';
+          this.caretakerSearchTerm = '';
+          this.publisherSearchTerm = '';
+          this.categorySearchTerm = '';
+          this.subjectSearchTerm = '';
+          this.muhashiSearchTerm = '';
+          this.pageCountInput = '';
+          this.pageCountTotal = 0;
+          this.newBookAdded.emit(createdBook);
+        },
+        error: (err) => {
+          console.error('Error adding book:', err);
+          alert('فشل في إضافة الكتاب. يرجى التحقق من المدخلات والمحاولة مرة أخرى.');
+          this.loading = false;
+        }
+      });
+    }
   }
 }
