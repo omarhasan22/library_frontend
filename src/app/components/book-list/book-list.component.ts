@@ -355,8 +355,42 @@ export class BookListComponent implements OnInit, OnDestroy {
   }
 
   exportData(): void {
-    // Implement export functionality
-    console.log('Exporting data...');
+    // Show loading state
+    this.loading = true;
+
+    // Extract current search filters (same logic as loadBooks)
+    const filters = this.searchFilters
+      .map(f => ({ ...f, value: (f.value ?? '').toString().trim() }))
+      .filter(f => f.value !== '');
+
+    // Determine if this is advanced search
+    const isAdvanced = filters.length > 1 ||
+      (filters.length === 1 && filters[0].field !== 'all' && filters[0].value !== '');
+
+    const query = isAdvanced ? 'advanced' : '';
+    const searchTerm = isAdvanced ? JSON.stringify(filters) : this.simpleSearchTerm;
+
+    // Call export service
+    this.bookService.exportBooksToExcel(query, searchTerm, this.sortDirection).subscribe(
+      (blob: Blob) => {
+        // Create download link
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        const filename = `books_export_${new Date().toISOString().split('T')[0]}.xlsx`;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        this.loading = false;
+      },
+      (error) => {
+        console.error('Error exporting books', error);
+        alert('حدث خطأ أثناء تصدير البيانات. يرجى المحاولة مرة أخرى.');
+        this.loading = false;
+      }
+    );
   }
 
   scrollToTop(): void {

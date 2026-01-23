@@ -224,5 +224,21 @@ export class BookService {
     );
   }
 
+  // Export books to Excel
+  exportBooksToExcel(
+    query: string = '',
+    searchTerm: string = '',
+    sortDirection: 'asc' | 'desc' = 'asc'
+  ): Observable<Blob> {
+    const params = new HttpParams()
+      .set('query', query)
+      .set('searchTerm', searchTerm)
+      .set('sortDirection', sortDirection);
+
+    return this.http.post(`${this.apiUrl}/books/export`, null, {
+      params,
+      responseType: 'blob'
+    });
+  }
 
 }
