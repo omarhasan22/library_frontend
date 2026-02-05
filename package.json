@@ -4,10 +4,10 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build": "ng build --base-href=/library_frontend/",
+    "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "deploy": "ng deploy --base-href=/library_frontend/"
+    "deploy": "ng deploy"
   },
   "private": true,
   "dependencies": {
