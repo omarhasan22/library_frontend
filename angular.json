@@ -36,6 +36,7 @@
           },
           "configurations": {
             "production": {
+              "baseHref": "/library_frontend/",
               "budgets": [
                 {
                   "type": "initial",
@@ -104,7 +105,11 @@
           }
         },
         "deploy": {
-          "builder": "angular-cli-ghpages:deploy"
+          "builder": "angular-cli-ghpages:deploy",
+          "options": {
+            "baseHref": "/library_frontend/",
+            "dir": "dist/library-frontend"
+          }
         }
       }
     }
