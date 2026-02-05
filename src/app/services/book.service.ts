@@ -241,4 +241,28 @@ export class BookService {
     });
   }
 
+  // Get unique room numbers
+  getUniqueRoomNumbers(): Observable<string[]> {
+    return this.http.get<string[]>(`${this.apiUrl}/books/rooms`);
+  }
+
+  // Export book locations to Excel
+  exportBookLocationsToExcel(
+    roomNumber: string,
+    query: string = '',
+    searchTerm: string = '',
+    sortDirection: 'asc' | 'desc' = 'asc'
+  ): Observable<Blob> {
+    const params = new HttpParams()
+      .set('roomNumber', roomNumber)
+      .set('query', query)
+      .set('searchTerm', searchTerm)
+      .set('sortDirection', sortDirection);
+
+    return this.http.post(`${this.apiUrl}/books/export-locations`, null, {
+      params,
+      responseType: 'blob'
+    });
+  }
+
 }

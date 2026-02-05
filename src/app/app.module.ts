@@ -19,6 +19,8 @@ import { CategoriesComponent } from './components/categories/categories.componen
 import { AdminBorrowsComponent } from './components/admin-borrows/admin-borrows.component';
 import { UserBorrowsComponent } from './components/user-borrows/user-borrows.component';
 import { UserProfileComponent } from './components/user-profile/user-profile.component';
+import { PaginationComponent } from './components/pagination/pagination.component';
+import { ExportsComponent } from './components/exports/exports.component';
 import { CommonModule } from '@angular/common';
 
 
@@ -35,7 +37,9 @@ import { CommonModule } from '@angular/common';
         CategoriesComponent,
         AdminBorrowsComponent,
         UserBorrowsComponent,
-        UserProfileComponent
+        UserProfileComponent,
+        PaginationComponent,
+        ExportsComponent
     ],
     bootstrap: [AppComponent], imports: [BrowserModule,
         AppRoutingModule,

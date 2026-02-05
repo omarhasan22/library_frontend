@@ -49,6 +49,10 @@ export class BookListComponent implements OnInit, OnDestroy {
   private searchSubject = new Subject<void>();
   private searchSubscription?: Subscription;
 
+  // Room selector for locations export
+  selectedRoomNumber: string | null = null;
+  availableRooms: string[] = [];
+
   // Table columns configuration
   // merged table columns configuration
   categories = [
@@ -106,22 +110,27 @@ export class BookListComponent implements OnInit, OnDestroy {
         this.loadBooks();
       });
 
+    // Load available room numbers
+    this.loadAvailableRooms();
+
     // load query params / url state if you have any
     this.loadQueryParams();
 
     // restore saved filters from localStorage BEFORE loading books
-    const saved = this.getSavedFiltersFromLocalStorage();
-    if (saved && saved.length) {
-      this.searchFilters = saved;
-      // if you're restoring advanced filters, clear simple term
-      this.simpleSearchTerm = '';
-      // Load books only if we have saved filters and no query params
-      if (!this.route.snapshot.queryParams['search'] && !this.route.snapshot.queryParams['category'] && !this.route.snapshot.queryParams['subjectTitle']) {
+    // But only if URL doesn't have filters (URL takes precedence)
+    const urlParams = this.route.snapshot.queryParams;
+    if (!urlParams['filters'] && !urlParams['search'] && !urlParams['category'] && !urlParams['subjectTitle']) {
+      const saved = this.getSavedFiltersFromLocalStorage();
+      if (saved && saved.length) {
+        this.searchFilters = saved;
+        // if you're restoring advanced filters, clear simple term
+        this.simpleSearchTerm = '';
+        // Load books only if we have saved filters and no query params
+        this.loadBooks();
+      } else {
+        // Only load books if no query params and no saved filters
         this.loadBooks();
       }
-    } else if (!this.route.snapshot.queryParams['search'] && !this.route.snapshot.queryParams['category'] && !this.route.snapshot.queryParams['subjectTitle']) {
-      // Only load books if no query params and no saved filters
-      this.loadBooks();
     }
   }
 
@@ -165,34 +174,61 @@ export class BookListComponent implements OnInit, OnDestroy {
       // Initialize search filters array
       this.searchFilters = [];
 
-      // Check if search parameter exists - treat as simple search
-      if (params['search']) {
-        this.simpleSearchTerm = params['search'];
-        this.searchFilters.push({
-          field: 'all',  // Changed from 'search' to 'all' for simple search
-          value: params['search']
-        });
+      // Check if page parameter exists
+      if (params['page']) {
+        const page = parseInt(params['page'], 10);
+        if (page >= 1) {
+          this.currentPage = page;
+        }
       }
 
-      // Check if category parameter exists
-      if (params['category']) {
-        this.searchFilters.push({
-          field: 'category',
-          value: params['category']
-        });
+      // Check if advanced filters are in URL (base64 encoded JSON)
+      if (params['filters']) {
+        try {
+          const decodedFilters = JSON.parse(atob(params['filters']));
+          if (Array.isArray(decodedFilters) && decodedFilters.length > 0) {
+            this.searchFilters = decodedFilters.map(f => ({
+              field: f.field ?? 'all',
+              value: (f.value ?? '').toString()
+            }));
+            // Clear simple search term when using advanced filters
+            this.simpleSearchTerm = '';
+          }
+        } catch (err) {
+          console.warn('Could not parse filters from URL:', err);
+        }
       }
+      // Otherwise, check for simple search parameters
+      else {
+        // Check if search parameter exists - treat as simple search
+        if (params['search']) {
+          this.simpleSearchTerm = params['search'];
+          this.searchFilters.push({
+            field: 'all',  // Changed from 'search' to 'all' for simple search
+            value: params['search']
+          });
+        }
 
-      // Check if subjectTitle parameter exists
-      if (params['subjectTitle']) {
-        this.searchFilters.push({
-          field: 'subject',
-          value: params['subjectTitle']
-        });
+        // Check if category parameter exists
+        if (params['category']) {
+          this.searchFilters.push({
+            field: 'category',
+            value: params['category']
+          });
+        }
+
+        // Check if subjectTitle parameter exists
+        if (params['subjectTitle']) {
+          this.searchFilters.push({
+            field: 'subject',
+            value: params['subjectTitle']
+          });
+        }
       }
       console.log("this.searchFilters", this.searchFilters);
 
-      // Load books with all filters applied (AND condition)
-      if (this.searchFilters.length > 0) {
+      // Load books if there are filters OR if page parameter exists
+      if (this.searchFilters.length > 0 || params['page']) {
         this.loadBooks();
       }
     });
@@ -221,9 +257,26 @@ export class BookListComponent implements OnInit, OnDestroy {
     // Save only the active/trimmed filters
     if (filters.length > 0) {
       localStorage.setItem('bookSearchFilters', JSON.stringify(filters));
+      
+      // Also save to URL query parameters for advanced searches
+      if (isAdvanced) {
+        const encodedFilters = btoa(JSON.stringify(filters));
+        this.router.navigate([], {
+          relativeTo: this.route,
+          queryParams: { filters: encodedFilters, page: this.currentPage },
+          queryParamsHandling: 'merge',
+          replaceUrl: true // Replace current history entry instead of adding new one
+        });
+      }
     } else {
       // If user cleared filters, remove saved state
       localStorage.removeItem('bookSearchFilters');
+      // Remove filters from URL
+      this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: { filters: null },
+        queryParamsHandling: 'merge'
+      });
     }
 
     this.bookService.getAllBooks(query, searchTerm, this.currentPage, this.itemsPerPage, this.sortField, this.sortDirection)
@@ -264,6 +317,18 @@ export class BookListComponent implements OnInit, OnDestroy {
       value: this.simpleSearchTerm
     }];
     this.currentPage = 1;
+    
+    // Update URL to remove advanced filters if switching to simple search
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { 
+        search: this.simpleSearchTerm,
+        filters: null,
+        page: null
+      },
+      queryParamsHandling: 'merge'
+    });
+    
     this.loadBooks();
 
     // this.searchSubject.next(); // Trigger debounced search
@@ -294,6 +359,13 @@ export class BookListComponent implements OnInit, OnDestroy {
     this.simpleSearchTerm = '';
     this.currentPage = 1;
     localStorage.removeItem('bookSearchFilters');
+    
+    // Clear all query parameters
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {}
+    });
+    
     this.searchSubject.next(); // Trigger debounced search
   }
 
@@ -309,29 +381,57 @@ export class BookListComponent implements OnInit, OnDestroy {
     this.searchSubject.next(); // Trigger debounced search
   }
 
-  goToPage(page: number): void {
+  onPageChange(page: number): void {
     if (page >= 1 && page <= this.totalPages) {
-      this.loading = true;
       this.currentPage = page;
-      this.searchSubject.next(); // Trigger debounced search
+
+      // Update route query parameters
+      const queryParams: any = {};
+
+      // Get current filters
+      const filters = this.searchFilters
+        .map(f => ({ ...f, value: (f.value ?? '').toString().trim() }))
+        .filter(f => f.value !== '');
+
+      const isAdvanced = filters.length > 1 ||
+        (filters.length === 1 && filters[0].field !== 'all' && filters[0].value !== '');
+
+      // If advanced search, preserve filters in URL
+      if (isAdvanced && filters.length > 0) {
+        const encodedFilters = btoa(JSON.stringify(filters));
+        queryParams['filters'] = encodedFilters;
+      } else {
+        // Preserve simple search parameters
+        if (this.simpleSearchTerm) {
+          queryParams['search'] = this.simpleSearchTerm;
+        }
+        if (filters.some(f => f.field === 'category' && f.value)) {
+          const categoryFilter = filters.find(f => f.field === 'category');
+          if (categoryFilter) {
+            queryParams['category'] = categoryFilter.value;
+          }
+        }
+        if (filters.some(f => f.field === 'subject' && f.value)) {
+          const subjectFilter = filters.find(f => f.field === 'subject');
+          if (subjectFilter) {
+            queryParams['subjectTitle'] = subjectFilter.value;
+          }
+        }
+      }
+
+      // Add page parameter
+      queryParams['page'] = page.toString();
+
+      // Navigate with updated query parameters
+      // The route change will trigger loadQueryParams subscription which will load books
+      this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: queryParams,
+        queryParamsHandling: 'merge'
+      });
+
       this.scrollToTop();
     }
-  }
-
-  getPageNumbers(): number[] {
-    const pages: number[] = [];
-    const maxPages = 5;
-    let start = Math.max(1, this.currentPage - Math.floor(maxPages / 2));
-    let end = Math.min(this.totalPages, start + maxPages - 1);
-
-    if (end - start < maxPages - 1) {
-      start = Math.max(1, end - maxPages + 1);
-    }
-
-    for (let i = start; i <= end; i++) {
-      pages.push(i);
-    }
-    return pages;
   }
 
   viewBook(id: string): void {
@@ -352,6 +452,17 @@ export class BookListComponent implements OnInit, OnDestroy {
         (error) => console.error('Error deleting book', error)
       );
     }
+  }
+
+  loadAvailableRooms(): void {
+    this.bookService.getUniqueRoomNumbers().subscribe(
+      (rooms: string[]) => {
+        this.availableRooms = rooms;
+      },
+      (error) => {
+        console.error('Error loading room numbers', error);
+      }
+    );
   }
 
   exportData(): void {
@@ -388,6 +499,51 @@ export class BookListComponent implements OnInit, OnDestroy {
       (error) => {
         console.error('Error exporting books', error);
         alert('حدث خطأ أثناء تصدير البيانات. يرجى المحاولة مرة أخرى.');
+        this.loading = false;
+      }
+    );
+  }
+
+  exportLocationsData(): void {
+    // Validate room number is selected
+    if (!this.selectedRoomNumber) {
+      alert('يرجى اختيار رقم الغرفة أولاً');
+      return;
+    }
+
+    // Show loading state
+    this.loading = true;
+
+    // Extract current search filters (same logic as loadBooks and exportData)
+    const filters = this.searchFilters
+      .map(f => ({ ...f, value: (f.value ?? '').toString().trim() }))
+      .filter(f => f.value !== '' && f.field !== 'roomNumber'); // Exclude roomNumber from filters since we're using selectedRoomNumber
+
+    // Determine if this is advanced search
+    const isAdvanced = filters.length > 1 ||
+      (filters.length === 1 && filters[0].field !== 'all' && filters[0].value !== '');
+
+    const query = isAdvanced ? 'advanced' : '';
+    const searchTerm = isAdvanced ? JSON.stringify(filters) : this.simpleSearchTerm;
+
+    // Call export locations service
+    this.bookService.exportBookLocationsToExcel(this.selectedRoomNumber, query, searchTerm, this.sortDirection).subscribe(
+      (blob: Blob) => {
+        // Create download link
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        const filename = `books_locations_room_${this.selectedRoomNumber}_${new Date().toISOString().split('T')[0]}.xlsx`;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        this.loading = false;
+      },
+      (error) => {
+        console.error('Error exporting book locations', error);
+        alert('حدث خطأ أثناء تصدير المواقع. يرجى المحاولة مرة أخرى.');
         this.loading = false;
       }
     );

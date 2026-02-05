@@ -150,10 +150,33 @@
             <i class="fas fa-arrow-down"></i>
             الأسفل
           </button>
-          <button class="btn btn-sm btn-outline-success" (click)="exportData()">
-            <i class="fas fa-download"></i>
-            تصدير
-          </button>
+          <div class="btn-group">
+            <button class="btn btn-sm btn-outline-success dropdown-toggle" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+              <i class="fas fa-download"></i>
+              تصدير
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="exportDropdown">
+              <li>
+                <a class="dropdown-item" href="#" (click)="exportData(); $event.preventDefault()">
+                  <i class="fas fa-file-excel me-2"></i>
+                  تصدير كامل
+                </a>
+              </li>
+              <li><hr class="dropdown-divider"></li>
+              <li>
+                <a class="dropdown-item" href="#" (click)="exportLocationsData(); $event.preventDefault()">
+                  <i class="fas fa-map-marker-alt me-2"></i>
+                  تصدير المواقع
+                </a>
+              </li>
+            </ul>
+          </div>
+          <div class="room-selector ms-2" *ngIf="availableRooms.length > 0">
+            <select class="form-select form-select-sm" [(ngModel)]="selectedRoomNumber" style="min-width: 120px;">
+              <option [value]="null">اختر الغرفة</option>
+              <option *ngFor="let room of availableRooms" [value]="room">{{ room }}</option>
+            </select>
+          </div>
         </div>
       </div>
     </div>
@@ -199,20 +222,12 @@
       </div>
 
       <!-- Pagination -->
-      <div class="pagination-wrapper" *ngIf="totalPages > 1">
-        <nav>
-          <ul class="pagination justify-content-center">
-            <li class="page-item" [class.disabled]="currentPage === 1">
-              <a class="page-link" (click)="goToPage(currentPage - 1)">السابق</a>
-            </li>
-            <li class="page-item" *ngFor="let page of getPageNumbers()" [class.active]="page === currentPage">
-              <a class="page-link" (click)="goToPage(page)">{{ page }}</a>
-            </li>
-            <li class="page-item" [class.disabled]="currentPage === totalPages">
-              <a class="page-link" (click)="goToPage(currentPage + 1)">التالي</a>
-            </li>
-          </ul>
-        </nav>
+      <div class="pagination-wrapper">
+        <app-pagination 
+          [currentPage]="currentPage" 
+          [totalPages]="totalPages"
+          (pageChange)="onPageChange($event)">
+        </app-pagination>
       </div>
     </div>
   </div>

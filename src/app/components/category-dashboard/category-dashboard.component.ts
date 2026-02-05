@@ -76,8 +76,10 @@ export class CategoryDashboardComponent implements OnInit {
    }
 
    onPageChange(page: number): void {
-      this.currentPage = page;
-      this.loadCategories();
+      if (page >= 1 && page <= this.totalPages) {
+         this.currentPage = page;
+         this.loadCategories();
+      }
    }
 
    openAddForm(): void {
@@ -171,15 +173,4 @@ export class CategoryDashboardComponent implements OnInit {
       }, 5000);
    }
 
-   getPaginationPages(): number[] {
-      const pages: number[] = [];
-      const start = Math.max(1, this.currentPage - 2);
-      const end = Math.min(this.totalPages, this.currentPage + 2);
-
-      for (let i = start; i <= end; i++) {
-         pages.push(i);
-      }
-
-      return pages;
-   }
 }

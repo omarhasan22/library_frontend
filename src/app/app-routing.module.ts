@@ -10,6 +10,7 @@ import { CategoriesComponent } from './components/categories/categories.componen
 import { AdminBorrowsComponent } from './components/admin-borrows/admin-borrows.component';
 import { UserBorrowsComponent } from './components/user-borrows/user-borrows.component';
 import { UserProfileComponent } from './components/user-profile/user-profile.component';
+import { ExportsComponent } from './components/exports/exports.component';
 
 
 const routes: Routes = [
@@ -18,6 +19,7 @@ const routes: Routes = [
   { path: 'books', component: BookListComponent },
   { path: 'books/:id', component: BookDetailComponent },
   { path: 'categories', component: CategoriesComponent },
+  { path: 'exports', component: ExportsComponent },
   { path: 'login', component: LoginComponent },
   { path: 'register', component: RegisterComponent },
 

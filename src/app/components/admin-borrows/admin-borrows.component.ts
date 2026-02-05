@@ -205,15 +205,4 @@ export class AdminBorrowsComponent implements OnInit {
     return 'status-active';
   }
 
-  getPaginationPages(): number[] {
-    const pages: number[] = [];
-    const start = Math.max(1, this.currentPage - 2);
-    const end = Math.min(this.totalPages, this.currentPage + 2);
-
-    for (let i = start; i <= end; i++) {
-      pages.push(i);
-    }
-
-    return pages;
-  }
 }

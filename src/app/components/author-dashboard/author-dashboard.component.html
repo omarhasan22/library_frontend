@@ -134,27 +134,12 @@
             </div>
 
             <!-- Pagination -->
-            <div class="pagination-container" *ngIf="totalPages > 1">
-               <nav>
-                  <ul class="pagination">
-                     <li class="page-item" [class.disabled]="currentPage === 1">
-                        <button class="page-link" (click)="onPageChange(currentPage - 1)"
-                           [disabled]="currentPage === 1">
-                           السابق
-                        </button>
-                     </li>
-                     <li *ngFor="let page of getPaginationPages()" class="page-item"
-                        [class.active]="page === currentPage">
-                        <button class="page-link" (click)="onPageChange(page)">{{ page }}</button>
-                     </li>
-                     <li class="page-item" [class.disabled]="currentPage === totalPages">
-                        <button class="page-link" (click)="onPageChange(currentPage + 1)"
-                           [disabled]="currentPage === totalPages">
-                           التالي
-                        </button>
-                     </li>
-                  </ul>
-               </nav>
+            <div class="pagination-container">
+               <app-pagination 
+                  [currentPage]="currentPage" 
+                  [totalPages]="totalPages"
+                  (pageChange)="onPageChange($event)">
+               </app-pagination>
             </div>
          </div>
       </div>

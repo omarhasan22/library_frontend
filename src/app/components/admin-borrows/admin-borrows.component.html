@@ -146,20 +146,12 @@
    </div>
 
    <!-- Pagination -->
-   <div class="pagination" *ngIf="totalPages > 1">
-      <button class="btn btn-pagination" [disabled]="currentPage === 1" (click)="onPageChange(currentPage - 1)">
-         <i class="fas fa-chevron-right"></i>
-      </button>
-
-      <button *ngFor="let page of getPaginationPages()" class="btn btn-pagination" [class.active]="page === currentPage"
-         (click)="onPageChange(page)">
-         {{ page }}
-      </button>
-
-      <button class="btn btn-pagination" [disabled]="currentPage === totalPages"
-         (click)="onPageChange(currentPage + 1)">
-         <i class="fas fa-chevron-left"></i>
-      </button>
+   <div class="pagination-wrapper">
+      <app-pagination 
+         [currentPage]="currentPage" 
+         [totalPages]="totalPages"
+         (pageChange)="onPageChange($event)">
+      </app-pagination>
    </div>
 
    <div class="pagination-info">
