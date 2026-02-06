@@ -32,7 +32,8 @@ export class PublisherService {
    getAllPublishers(page: number = 1, limit: number = 10, search: string = ''): Observable<PublisherResponse> {
       let params = new HttpParams()
          .set('page', page.toString())
-         .set('limit', limit.toString());
+         .set('limit', limit.toString())
+         .set('isPagination', 'true');
 
       if (search) {
          params = params.set('search', search);

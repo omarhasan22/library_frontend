@@ -100,12 +100,14 @@
             </div>
             <div class="export-card-body">
               <p class="export-description">
-                قم بتصدير مواقع الكتب لغرفة محددة مع إمكانية التصفية الإضافية
+                قم بتصدير مواقع الكتب لغرفة محددة. يمكنك اختيار الغرفة من البحث المتقدم أو من القائمة أدناه.
               </p>
               
-              <!-- Room Selector -->
+              <!-- Room Selector (Optional - can also use roomNumber in advanced search) -->
               <div class="room-selector mb-3">
-                <label for="roomSelect" class="form-label">اختر رقم الغرفة:</label>
+                <label for="roomSelect" class="form-label">
+                  اختر رقم الغرفة (اختياري - يمكن اختياره من البحث المتقدم):
+                </label>
                 <select 
                   id="roomSelect" 
                   class="form-select form-select-lg" 
@@ -117,12 +119,16 @@
                 <small class="text-muted" *ngIf="availableRooms.length === 0">
                   جاري تحميل قائمة الغرف...
                 </small>
+                <small class="text-info d-block mt-1">
+                  <i class="fas fa-info-circle me-1"></i>
+                  يمكنك أيضاً اختيار الغرفة من البحث المتقدم أعلاه
+                </small>
               </div>
 
               <button 
                 class="btn btn-primary btn-lg w-100" 
                 (click)="exportLocationsData()" 
-                [disabled]="loading || !selectedRoomNumber">
+                [disabled]="loading">
                 <i class="fas fa-download me-2"></i>
                 <span *ngIf="!loading">تصدير المواقع</span>
                 <span *ngIf="loading">

@@ -150,33 +150,6 @@
             <i class="fas fa-arrow-down"></i>
             الأسفل
           </button>
-          <div class="btn-group">
-            <button class="btn btn-sm btn-outline-success dropdown-toggle" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-              <i class="fas fa-download"></i>
-              تصدير
-            </button>
-            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="exportDropdown">
-              <li>
-                <a class="dropdown-item" href="#" (click)="exportData(); $event.preventDefault()">
-                  <i class="fas fa-file-excel me-2"></i>
-                  تصدير كامل
-                </a>
-              </li>
-              <li><hr class="dropdown-divider"></li>
-              <li>
-                <a class="dropdown-item" href="#" (click)="exportLocationsData(); $event.preventDefault()">
-                  <i class="fas fa-map-marker-alt me-2"></i>
-                  تصدير المواقع
-                </a>
-              </li>
-            </ul>
-          </div>
-          <div class="room-selector ms-2" *ngIf="availableRooms.length > 0">
-            <select class="form-select form-select-sm" [(ngModel)]="selectedRoomNumber" style="min-width: 120px;">
-              <option [value]="null">اختر الغرفة</option>
-              <option *ngFor="let room of availableRooms" [value]="room">{{ room }}</option>
-            </select>
-          </div>
         </div>
       </div>
     </div>
@@ -223,10 +196,7 @@
 
       <!-- Pagination -->
       <div class="pagination-wrapper">
-        <app-pagination 
-          [currentPage]="currentPage" 
-          [totalPages]="totalPages"
-          (pageChange)="onPageChange($event)">
+        <app-pagination [currentPage]="currentPage" [totalPages]="totalPages" (pageChange)="onPageChange($event)">
         </app-pagination>
       </div>
     </div>

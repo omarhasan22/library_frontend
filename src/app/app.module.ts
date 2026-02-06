@@ -21,6 +21,8 @@ import { UserBorrowsComponent } from './components/user-borrows/user-borrows.com
 import { UserProfileComponent } from './components/user-profile/user-profile.component';
 import { PaginationComponent } from './components/pagination/pagination.component';
 import { ExportsComponent } from './components/exports/exports.component';
+import { AuthorDashboardComponent } from './components/author-dashboard/author-dashboard.component';
+import { PublisherDashboardComponent } from './components/publisher-dashboard/publisher-dashboard.component';
 import { CommonModule } from '@angular/common';
 
 
@@ -39,7 +41,9 @@ import { CommonModule } from '@angular/common';
         UserBorrowsComponent,
         UserProfileComponent,
         PaginationComponent,
-        ExportsComponent
+        ExportsComponent,
+        AuthorDashboardComponent,
+        PublisherDashboardComponent
     ],
     bootstrap: [AppComponent], imports: [BrowserModule,
         AppRoutingModule,

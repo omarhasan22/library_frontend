@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
 import { AuthorService, Author, AuthorResponse, AuthorStats } from '../../services/author.service';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
    selector: 'app-author-dashboard',
@@ -29,6 +31,9 @@ export class AuthorDashboardComponent implements OnInit {
    isEditing = false;
    editingAuthor: Author | null = null;
 
+   // Admin check
+   isAdmin = false;
+
    // Author types
    authorTypes = [
       { value: 'author', label: 'مؤلف' },
@@ -41,7 +46,9 @@ export class AuthorDashboardComponent implements OnInit {
 
    constructor(
       private authorService: AuthorService,
-      private fb: FormBuilder
+      private fb: FormBuilder,
+      private authService: AuthService,
+      private router: Router
    ) {
       this.authorForm = this.fb.group({
          name: ['', [Validators.required, Validators.minLength(2)]],
@@ -52,8 +59,18 @@ export class AuthorDashboardComponent implements OnInit {
    }
 
    ngOnInit(): void {
-      this.loadAuthors();
-      this.loadStats();
+      // Check if user is admin
+      this.authService.currentUser$.subscribe(user => {
+         this.isAdmin = user?.role === 'admin';
+         if (!this.isAdmin) {
+            // Redirect non-admin users to home page
+            this.router.navigate(['/']);
+            return;
+         }
+         // Only load data if user is admin
+         this.loadAuthors();
+         this.loadStats();
+      });
    }
 
    loadAuthors(): void {

@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
 import { PublisherService, Publisher, PublisherResponse, PublisherStats } from '../../services/publisher.service';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
    selector: 'app-publisher-dashboard',
@@ -28,9 +30,14 @@ export class PublisherDashboardComponent implements OnInit {
    isEditing = false;
    editingPublisher: Publisher | null = null;
 
+   // Admin check
+   isAdmin = false;
+
    constructor(
       private publisherService: PublisherService,
-      private fb: FormBuilder
+      private fb: FormBuilder,
+      private authService: AuthService,
+      private router: Router
    ) {
       this.publisherForm = this.fb.group({
          title: ['', [Validators.required, Validators.minLength(2)]]
@@ -38,8 +45,18 @@ export class PublisherDashboardComponent implements OnInit {
    }
 
    ngOnInit(): void {
-      this.loadPublishers();
-      this.loadStats();
+      // Check if user is admin
+      this.authService.currentUser$.subscribe(user => {
+         this.isAdmin = user?.role === 'admin';
+         if (!this.isAdmin) {
+            // Redirect non-admin users to home page
+            this.router.navigate(['/']);
+            return;
+         }
+         // Only load data if user is admin
+         this.loadPublishers();
+         this.loadStats();
+      });
    }
 
    loadPublishers(): void {

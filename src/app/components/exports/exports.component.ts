@@ -138,35 +138,49 @@ export class ExportsComponent implements OnInit, OnDestroy {
   }
 
   exportLocationsData(): void {
-    // Validate room number is selected
-    if (!this.selectedRoomNumber) {
-      alert('يرجى اختيار رقم الغرفة أولاً');
-      return;
-    }
-
     // Show loading state
     this.loading = true;
 
-    // Extract current search filters (exclude roomNumber since we're using selectedRoomNumber)
+    // Extract current search filters
     const filters = this.searchFilters
       .map(f => ({ ...f, value: (f.value ?? '').toString().trim() }))
-      .filter(f => f.value !== '' && f.field !== 'roomNumber');
+      .filter(f => f.value !== '');
 
-    // Determine if this is advanced search
-    const isAdvanced = filters.length > 1 ||
-      (filters.length === 1 && filters[0].field !== 'all' && filters[0].value !== '');
+    // Check if roomNumber is in filters
+    const roomFilter = filters.find(f => f.field === 'roomNumber');
+    let roomNumber: string | null = null;
+
+    if (roomFilter && roomFilter.value) {
+      // Use roomNumber from filters
+      roomNumber = roomFilter.value;
+    } else if (this.selectedRoomNumber) {
+      // Use roomNumber from selector
+      roomNumber = this.selectedRoomNumber;
+    } else {
+      // No room number specified
+      alert('يرجى اختيار رقم الغرفة من البحث المتقدم أو من القائمة المنسدلة');
+      this.loading = false;
+      return;
+    }
+
+    // Remove roomNumber from filters since we're passing it separately
+    const additionalFilters = filters.filter(f => f.field !== 'roomNumber');
+
+    // Determine if this is advanced search (with additional filters)
+    const isAdvanced = additionalFilters.length > 1 ||
+      (additionalFilters.length === 1 && additionalFilters[0].field !== 'all' && additionalFilters[0].value !== '');
 
     const query = isAdvanced ? 'advanced' : '';
-    const searchTerm = isAdvanced ? JSON.stringify(filters) : this.simpleSearchTerm;
+    const searchTerm = isAdvanced ? JSON.stringify(additionalFilters) : this.simpleSearchTerm;
 
     // Call export locations service
-    this.bookService.exportBookLocationsToExcel(this.selectedRoomNumber, query, searchTerm, this.sortDirection).subscribe(
+    this.bookService.exportBookLocationsToExcel(roomNumber, query, searchTerm, this.sortDirection).subscribe(
       (blob: Blob) => {
         // Create download link
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        const filename = `books_locations_room_${this.selectedRoomNumber}_${new Date().toISOString().split('T')[0]}.xlsx`;
+        const filename = `books_locations_room_${roomNumber}_${new Date().toISOString().split('T')[0]}.xlsx`;
         link.download = filename;
         document.body.appendChild(link);
         link.click();
