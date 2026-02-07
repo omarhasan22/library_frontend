@@ -49,6 +49,9 @@ export class BookListComponent implements OnInit, OnDestroy {
   private searchSubject = new Subject<void>();
   private searchSubscription?: Subscription;
 
+  // Flag to prevent recursive calls
+  private isLoadingBooks = false;
+
   // Room selector for locations export
   selectedRoomNumber: string | null = null;
   availableRooms: string[] = [];
@@ -171,6 +174,11 @@ export class BookListComponent implements OnInit, OnDestroy {
     this.route.queryParams.subscribe(params => {
       console.log("params ", params);
 
+      // Skip if we're already loading books (prevent recursive calls)
+      if (this.isLoadingBooks) {
+        return;
+      }
+
       // Initialize search filters array
       this.searchFilters = [];
 
@@ -193,6 +201,7 @@ export class BookListComponent implements OnInit, OnDestroy {
             }));
             // Clear simple search term when using advanced filters
             this.simpleSearchTerm = '';
+            this.showAdvancedSearch = true; // Show advanced search UI
           }
         } catch (err) {
           console.warn('Could not parse filters from URL:', err);
@@ -235,6 +244,12 @@ export class BookListComponent implements OnInit, OnDestroy {
   }
 
   loadBooks(): void {
+    // Prevent recursive calls
+    if (this.isLoadingBooks) {
+      return;
+    }
+
+    this.isLoadingBooks = true;
     this.loading = true;
 
     // trim and take only filters with a non-empty value
@@ -250,35 +265,18 @@ export class BookListComponent implements OnInit, OnDestroy {
       (filters.length === 1 && filters[0].field !== 'all' && filters[0].value !== '');
 
     const query = isAdvanced ? 'advanced' : '';
-    const searchTerm = isAdvanced ? JSON.stringify(filters) : this.simpleSearchTerm;
+    const searchTerm = isAdvanced ? JSON.stringify(filters) : this.simpleSearchTerm.trim();
 
     console.log('Search details:', { isAdvanced, query, searchTerm, filters });
 
     // Save only the active/trimmed filters
     if (filters.length > 0) {
       localStorage.setItem('bookSearchFilters', JSON.stringify(filters));
-      
-      // Also save to URL query parameters for advanced searches
-      if (isAdvanced) {
-        const encodedFilters = btoa(JSON.stringify(filters));
-        this.router.navigate([], {
-          relativeTo: this.route,
-          queryParams: { filters: encodedFilters, page: this.currentPage },
-          queryParamsHandling: 'merge',
-          replaceUrl: true // Replace current history entry instead of adding new one
-        });
-      }
     } else {
-      // If user cleared filters, remove saved state
       localStorage.removeItem('bookSearchFilters');
-      // Remove filters from URL
-      this.router.navigate([], {
-        relativeTo: this.route,
-        queryParams: { filters: null },
-        queryParamsHandling: 'merge'
-      });
     }
 
+    // Make the API call first
     this.bookService.getAllBooks(query, searchTerm, this.currentPage, this.itemsPerPage, this.sortField, this.sortDirection)
       .subscribe(
         (res) => {
@@ -287,8 +285,37 @@ export class BookListComponent implements OnInit, OnDestroy {
           this.uniqueAuthors = res.uniqueAuthors;
           this.uniquePublishers = res.uniquePublishers;
           this.filteredCount = res.filteredCount || res.books.length;
-          this.totalPages = Math.ceil(this.filteredCount / this.itemsPerPage);
+          this.totalPages = Math.ceil(this.filteredCount / this.itemsPerPage) || 1;
           this.loading = false;
+          this.isLoadingBooks = false;
+
+          // Update URL after successful API call
+          if (isAdvanced && filters.length > 0) {
+            try {
+              const encodedFilters = btoa(JSON.stringify(filters));
+              this.router.navigate([], {
+                relativeTo: this.route,
+                queryParams: {
+                  filters: encodedFilters,
+                  page: this.currentPage > 1 ? this.currentPage.toString() : null,
+                  search: null,
+                  category: null,
+                  subjectTitle: null
+                },
+                queryParamsHandling: 'merge',
+                replaceUrl: true
+              });
+            } catch (err) {
+              console.error('Error encoding filters for URL:', err);
+            }
+          } else if (filters.length === 0) {
+            // Clear filters from URL
+            this.router.navigate([], {
+              relativeTo: this.route,
+              queryParams: { filters: null },
+              queryParamsHandling: 'merge'
+            });
+          }
 
           // Scroll to last viewed book if exists
           setTimeout(() => {
@@ -307,6 +334,8 @@ export class BookListComponent implements OnInit, OnDestroy {
         (error) => {
           console.error('Error loading books', error);
           this.loading = false;
+          this.isLoadingBooks = false;
+          alert('حدث خطأ في تحميل الكتب. يرجى المحاولة مرة أخرى.');
         }
       );
   }
@@ -317,18 +346,18 @@ export class BookListComponent implements OnInit, OnDestroy {
       value: this.simpleSearchTerm
     }];
     this.currentPage = 1;
-    
+
     // Update URL to remove advanced filters if switching to simple search
     this.router.navigate([], {
       relativeTo: this.route,
-      queryParams: { 
+      queryParams: {
         search: this.simpleSearchTerm,
         filters: null,
         page: null
       },
       queryParamsHandling: 'merge'
     });
-    
+
     this.loadBooks();
 
     // this.searchSubject.next(); // Trigger debounced search
@@ -351,21 +380,31 @@ export class BookListComponent implements OnInit, OnDestroy {
 
   onFilterChange(): void {
     this.currentPage = 1; // Reset to first page when filters change
+    this.isLoadingBooks = false; // Reset flag when filters change
     this.searchSubject.next(); // Trigger debounced search
+  }
+
+  // Method to handle advanced search button click
+  performAdvancedSearch(): void {
+    this.currentPage = 1; // Reset to first page for new search
+    this.isLoadingBooks = false; // Reset flag
+    this.loadBooks();
   }
 
   resetSearch(): void {
     this.searchFilters = [{ field: 'all', value: '' }];
     this.simpleSearchTerm = '';
     this.currentPage = 1;
+    this.isLoadingBooks = false; // Reset flag
+    this.showAdvancedSearch = false;
     localStorage.removeItem('bookSearchFilters');
-    
+
     // Clear all query parameters
     this.router.navigate([], {
       relativeTo: this.route,
       queryParams: {}
     });
-    
+
     this.searchSubject.next(); // Trigger debounced search
   }
 
