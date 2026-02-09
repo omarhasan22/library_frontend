@@ -14,14 +14,12 @@
         </div>
 
         <!-- User borrow/return buttons -->
-        <div *ngIf="isLoggedIn && !isAdmin">
-          <!-- Borrow button (when book is not borrowed) -->
+        <!-- <div *ngIf="isLoggedIn && !isAdmin">
           <button *ngIf="!isBookBorrowed" class="btn btn-modern btn-borrow" (click)="openBorrowForm()">
             <i class="fas fa-book-open"></i>
             استعارة
           </button>
 
-          <!-- Return button (when book is borrowed by current user) -->
           <div *ngIf="isBookBorrowed && currentUserBorrow" class="borrowed-status">
             <div class="borrow-info">
               <div class="borrow-details">
@@ -51,7 +49,7 @@
               {{ borrowLoading ? 'جاري الإرجاع...' : 'إرجاع الكتاب' }}
             </button>
           </div>
-        </div>
+        </div> -->
       </div>
       <h1 class="book-title">{{ book?.title || 'بدون عنوان' }}</h1>
       <p class="book-subtitle">معلومات تفصيلية عن الكتاب</p>
@@ -631,7 +629,7 @@
   </div>
 
   <!-- Borrow Form Popup -->
-  <div class="modal-overlay" *ngIf="showBorrowForm" (click)="closeBorrowForm()">
+  <!-- <div class="modal-overlay" *ngIf="showBorrowForm" (click)="closeBorrowForm()">
     <div class="modal-content borrow-modal" (click)="$event.stopPropagation()" dir="rtl">
       <div class="modal-header">
         <h3>استعارة الكتاب</h3>
@@ -679,5 +677,5 @@
         </form>
       </div>
     </div>
-  </div>
+  </div> -->
 </div>
