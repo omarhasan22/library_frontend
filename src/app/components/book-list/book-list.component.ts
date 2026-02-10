@@ -155,6 +155,25 @@ export class BookListComponent implements OnInit, OnDestroy, AfterViewInit {
       this.authSubscription.unsubscribe();
     }
   }
+
+  // Helper methods for UTF-8 safe base64 encoding/decoding
+  private encodeBase64(str: string): string {
+    try {
+      return btoa(unescape(encodeURIComponent(str)));
+    } catch (err) {
+      console.error('Error encoding to base64:', err);
+      return '';
+    }
+  }
+
+  private decodeBase64(str: string): string {
+    try {
+      return decodeURIComponent(escape(atob(str)));
+    } catch (err) {
+      console.error('Error decoding from base64:', err);
+      return '';
+    }
+  }
   /** Read saved filters safely from localStorage */
   private getSavedFiltersFromLocalStorage(): Array<{ field: string, value: string }> | null {
     try {
@@ -203,7 +222,7 @@ export class BookListComponent implements OnInit, OnDestroy, AfterViewInit {
       // Check if advanced filters are in URL (base64 encoded JSON)
       if (params['filters']) {
         try {
-          const decodedFilters = JSON.parse(atob(params['filters']));
+          const decodedFilters = JSON.parse(this.decodeBase64(params['filters']));
           if (Array.isArray(decodedFilters) && decodedFilters.length > 0) {
             this.searchFilters = decodedFilters.map(f => ({
               field: f.field ?? 'all',
@@ -302,7 +321,7 @@ export class BookListComponent implements OnInit, OnDestroy, AfterViewInit {
           // Update URL after successful API call
           if (isAdvanced && filters.length > 0) {
             try {
-              const encodedFilters = btoa(JSON.stringify(filters));
+              const encodedFilters = this.encodeBase64(JSON.stringify(filters));
               this.router.navigate([], {
                 relativeTo: this.route,
                 queryParams: {
@@ -488,7 +507,7 @@ export class BookListComponent implements OnInit, OnDestroy, AfterViewInit {
 
       // If advanced search, preserve filters in URL
       if (isAdvanced && filters.length > 0) {
-        const encodedFilters = btoa(JSON.stringify(filters));
+        const encodedFilters = this.encodeBase64(JSON.stringify(filters));
         queryParams['filters'] = encodedFilters;
       } else {
         // Preserve simple search parameters
