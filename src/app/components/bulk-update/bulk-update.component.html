@@ -18,7 +18,8 @@
           <span>
             <i class="fas fa-check-circle"></i> {{ successMessage }}
           </span>
-          <button *ngIf="currentHistoryId" type="button" class="btn btn-sm btn-outline-light ms-3" (click)="showUndoDialog()">
+          <button *ngIf="currentHistoryId" type="button" class="btn btn-sm btn-outline-light ms-3"
+            (click)="showUndoDialog()">
             <i class="fas fa-undo me-1"></i> تراجع
           </button>
         </div>
@@ -34,10 +35,14 @@
             <thead>
               <tr>
                 <th>عنوان الكتاب</th>
-                <th *ngIf="editedBooksList.length > 0 && editedBooksList[0].oldSubject !== undefined">التصنيف الفرعي القديم</th>
-                <th *ngIf="editedBooksList.length > 0 && editedBooksList[0].newSubject !== undefined">التصنيف الفرعي الجديد</th>
-                <th *ngIf="editedBooksList.length > 0 && editedBooksList[0].oldCategory !== undefined">التصنيف الرئيسي القديم</th>
-                <th *ngIf="editedBooksList.length > 0 && editedBooksList[0].newCategory !== undefined">التصنيف الرئيسي الجديد</th>
+                <th *ngIf="editedBooksList.length > 0 && editedBooksList[0].oldSubject !== undefined">التصنيف الفرعي
+                  القديم</th>
+                <th *ngIf="editedBooksList.length > 0 && editedBooksList[0].newSubject !== undefined">التصنيف الفرعي
+                  الجديد</th>
+                <th *ngIf="editedBooksList.length > 0 && editedBooksList[0].oldCategory !== undefined">التصنيف الرئيسي
+                  القديم</th>
+                <th *ngIf="editedBooksList.length > 0 && editedBooksList[0].newCategory !== undefined">التصنيف الرئيسي
+                  الجديد</th>
               </tr>
             </thead>
             <tbody>
@@ -67,12 +72,14 @@
           </div>
           <div class="update-type-selector">
             <label class="radio-option">
-              <input type="radio" name="updateType" value="subject" [(ngModel)]="updateType" (change)="onUpdateTypeChange()" />
-              <span>تصنيف فرعي (Subject)</span>
+              <input type="radio" name="updateType" value="subject" [(ngModel)]="updateType"
+                (change)="onUpdateTypeChange()" />
+              <span>تصنيف فرعي</span>
             </label>
             <label class="radio-option">
-              <input type="radio" name="updateType" value="category" [(ngModel)]="updateType" (change)="onUpdateTypeChange()" />
-              <span>تصنيف رئيسي (Category)</span>
+              <input type="radio" name="updateType" value="category" [(ngModel)]="updateType"
+                (change)="onUpdateTypeChange()" />
+              <span>تصنيف رئيسي</span>
             </label>
           </div>
         </div>
@@ -134,8 +141,7 @@
           </div>
           <div class="search-dropdown-container">
             <input type="text" class="form-control" placeholder="ابحث عن تصنيف فرعي أو أضف جديد"
-              [(ngModel)]="subjectSearchTerm" name="subjectSearch" 
-              (input)="onSubjectSearch(subjectSearchTerm)"
+              [(ngModel)]="subjectSearchTerm" name="subjectSearch" (input)="onSubjectSearch(subjectSearchTerm)"
               (focus)="showSubjectDropdown = true" />
 
             <div class="dropdown-menu"
@@ -143,7 +149,8 @@
               <div class="dropdown-item" *ngFor="let subject of filteredSubjects" (click)="selectSubject(subject)">
                 {{ subject.title }}
               </div>
-              <div class="dropdown-item add-new" *ngIf="subjectSearchTerm.length > 0 && subjectSearchTerm.trim()" (click)="addNewSubject()">
+              <div class="dropdown-item add-new" *ngIf="subjectSearchTerm.length > 0 && subjectSearchTerm.trim()"
+                (click)="addNewSubject()">
                 <i class="fas fa-plus"></i> إضافة "{{ subjectSearchTerm }}" كتصنيف فرعي جديد
               </div>
             </div>
@@ -151,7 +158,8 @@
 
           <div class="selected-item" *ngIf="selectedSubject?.title">
             <span>{{ selectedSubject.title }}</span>
-            <button type="button" class="btn-remove" (click)="selectedSubject = null; subjectSearchTerm = ''">حذف</button>
+            <button type="button" class="btn-remove"
+              (click)="selectedSubject = null; subjectSearchTerm = ''">حذف</button>
           </div>
         </div>
 
@@ -163,8 +171,7 @@
           </div>
           <div class="search-dropdown-container">
             <input type="text" class="form-control" placeholder="ابحث عن تصنيف رئيسي أو أضف جديد"
-              [(ngModel)]="categorySearchTerm" name="categorySearch" 
-              (input)="onCategorySearch(categorySearchTerm)"
+              [(ngModel)]="categorySearchTerm" name="categorySearch" (input)="onCategorySearch(categorySearchTerm)"
               (focus)="showCategoryDropdown = true" />
 
             <div class="dropdown-menu"
@@ -172,7 +179,8 @@
               <div class="dropdown-item" *ngFor="let category of filteredCategories" (click)="selectCategory(category)">
                 {{ category.title }}
               </div>
-              <div class="dropdown-item add-new" *ngIf="categorySearchTerm.length > 0 && categorySearchTerm.trim()" (click)="addNewCategory()">
+              <div class="dropdown-item add-new" *ngIf="categorySearchTerm.length > 0 && categorySearchTerm.trim()"
+                (click)="addNewCategory()">
                 <i class="fas fa-plus"></i> إضافة "{{ categorySearchTerm }}" كتصنيف رئيسي جديد
               </div>
             </div>
@@ -180,7 +188,8 @@
 
           <div class="selected-item" *ngIf="selectedCategory?.title">
             <span>{{ selectedCategory.title }}</span>
-            <button type="button" class="btn-remove" (click)="selectedCategory = null; categorySearchTerm = ''">حذف</button>
+            <button type="button" class="btn-remove"
+              (click)="selectedCategory = null; categorySearchTerm = ''">حذف</button>
           </div>
         </div>
 
@@ -198,34 +207,42 @@
           <i class="fas fa-history"></i> سجل التحديثات السابقة
         </h4>
         <div class="history-list">
-          <div *ngFor="let historyItem of historyList" class="history-item" [class.undone]="historyItem.status === 'undone'">
+          <div *ngFor="let historyItem of historyList" class="history-item"
+            [class.undone]="historyItem.status === 'undone'">
             <div class="history-header">
               <div class="history-info">
                 <span class="history-date">
                   <i class="fas fa-calendar"></i> {{ historyItem.createdAt | date:'short' }}
                 </span>
-                <span class="history-status" [class.active]="historyItem.status === 'active'" [class.undone-status]="historyItem.status === 'undone'">
+                <span class="history-status" [class.active]="historyItem.status === 'active'"
+                  [class.undone-status]="historyItem.status === 'undone'">
                   {{ historyItem.status === 'active' ? 'نشط' : 'تم التراجع' }}
                 </span>
               </div>
-              <button *ngIf="historyItem.status === 'active'" type="button" class="btn btn-sm btn-warning" (click)="undoHistoryItem(historyItem._id)">
+              <button *ngIf="historyItem.status === 'active'" type="button" class="btn btn-sm btn-warning"
+                (click)="undoHistoryItem(historyItem._id)">
                 <i class="fas fa-undo"></i> تراجع
               </button>
             </div>
             <div class="history-details">
               <div class="detail-item">
                 <strong>الرف:</strong> {{ historyItem.criteria.shelfNumber }}
-                <span *ngIf="historyItem.criteria.roomNumber"> | <strong>الغرفة:</strong> {{ historyItem.criteria.roomNumber }}</span>
-                <span *ngIf="historyItem.criteria.wallNumber"> | <strong>الحائط:</strong> {{ historyItem.criteria.wallNumber }}</span>
+                <span *ngIf="historyItem.criteria.roomNumber"> | <strong>الغرفة:</strong> {{
+                  historyItem.criteria.roomNumber }}</span>
+                <span *ngIf="historyItem.criteria.wallNumber"> | <strong>الحائط:</strong> {{
+                  historyItem.criteria.wallNumber }}</span>
               </div>
               <div class="detail-item">
-                <strong>نطاق الكتب:</strong> من {{ historyItem.criteria.bookNumberFrom }} إلى {{ historyItem.criteria.bookNumberTo }}
+                <strong>نطاق الكتب:</strong> من {{ historyItem.criteria.bookNumberFrom }} إلى {{
+                historyItem.criteria.bookNumberTo }}
               </div>
               <div class="detail-item" *ngIf="historyItem.updateType === 'subject'">
-                <strong>التصنيف الفرعي:</strong> {{ historyItem.oldSubject?.title || 'لا يوجد' }} → <strong>{{ historyItem.newSubject?.title }}</strong>
+                <strong>التصنيف الفرعي:</strong> {{ historyItem.oldSubject?.title || 'لا يوجد' }} → <strong>{{
+                  historyItem.newSubject?.title }}</strong>
               </div>
               <div class="detail-item" *ngIf="historyItem.updateType === 'category'">
-                <strong>التصنيف الرئيسي:</strong> {{ historyItem.oldCategory?.title || 'لا يوجد' }} → <strong>{{ historyItem.newCategory?.title }}</strong>
+                <strong>التصنيف الرئيسي:</strong> {{ historyItem.oldCategory?.title || 'لا يوجد' }} → <strong>{{
+                  historyItem.newCategory?.title }}</strong>
               </div>
               <div class="detail-item">
                 <strong>عدد الكتب:</strong> {{ historyItem.affectedBooks.length }} كتاب
