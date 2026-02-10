@@ -246,6 +246,12 @@ export class BookService {
     return this.http.get<string[]>(`${this.apiUrl}/books/rooms`);
   }
 
+  // Get unique wall numbers for a room
+  getUniqueWallNumbers(roomNumber: string): Observable<string[]> {
+    const params = new HttpParams().set('roomNumber', roomNumber);
+    return this.http.get<string[]>(`${this.apiUrl}/books/walls`, { params });
+  }
+
   // Export book locations to Excel
   exportBookLocationsToExcel(
     roomNumber: string,
@@ -263,6 +269,203 @@ export class BookService {
       params,
       responseType: 'blob'
     });
+  }
+
+  // Bulk update subjects
+  bulkUpdateSubjects(criteria: {
+    roomNumber?: string;
+    wallNumber?: string;
+    shelfNumber: string;
+    bookNumberFrom: number;
+    bookNumberTo: number;
+    subjectId: string;
+  }): Observable<{
+    matchedCount: number;
+    modifiedCount: number;
+    subject: { _id: string; title: string };
+    historyId: string;
+    undoData: {
+      updateId: string;
+      books: Array<{ bookId: string; previousSubjectId: string | null }>;
+      timestamp: Date;
+    };
+  }> {
+    return this.http.post<{
+      matchedCount: number;
+      modifiedCount: number;
+      subject: { _id: string; title: string };
+      historyId: string;
+      undoData: {
+        updateId: string;
+        books: Array<{ bookId: string; previousSubjectId: string | null }>;
+        timestamp: Date;
+      };
+    }>(`${this.apiUrl}/books/bulk-update-subjects`, criteria);
+  }
+
+  bulkUpdateCategories(criteria: {
+    roomNumber?: string;
+    wallNumber?: string;
+    shelfNumber: string;
+    bookNumberFrom: number;
+    bookNumberTo: number;
+    categoryId: string;
+  }): Observable<{
+    matchedCount: number;
+    modifiedCount: number;
+    category: { _id: string; title: string };
+    historyId: string;
+    undoData: {
+      updateId: string;
+      books: Array<{ bookId: string; previousCategoryId: string | null }>;
+      timestamp: Date;
+    };
+  }> {
+    return this.http.post<{
+      matchedCount: number;
+      modifiedCount: number;
+      category: { _id: string; title: string };
+      historyId: string;
+      undoData: {
+        updateId: string;
+        books: Array<{ bookId: string; previousCategoryId: string | null }>;
+        timestamp: Date;
+      };
+    }>(`${this.apiUrl}/books/bulk-update-categories`, criteria);
+  }
+
+  // Undo bulk update subjects
+  undoBulkUpdateSubjects(historyId: string): Observable<{
+    success: boolean;
+    restoredCount: number;
+  }> {
+    return this.http.post<{
+      success: boolean;
+      restoredCount: number;
+    }>(`${this.apiUrl}/books/undo-bulk-update-subjects`, { historyId });
+  }
+
+  // Get bulk update history
+  getBulkUpdateHistory(page: number = 1, limit: number = 10): Observable<{
+    history: Array<{
+      _id: string;
+      updateId: string;
+      updateType: 'subject' | 'category';
+      userId: { username: string; email: string };
+      criteria: {
+        roomNumber?: string;
+        wallNumber?: string;
+        shelfNumber: string;
+        bookNumberFrom: number;
+        bookNumberTo: number;
+      };
+      oldSubject?: { _id: string | null; title: string | null };
+      newSubject?: { _id: string; title: string };
+      oldCategory?: { _id: string | null; title: string | null };
+      newCategory?: { _id: string; title: string };
+      affectedBooks: Array<{
+        bookId: string;
+        bookTitle: string;
+        previousSubjectId?: string | null;
+        previousCategoryId?: string | null;
+      }>;
+      status: 'active' | 'undone';
+      createdAt: Date;
+      undoneAt?: Date;
+    }>;
+    total: number;
+    page: number;
+    totalPages: number;
+  }> {
+    const params = new HttpParams()
+      .set('page', page.toString())
+      .set('limit', limit.toString());
+    return this.http.get<{
+      history: Array<{
+        _id: string;
+        updateId: string;
+        updateType: 'subject' | 'category';
+        userId: { username: string; email: string };
+        criteria: {
+          roomNumber?: string;
+          wallNumber?: string;
+          shelfNumber: string;
+          bookNumberFrom: number;
+          bookNumberTo: number;
+        };
+        oldSubject?: { _id: string | null; title: string | null };
+        newSubject?: { _id: string; title: string };
+        oldCategory?: { _id: string | null; title: string | null };
+        newCategory?: { _id: string; title: string };
+        affectedBooks: Array<{
+          bookId: string;
+          bookTitle: string;
+          previousSubjectId?: string | null;
+          previousCategoryId?: string | null;
+        }>;
+        status: 'active' | 'undone';
+        createdAt: Date;
+        undoneAt?: Date;
+      }>;
+      total: number;
+      page: number;
+      totalPages: number;
+    }>(`${this.apiUrl}/books/bulk-update-history`, { params });
+  }
+
+  // Get history by ID
+  getHistoryById(historyId: string): Observable<{
+    _id: string;
+    updateId: string;
+    updateType: 'subject' | 'category';
+    userId: { username: string; email: string };
+    criteria: {
+      roomNumber?: string;
+      wallNumber?: string;
+      shelfNumber: string;
+      bookNumberFrom: number;
+      bookNumberTo: number;
+    };
+    oldSubject?: { _id: string | null; title: string | null };
+    newSubject?: { _id: string; title: string };
+    oldCategory?: { _id: string | null; title: string | null };
+    newCategory?: { _id: string; title: string };
+    affectedBooks: Array<{
+      bookId: string;
+      bookTitle: string;
+      previousSubjectId?: string | null;
+      previousCategoryId?: string | null;
+    }>;
+    status: 'active' | 'undone';
+    createdAt: Date;
+    undoneAt?: Date;
+  }> {
+    return this.http.get<{
+      _id: string;
+      updateId: string;
+      updateType: 'subject' | 'category';
+      userId: { username: string; email: string };
+      criteria: {
+        roomNumber?: string;
+        wallNumber?: string;
+        shelfNumber: string;
+        bookNumberFrom: number;
+        bookNumberTo: number;
+      };
+      oldSubject?: { _id: string | null; title: string | null };
+      newSubject?: { _id: string; title: string };
+      oldCategory?: { _id: string | null; title: string | null };
+      newCategory?: { _id: string; title: string };
+      affectedBooks: Array<{
+        bookId: string;
+        bookTitle: string;
+        previousSubjectId?: string | null;
+        previousCategoryId?: string | null;
+      }>;
+      status: 'active' | 'undone';
+      createdAt: Date;
+      undoneAt?: Date;
+    }>(`${this.apiUrl}/books/bulk-update-history/${historyId}`);
   }
 
 }

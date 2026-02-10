@@ -694,7 +694,7 @@ export class AddBookComponent implements OnInit {
         next: (updatedBook) => {
           alert('تم تحديث الكتاب بنجاح!');
           this.loading = false;
-          this.router.navigate(['/books', this.bookId]);
+          this.router.navigate(['/books', this.bookId], { replaceUrl: true });
         },
         error: (err) => {
           console.error('Error updating book:', err);

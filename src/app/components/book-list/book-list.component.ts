@@ -478,8 +478,27 @@ export class BookListComponent implements OnInit, OnDestroy {
     this.router.navigate(['/books', id]);
   }
 
+  // Add this method for right-click to open view in new window
+  viewBookInNewWindow(id: string, event?: MouseEvent): void {
+    if (event) {
+      event.preventDefault(); // Prevent default context menu
+    }
+    localStorage.setItem('lastViewedBookId', id);
+    const url = this.router.createUrlTree(['/books', id]).toString();
+    window.open(url, '_blank');
+  }
+
   editBook(id: string): void {
     this.router.navigate(['/edit-book', id]);
+  }
+
+  // Add this method for right-click to open edit in new window
+  editBookInNewWindow(id: string, event?: MouseEvent): void {
+    if (event) {
+      event.preventDefault(); // Prevent default context menu
+    }
+    const url = this.router.createUrlTree(['/edit-book', id]).toString();
+    window.open(url, '_blank');
   }
 
   deleteBook(id: string): void {

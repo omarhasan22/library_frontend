@@ -1,0 +1,313 @@
+<div class="main-container fade-in">
+  <div class="book-card">
+    <div class="book-header">
+      <h2 class="book-title text-center">تحديث جماعي للتصنيف الفرعي</h2>
+    </div>
+
+    <div class="book-content">
+      <div *ngIf="loading" class="loader-overlay">
+        <div class="spinner-border text-primary" role="status">
+          <span class="sr-only">Loading...</span>
+        </div>
+        <p>جاري المعالجة...</p>
+      </div>
+
+      <!-- Success Message -->
+      <div *ngIf="successMessage" class="alert alert-success" role="alert">
+        <div class="d-flex justify-content-between align-items-center">
+          <span>
+            <i class="fas fa-check-circle"></i> {{ successMessage }}
+          </span>
+          <button *ngIf="currentHistoryId" type="button" class="btn btn-sm btn-outline-light ms-3" (click)="showUndoDialog()">
+            <i class="fas fa-undo me-1"></i> تراجع
+          </button>
+        </div>
+      </div>
+
+      <!-- Edited Books List -->
+      <div *ngIf="editedBooksList.length > 0" class="edited-books-section">
+        <h4 class="section-title">
+          <i class="fas fa-list"></i> قائمة الكتب التي تم تحديثها
+        </h4>
+        <div class="table-responsive">
+          <table class="edited-books-table">
+            <thead>
+              <tr>
+                <th>عنوان الكتاب</th>
+                <th *ngIf="editedBooksList.length > 0 && editedBooksList[0].oldSubject !== undefined">التصنيف الفرعي القديم</th>
+                <th *ngIf="editedBooksList.length > 0 && editedBooksList[0].newSubject !== undefined">التصنيف الفرعي الجديد</th>
+                <th *ngIf="editedBooksList.length > 0 && editedBooksList[0].oldCategory !== undefined">التصنيف الرئيسي القديم</th>
+                <th *ngIf="editedBooksList.length > 0 && editedBooksList[0].newCategory !== undefined">التصنيف الرئيسي الجديد</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let book of editedBooksList">
+                <td>{{ book.bookTitle }}</td>
+                <td *ngIf="book.oldSubject !== undefined">{{ book.oldSubject }}</td>
+                <td *ngIf="book.newSubject !== undefined"><strong>{{ book.newSubject }}</strong></td>
+                <td *ngIf="book.oldCategory !== undefined">{{ book.oldCategory }}</td>
+                <td *ngIf="book.newCategory !== undefined"><strong>{{ book.newCategory }}</strong></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Error Message -->
+      <div *ngIf="errorMessage" class="alert alert-danger" role="alert">
+        <i class="fas fa-exclamation-circle"></i> {{ errorMessage }}
+      </div>
+
+      <form (ngSubmit)="showPreview()" #bulkUpdateForm="ngForm">
+        <!-- Update Type Selection -->
+        <div class="form-section">
+          <div class="form-section-title">
+            <i class="fas fa-cog"></i>
+            نوع التحديث
+          </div>
+          <div class="update-type-selector">
+            <label class="radio-option">
+              <input type="radio" name="updateType" value="subject" [(ngModel)]="updateType" (change)="onUpdateTypeChange()" />
+              <span>تصنيف فرعي (Subject)</span>
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="updateType" value="category" [(ngModel)]="updateType" (change)="onUpdateTypeChange()" />
+              <span>تصنيف رئيسي (Category)</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Room Number -->
+        <div class="form-section">
+          <div class="form-section-title">
+            <i class="fas fa-door-open"></i>
+            الغرفة
+          </div>
+          <select class="form-control" [(ngModel)]="roomNumber" name="roomNumber" (change)="onRoomChange()">
+            <option value="">اختر الغرفة (اختياري)</option>
+            <option *ngFor="let room of availableRooms" [value]="room">{{ room }}</option>
+          </select>
+        </div>
+
+        <!-- Wall Number -->
+        <div class="form-section" *ngIf="roomNumber">
+          <div class="form-section-title">
+            <i class="fas fa-wall"></i>
+            الحائط
+          </div>
+          <select class="form-control" [(ngModel)]="wallNumber" name="wallNumber">
+            <option value="">اختر الحائط (اختياري)</option>
+            <option *ngFor="let wall of availableWalls" [value]="wall">{{ wall }}</option>
+          </select>
+        </div>
+
+        <!-- Shelf Number -->
+        <div class="form-section">
+          <div class="form-section-title">
+            <i class="fas fa-layer-group"></i>
+            رقم الرف *
+          </div>
+          <input type="text" class="form-control" placeholder="أدخل رقم الرف" [(ngModel)]="shelfNumber"
+            name="shelfNumber" required />
+        </div>
+
+        <!-- Book Number Range -->
+        <div class="form-section">
+          <div class="form-section-title">
+            <i class="fas fa-book"></i>
+            نطاق أرقام الكتب *
+          </div>
+          <div class="book-range-container">
+            <input type="number" class="form-control range-input" placeholder="من" [(ngModel)]="bookNumberFrom"
+              name="bookNumberFrom" min="1" required />
+            <span class="range-separator">إلى</span>
+            <input type="number" class="form-control range-input" placeholder="إلى" [(ngModel)]="bookNumberTo"
+              name="bookNumberTo" min="1" required />
+          </div>
+        </div>
+
+        <!-- Subject Selection (when updateType is 'subject') -->
+        <div class="form-section" *ngIf="updateType === 'subject'">
+          <div class="form-section-title">
+            <i class="fas fa-tag"></i>
+            التصنيف الفرعي الجديد *
+          </div>
+          <div class="search-dropdown-container">
+            <input type="text" class="form-control" placeholder="ابحث عن تصنيف فرعي أو أضف جديد"
+              [(ngModel)]="subjectSearchTerm" name="subjectSearch" 
+              (input)="onSubjectSearch(subjectSearchTerm)"
+              (focus)="showSubjectDropdown = true" />
+
+            <div class="dropdown-menu"
+              *ngIf="showSubjectDropdown && (filteredSubjects.length > 0 || subjectSearchTerm.length > 0)">
+              <div class="dropdown-item" *ngFor="let subject of filteredSubjects" (click)="selectSubject(subject)">
+                {{ subject.title }}
+              </div>
+              <div class="dropdown-item add-new" *ngIf="subjectSearchTerm.length > 0 && subjectSearchTerm.trim()" (click)="addNewSubject()">
+                <i class="fas fa-plus"></i> إضافة "{{ subjectSearchTerm }}" كتصنيف فرعي جديد
+              </div>
+            </div>
+          </div>
+
+          <div class="selected-item" *ngIf="selectedSubject?.title">
+            <span>{{ selectedSubject.title }}</span>
+            <button type="button" class="btn-remove" (click)="selectedSubject = null; subjectSearchTerm = ''">حذف</button>
+          </div>
+        </div>
+
+        <!-- Category Selection (when updateType is 'category') -->
+        <div class="form-section" *ngIf="updateType === 'category'">
+          <div class="form-section-title">
+            <i class="fas fa-folder"></i>
+            التصنيف الرئيسي الجديد *
+          </div>
+          <div class="search-dropdown-container">
+            <input type="text" class="form-control" placeholder="ابحث عن تصنيف رئيسي أو أضف جديد"
+              [(ngModel)]="categorySearchTerm" name="categorySearch" 
+              (input)="onCategorySearch(categorySearchTerm)"
+              (focus)="showCategoryDropdown = true" />
+
+            <div class="dropdown-menu"
+              *ngIf="showCategoryDropdown && (filteredCategories.length > 0 || categorySearchTerm.length > 0)">
+              <div class="dropdown-item" *ngFor="let category of filteredCategories" (click)="selectCategory(category)">
+                {{ category.title }}
+              </div>
+              <div class="dropdown-item add-new" *ngIf="categorySearchTerm.length > 0 && categorySearchTerm.trim()" (click)="addNewCategory()">
+                <i class="fas fa-plus"></i> إضافة "{{ categorySearchTerm }}" كتصنيف رئيسي جديد
+              </div>
+            </div>
+          </div>
+
+          <div class="selected-item" *ngIf="selectedCategory?.title">
+            <span>{{ selectedCategory.title }}</span>
+            <button type="button" class="btn-remove" (click)="selectedCategory = null; categorySearchTerm = ''">حذف</button>
+          </div>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary btn-lg" [disabled]="loading">
+            <i class="fas fa-eye"></i> معاينة التحديث
+          </button>
+        </div>
+      </form>
+
+      <!-- History Section -->
+      <div *ngIf="historyList.length > 0" class="history-section">
+        <h4 class="section-title">
+          <i class="fas fa-history"></i> سجل التحديثات السابقة
+        </h4>
+        <div class="history-list">
+          <div *ngFor="let historyItem of historyList" class="history-item" [class.undone]="historyItem.status === 'undone'">
+            <div class="history-header">
+              <div class="history-info">
+                <span class="history-date">
+                  <i class="fas fa-calendar"></i> {{ historyItem.createdAt | date:'short' }}
+                </span>
+                <span class="history-status" [class.active]="historyItem.status === 'active'" [class.undone-status]="historyItem.status === 'undone'">
+                  {{ historyItem.status === 'active' ? 'نشط' : 'تم التراجع' }}
+                </span>
+              </div>
+              <button *ngIf="historyItem.status === 'active'" type="button" class="btn btn-sm btn-warning" (click)="undoHistoryItem(historyItem._id)">
+                <i class="fas fa-undo"></i> تراجع
+              </button>
+            </div>
+            <div class="history-details">
+              <div class="detail-item">
+                <strong>الرف:</strong> {{ historyItem.criteria.shelfNumber }}
+                <span *ngIf="historyItem.criteria.roomNumber"> | <strong>الغرفة:</strong> {{ historyItem.criteria.roomNumber }}</span>
+                <span *ngIf="historyItem.criteria.wallNumber"> | <strong>الحائط:</strong> {{ historyItem.criteria.wallNumber }}</span>
+              </div>
+              <div class="detail-item">
+                <strong>نطاق الكتب:</strong> من {{ historyItem.criteria.bookNumberFrom }} إلى {{ historyItem.criteria.bookNumberTo }}
+              </div>
+              <div class="detail-item" *ngIf="historyItem.updateType === 'subject'">
+                <strong>التصنيف الفرعي:</strong> {{ historyItem.oldSubject?.title || 'لا يوجد' }} → <strong>{{ historyItem.newSubject?.title }}</strong>
+              </div>
+              <div class="detail-item" *ngIf="historyItem.updateType === 'category'">
+                <strong>التصنيف الرئيسي:</strong> {{ historyItem.oldCategory?.title || 'لا يوجد' }} → <strong>{{ historyItem.newCategory?.title }}</strong>
+              </div>
+              <div class="detail-item">
+                <strong>عدد الكتب:</strong> {{ historyItem.affectedBooks.length }} كتاب
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Confirmation Dialog -->
+<div class="modal-overlay" *ngIf="showConfirmationDialog" (click)="cancelUpdate()">
+  <div class="modal-dialog" (click)="$event.stopPropagation()">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">تأكيد التحديث الجماعي</h3>
+        <button type="button" class="close-btn" (click)="cancelUpdate()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body" *ngIf="previewData">
+        <div class="preview-section">
+          <div class="preview-item">
+            <strong>الغرفة:</strong> {{ previewData.roomNumber }}
+          </div>
+          <div class="preview-item">
+            <strong>الحائط:</strong> {{ previewData.wallNumber }}
+          </div>
+          <div class="preview-item">
+            <strong>الرف:</strong> {{ previewData.shelfNumber }}
+          </div>
+          <div class="preview-item">
+            <strong>نطاق الكتب:</strong> {{ previewData.bookRange }}
+          </div>
+          <div class="preview-item highlight">
+            <strong>التصنيف الفرعي الجديد:</strong> {{ previewData.subjectTitle }}
+          </div>
+        </div>
+        <div class="warning-message">
+          <i class="fas fa-exclamation-triangle"></i>
+          سيتم تحديث جميع الكتب المطابقة للمعايير المحددة. هل أنت متأكد؟
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="cancelUpdate()">إلغاء</button>
+        <button type="button" class="btn btn-primary" (click)="confirmUpdate()" [disabled]="loading">
+          <i class="fas fa-check"></i> تأكيد التحديث
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Undo Confirmation Dialog -->
+<div class="modal-overlay" *ngIf="showUndoConfirmation" (click)="cancelUndo()">
+  <div class="modal-dialog" (click)="$event.stopPropagation()">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">تأكيد التراجع</h3>
+        <button type="button" class="close-btn" (click)="cancelUndo()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="warning-message">
+          <i class="fas fa-exclamation-triangle"></i>
+          هل أنت متأكد من التراجع عن التحديث؟ سيتم استعادة جميع الكتب إلى حالتها السابقة.
+        </div>
+        <div class="preview-section" *ngIf="undoData">
+          <div class="preview-item">
+            <strong>عدد الكتب:</strong> {{ undoData.books.length }}
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="cancelUndo()">إلغاء</button>
+        <button type="button" class="btn btn-warning" (click)="confirmUndo()" [disabled]="loading">
+          <i class="fas fa-undo"></i> تأكيد التراجع
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -13,6 +13,7 @@ import { UserProfileComponent } from './components/user-profile/user-profile.com
 import { ExportsComponent } from './components/exports/exports.component';
 import { AuthorDashboardComponent } from './components/author-dashboard/author-dashboard.component';
 import { PublisherDashboardComponent } from './components/publisher-dashboard/publisher-dashboard.component';
+import { BulkUpdateComponent } from './components/bulk-update/bulk-update.component';
 
 
 const routes: Routes = [
@@ -24,6 +25,7 @@ const routes: Routes = [
   { path: 'authors', component: AuthorDashboardComponent },
   { path: 'publishers', component: PublisherDashboardComponent },
   { path: 'exports', component: ExportsComponent },
+  { path: 'bulk-update', component: BulkUpdateComponent },
   { path: 'login', component: LoginComponent },
   { path: 'register', component: RegisterComponent },
 

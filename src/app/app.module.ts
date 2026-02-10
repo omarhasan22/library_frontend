@@ -23,6 +23,7 @@ import { PaginationComponent } from './components/pagination/pagination.componen
 import { ExportsComponent } from './components/exports/exports.component';
 import { AuthorDashboardComponent } from './components/author-dashboard/author-dashboard.component';
 import { PublisherDashboardComponent } from './components/publisher-dashboard/publisher-dashboard.component';
+import { BulkUpdateComponent } from './components/bulk-update/bulk-update.component';
 import { CommonModule } from '@angular/common';
 
 
@@ -43,7 +44,8 @@ import { CommonModule } from '@angular/common';
         PaginationComponent,
         ExportsComponent,
         AuthorDashboardComponent,
-        PublisherDashboardComponent
+        PublisherDashboardComponent,
+        BulkUpdateComponent
     ],
     bootstrap: [AppComponent], imports: [BrowserModule,
         AppRoutingModule,

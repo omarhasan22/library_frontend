@@ -178,10 +178,17 @@
               </td>
               <td>
                 <div class="action-buttons">
-                  <button class="btn btn-sm btn-primary" (click)="viewBook(book._id)" title="عرض">
+                  <button class="btn btn-sm btn-primary" 
+                          (click)="viewBook(book._id)" 
+                          (contextmenu)="viewBookInNewWindow(book._id, $event)"
+                          title="عرض (انقر بزر الماوس الأيمن لفتح في نافذة جديدة)">
                     <i class="fas fa-eye"></i>
                   </button>
-                  <button class="btn btn-sm btn-warning" *ngIf="isAdmin" (click)="editBook(book._id)" title="تعديل">
+                  <button class="btn btn-sm btn-warning" 
+                          *ngIf="isAdmin" 
+                          (click)="editBook(book._id)" 
+                          (contextmenu)="editBookInNewWindow(book._id, $event)"
+                          title="تعديل (انقر بزر الماوس الأيمن لفتح في نافذة جديدة)">
                     <i class="fas fa-edit"></i>
                   </button>
                   <button class="btn btn-sm btn-danger" *ngIf="isAdmin" (click)="deleteBook(book._id)" title="حذف">
@@ -212,11 +219,16 @@
               <img [src]="book.imageUrl || 'assets/img/book-placeholder.jpg'" [alt]="book.title">
               <div class="book-overlay">
                 <div class="overlay-actions">
-                  <button class="btn btn-light btn-sm" (click)="viewBook(book._id)">
+                  <button class="btn btn-light btn-sm" 
+                          (click)="viewBook(book._id)"
+                          (contextmenu)="viewBookInNewWindow(book._id, $event)">
                     <i class="fas fa-eye me-1"></i>
                     عرض
                   </button>
-                  <button class="btn btn-warning btn-sm" *ngIf="isAdmin" (click)="editBook(book._id)">
+                  <button class="btn btn-warning btn-sm" 
+                          *ngIf="isAdmin" 
+                          (click)="editBook(book._id)"
+                          (contextmenu)="editBookInNewWindow(book._id, $event)">
                     <i class="fas fa-edit me-1"></i>
                     تعديل
                   </button>
