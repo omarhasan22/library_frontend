@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, AfterViewInit } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { BookService } from '../../services/book.service';
 import { Book } from '../../models/book.model';
@@ -11,7 +11,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
   templateUrl: './book-list.component.html',
   styleUrls: ['./book-list.component.css']
 })
-export class BookListComponent implements OnInit, OnDestroy {
+export class BookListComponent implements OnInit, OnDestroy, AfterViewInit {
   // Books data
   books: Book[] = [];
   loading: boolean = false;
@@ -51,6 +51,9 @@ export class BookListComponent implements OnInit, OnDestroy {
 
   // Flag to prevent recursive calls
   private isLoadingBooks = false;
+
+  // Scroll retry counter
+  private scrollRetries = 0;
 
   // Room selector for locations export
   selectedRoomNumber: string | null = null;
@@ -134,6 +137,13 @@ export class BookListComponent implements OnInit, OnDestroy {
         // Only load books if no query params and no saved filters
         this.loadBooks();
       }
+    }
+  }
+
+  ngAfterViewInit(): void {
+    // Check if we need to scroll when component view is ready
+    if (this.books.length > 0) {
+      this.scrollToLastViewedBook();
     }
   }
 
@@ -318,18 +328,7 @@ export class BookListComponent implements OnInit, OnDestroy {
           }
 
           // Scroll to last viewed book if exists
-          setTimeout(() => {
-            const lastViewedBookId = localStorage.getItem('lastViewedBookId');
-            if (lastViewedBookId) {
-              const el = document.getElementById(`book-${lastViewedBookId}`);
-              if (el) {
-                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                el.classList.add('highlight');
-                setTimeout(() => el.classList.remove('highlight'), 2000);
-                localStorage.removeItem('lastViewedBookId');
-              }
-            }
-          }, 100);
+          this.scrollToLastViewedBook();
         },
         (error) => {
           console.error('Error loading books', error);
@@ -338,6 +337,49 @@ export class BookListComponent implements OnInit, OnDestroy {
           alert('حدث خطأ في تحميل الكتب. يرجى المحاولة مرة أخرى.');
         }
       );
+  }
+
+  private scrollToLastViewedBook(): void {
+    const lastViewedBookId = localStorage.getItem('lastViewedBookId');
+    const lastViewedBookPage = localStorage.getItem('lastViewedBookPage');
+
+    if (!lastViewedBookId) return;
+
+    // Restore the page if needed and reload books
+    if (lastViewedBookPage) {
+      const savedPage = parseInt(lastViewedBookPage, 10);
+      if (savedPage >= 1 && savedPage !== this.currentPage) {
+        this.currentPage = savedPage;
+        localStorage.removeItem('lastViewedBookPage');
+        this.scrollRetries = 0;
+        this.loadBooks(); // This will call scrollToLastViewedBook again after loading
+        return;
+      }
+      localStorage.removeItem('lastViewedBookPage');
+    }
+
+    // Use a timeout to ensure DOM is ready
+    setTimeout(() => {
+      const el = document.getElementById(`book-${lastViewedBookId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.classList.add('highlight');
+        setTimeout(() => {
+          el.classList.remove('highlight');
+          localStorage.removeItem('lastViewedBookId');
+        }, 2000);
+        this.scrollRetries = 0;
+      } else if (this.scrollRetries < 3) {
+        // Retry a few times in case DOM isn't ready yet
+        this.scrollRetries++;
+        setTimeout(() => this.scrollToLastViewedBook(), 200);
+      } else {
+        // Give up after 3 retries
+        this.scrollRetries = 0;
+        localStorage.removeItem('lastViewedBookId');
+        localStorage.removeItem('lastViewedBookPage');
+      }
+    }, 300);
   }
 
   performSimpleSearch(): void {
@@ -392,20 +434,29 @@ export class BookListComponent implements OnInit, OnDestroy {
   }
 
   resetSearch(): void {
+    // Reset all search-related state
     this.searchFilters = [{ field: 'all', value: '' }];
     this.simpleSearchTerm = '';
     this.currentPage = 1;
-    this.isLoadingBooks = false; // Reset flag
+    this.isLoadingBooks = false;
     this.showAdvancedSearch = false;
-    localStorage.removeItem('bookSearchFilters');
+    this.sortField = '';
+    this.sortDirection = 'asc';
 
-    // Clear all query parameters
+    // Clear localStorage
+    localStorage.removeItem('bookSearchFilters');
+    localStorage.removeItem('lastViewedBookId');
+    localStorage.removeItem('lastViewedBookPage');
+
+    // Clear all query parameters and navigate
     this.router.navigate([], {
       relativeTo: this.route,
-      queryParams: {}
+      queryParams: {},
+      replaceUrl: true
+    }).then(() => {
+      // Load books after navigation completes to avoid conflicts
+      this.loadBooks();
     });
-
-    this.searchSubject.next(); // Trigger debounced search
   }
 
   sort(field: string): void {
@@ -475,6 +526,7 @@ export class BookListComponent implements OnInit, OnDestroy {
 
   viewBook(id: string): void {
     localStorage.setItem('lastViewedBookId', id);
+    localStorage.setItem('lastViewedBookPage', this.currentPage.toString());
     this.router.navigate(['/books', id]);
   }
 
@@ -505,9 +557,26 @@ export class BookListComponent implements OnInit, OnDestroy {
     if (confirm('هل أنت متأكد من حذف هذا الكتاب؟')) {
       this.bookService.deleteBook(id).subscribe(
         () => {
-          this.loadBooks();
+          // Remove the book from the local array instead of reloading
+          this.books = this.books.filter(book => book._id !== id);
+
+          // Update statistics
+          this.filteredCount = Math.max(0, this.filteredCount - 1);
+          this.totalBooks = Math.max(0, this.totalBooks - 1);
+
+          // Recalculate total pages
+          this.totalPages = Math.ceil(this.filteredCount / this.itemsPerPage) || 1;
+
+          // If current page is empty and not the first page, go to previous page
+          if (this.books.length === 0 && this.currentPage > 1) {
+            this.currentPage--;
+            this.loadBooks(); // Only reload if we need to go to previous page
+          }
         },
-        (error) => console.error('Error deleting book', error)
+        (error) => {
+          console.error('Error deleting book', error);
+          alert('فشل حذف الكتاب. يرجى المحاولة مرة أخرى.');
+        }
       );
     }
   }
