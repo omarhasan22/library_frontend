@@ -1,206 +1,74 @@
-<div class="user-profile-container">
-   <div class="container">
-      <div class="row justify-content-center">
-         <div class="col-lg-10">
-            <!-- Message Display -->
-            <div *ngIf="message" class="alert" [class]="messageType === 'success' ? 'alert-success' : 'alert-danger'"
-               role="alert">
-               <i class="fas" [class]="messageType === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'"></i>
-               {{ message }}
-               <button type="button" class="btn-close" (click)="clearMessage()"></button>
-            </div>
+<div class="app-container page profile-page">
+  <app-page-header title="الملف الشخصي" [crumbs]="[{ label: 'الرئيسية', link: '/' }, { label: 'الملف الشخصي' }]"></app-page-header>
 
-            <!-- User Overview Card -->
-            <div class="row mb-4">
-               <div class="col-12">
-                  <div class="profile-overview-card">
-                     <div class="profile-avatar">
-                        <i class="fas fa-user-circle"></i>
-                     </div>
-                     <div class="profile-info">
-                        <h3>{{ currentUser?.username }}</h3>
-                        <p class="profile-email">{{ currentUser?.email }}</p>
-                        <span class="badge profile-badge"
-                           [class]="currentUser?.role === 'admin' ? 'bg-danger' : 'bg-primary'">
-                           {{ currentUser?.role === 'admin' ? 'مدير' : 'مستخدم' }}
-                        </span>
-                     </div>
-                  </div>
-               </div>
-            </div>
+  <app-skeleton *ngIf="loadingUser" variant="lines" [count]="4" label="جارٍ تحميل الحساب…"></app-skeleton>
 
-            <div class="row">
-               <!-- Profile Information -->
-               <div class="col-md-6">
-                  <div class="profile-card">
-                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5><i class="fas fa-user me-2"></i>معلومات الملف الشخصي</h5>
-                        <button *ngIf="!isEditingProfile" class="btn btn-outline-light btn-sm"
-                           (click)="startEditingProfile()">
-                           <i class="fas fa-edit me-1"></i>تعديل
-                        </button>
-                     </div>
-                     <div class="card-body">
-                        <!-- Display Mode -->
-                        <div *ngIf="!isEditingProfile" class="user-info-display">
-                           <div class="info-item">
-                              <label class="info-label">اسم المستخدم:</label>
-                              <span class="info-value">{{ currentUser?.username }}</span>
-                           </div>
-                           <div class="info-item">
-                              <label class="info-label">البريد الإلكتروني:</label>
-                              <span class="info-value">{{ currentUser?.email }}</span>
-                           </div>
-                        </div>
-
-                        <!-- Edit Mode -->
-                        <form *ngIf="isEditingProfile" [formGroup]="profileForm" (ngSubmit)="onProfileSubmit()">
-                           <div class="mb-3">
-                              <label for="username" class="form-label">اسم المستخدم</label>
-                              <input type="text" class="form-control" id="username" formControlName="username"
-                                 [class.is-invalid]="profileForm.get('username')?.invalid && profileForm.get('username')?.touched">
-                              <div class="invalid-feedback">
-                                 {{ getFieldError('username') }}
-                              </div>
-                           </div>
-
-                           <div class="mb-3">
-                              <label for="email" class="form-label">البريد الإلكتروني</label>
-                              <input type="email" class="form-control" id="email" formControlName="email"
-                                 [class.is-invalid]="profileForm.get('email')?.invalid && profileForm.get('email')?.touched">
-                              <div class="invalid-feedback">
-                                 {{ getFieldError('email') }}
-                              </div>
-                           </div>
-
-                           <div class="d-flex gap-2">
-                              <button type="submit" class="btn btn-primary" [disabled]="profileForm.invalid || loading">
-                                 <i class="fas fa-save me-1" *ngIf="!loading"></i>
-                                 <span class="spinner-border spinner-border-sm me-1" *ngIf="loading"></span>
-                                 {{ loading ? 'جاري الحفظ...' : 'حفظ' }}
-                              </button>
-                              <button type="button" class="btn btn-secondary" (click)="cancelEditingProfile()"
-                                 [disabled]="loading">
-                                 <i class="fas fa-times me-1"></i>إلغاء
-                              </button>
-                           </div>
-                        </form>
-                     </div>
-                  </div>
-               </div>
-
-               <!-- Password Change -->
-               <div class="col-md-6">
-                  <div class="profile-card">
-                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5><i class="fas fa-lock me-2"></i>كلمة المرور</h5>
-                        <button *ngIf="!isEditingPassword" class="btn btn-outline-light btn-sm"
-                           (click)="startEditingPassword()">
-                           <i class="fas fa-key me-1"></i>تغيير
-                        </button>
-                     </div>
-                     <div class="card-body">
-                        <!-- Display Mode -->
-                        <div *ngIf="!isEditingPassword" class="password-info-display">
-                           <div class="info-item">
-                              <i class="fas fa-shield-alt text-muted me-2"></i>
-                              <span>كلمة المرور محمية</span>
-                           </div>
-                           <p class="text-muted small mt-2">انقر على "تغيير" لتحديث كلمة المرور</p>
-                        </div>
-
-                        <!-- Edit Mode -->
-                        <form *ngIf="isEditingPassword" [formGroup]="passwordForm" (ngSubmit)="onPasswordSubmit()">
-                           <div class="mb-3">
-                              <label for="currentPassword" class="form-label">كلمة المرور الحالية</label>
-                              <input type="password" class="form-control" id="currentPassword"
-                                 formControlName="currentPassword"
-                                 [class.is-invalid]="passwordForm.get('currentPassword')?.invalid && passwordForm.get('currentPassword')?.touched">
-                              <div class="invalid-feedback">
-                                 {{ getPasswordFieldError('currentPassword') }}
-                              </div>
-                           </div>
-
-                           <div class="mb-3">
-                              <label for="newPassword" class="form-label">كلمة المرور الجديدة</label>
-                              <input type="password" class="form-control" id="newPassword" formControlName="newPassword"
-                                 [class.is-invalid]="passwordForm.get('newPassword')?.invalid && passwordForm.get('newPassword')?.touched">
-                              <div class="invalid-feedback">
-                                 {{ getPasswordFieldError('newPassword') }}
-                              </div>
-                           </div>
-
-                           <div class="mb-3">
-                              <label for="confirmPassword" class="form-label">تأكيد كلمة المرور الجديدة</label>
-                              <input type="password" class="form-control" id="confirmPassword"
-                                 formControlName="confirmPassword"
-                                 [class.is-invalid]="passwordForm.get('confirmPassword')?.invalid && passwordForm.get('confirmPassword')?.touched">
-                              <div class="invalid-feedback">
-                                 {{ getPasswordFieldError('confirmPassword') }}
-                              </div>
-                           </div>
-
-                           <div class="d-flex gap-2">
-                              <button type="submit" class="btn btn-warning"
-                                 [disabled]="passwordForm.invalid || loading">
-                                 <i class="fas fa-key me-1" *ngIf="!loading"></i>
-                                 <span class="spinner-border spinner-border-sm me-1" *ngIf="loading"></span>
-                                 {{ loading ? 'جاري التحديث...' : 'تغيير' }}
-                              </button>
-                              <button type="button" class="btn btn-secondary" (click)="cancelEditingPassword()"
-                                 [disabled]="loading">
-                                 <i class="fas fa-times me-1"></i>إلغاء
-                              </button>
-                           </div>
-                        </form>
-                     </div>
-                  </div>
-               </div>
-            </div>
-
-            <!-- Account Information -->
-            <div class="row mt-4">
-               <div class="col-12">
-                  <div class="profile-card">
-                     <div class="card-header">
-                        <h5><i class="fas fa-info-circle me-2"></i>معلومات الحساب</h5>
-                     </div>
-                     <div class="card-body">
-                        <div class="row">
-                           <div class="col-md-4">
-                              <div class="account-info-item">
-                                 <i class="fas fa-calendar-alt text-primary me-2"></i>
-                                 <div>
-                                    <label>تاريخ الانضمام</label>
-                                    <span>{{ currentUser?.createdAt ? (currentUser.createdAt | date:'dd/MM/yyyy') : 'غير
-                                       محدد' }}</span>
-                                 </div>
-                              </div>
-                           </div>
-                           <div class="col-md-4">
-                              <div class="account-info-item">
-                                 <i class="fas fa-user-tag text-success me-2"></i>
-                                 <div>
-                                    <label>نوع المستخدم</label>
-                                    <span>{{ currentUser?.role === 'admin' ? 'مدير' : 'مستخدم' }}</span>
-                                 </div>
-                              </div>
-                           </div>
-                           <div class="col-md-4">
-                              <div class="account-info-item">
-                                 <i class="fas fa-envelope text-info me-2"></i>
-                                 <div>
-                                    <label>البريد الإلكتروني</label>
-                                    <span>{{ currentUser?.email }}</span>
-                                 </div>
-                              </div>
-                           </div>
-                        </div>
-                     </div>
-                  </div>
-               </div>
-            </div>
-         </div>
+  <ng-container *ngIf="!loadingUser">
+    <section class="who surface" aria-label="الحساب">
+      <span class="who__avatar" aria-hidden="true">{{ initial }}</span>
+      <div>
+        <p class="who__name">{{ currentUser?.username }}</p>
+        <p class="who__meta">
+          <span class="role-tag" [class.is-admin]="currentUser?.role === 'admin'">{{ currentUser?.role === 'admin' ? 'مشرف' : 'مستخدم' }}</span>
+          <span *ngIf="joined"> · عضو منذ {{ joined }}</span>
+        </p>
       </div>
-   </div>
+    </section>
+
+    <div class="profile-grid">
+      <!-- Account -->
+      <form class="form-card surface" [formGroup]="profileForm" (ngSubmit)="saveProfile()" novalidate aria-labelledby="acc-title">
+        <h2 id="acc-title" class="form-card__title">بيانات الحساب</h2>
+        <div *ngIf="profileError" class="alert alert-danger py-2" role="alert">{{ profileError }}</div>
+        <div class="field">
+          <label for="p-username" class="form-label">اسم المستخدم</label>
+          <input id="p-username" class="form-control" formControlName="username" autocomplete="username" dir="auto"
+                 [class.is-invalid]="error('profile', 'username')" [attr.aria-invalid]="error('profile', 'username') ? true : null"
+                 aria-describedby="p-username-err">
+          <p *ngIf="error('profile', 'username')" id="p-username-err" class="field-error">{{ error('profile', 'username') }}</p>
+        </div>
+        <div class="field">
+          <label for="p-email" class="form-label">البريد الإلكتروني</label>
+          <input id="p-email" type="email" class="form-control" formControlName="email" autocomplete="email" dir="ltr"
+                 [class.is-invalid]="error('profile', 'email')" [attr.aria-invalid]="error('profile', 'email') ? true : null"
+                 aria-describedby="p-email-err">
+          <p *ngIf="error('profile', 'email')" id="p-email-err" class="field-error">{{ error('profile', 'email') }}</p>
+        </div>
+        <div class="form-card__actions">
+          <button type="submit" class="btn btn-primary" [disabled]="savingProfile || !profileChanged">
+            <span *ngIf="savingProfile" class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+            حفظ البيانات
+          </button>
+          <button *ngIf="profileChanged" type="button" class="btn btn-link" (click)="resetProfile()">تراجع عن التعديل</button>
+        </div>
+      </form>
+
+      <!-- Password -->
+      <form class="form-card surface" [formGroup]="passwordForm" (ngSubmit)="savePassword()" novalidate aria-labelledby="pw-title">
+        <h2 id="pw-title" class="form-card__title">تغيير كلمة المرور</h2>
+        <div *ngIf="passwordError" class="alert alert-danger py-2" role="alert">{{ passwordError }}</div>
+        <div class="field" *ngFor="let f of [
+            { name: 'currentPassword', label: 'كلمة المرور الحالية', auto: 'current-password' },
+            { name: 'newPassword', label: 'كلمة المرور الجديدة', auto: 'new-password' },
+            { name: 'confirmPassword', label: 'تأكيد كلمة المرور الجديدة', auto: 'new-password' }]">
+          <label [for]="'p-' + f.name" class="form-label">{{ f.label }}</label>
+          <input [id]="'p-' + f.name" class="form-control" [formControlName]="f.name" [autocomplete]="f.auto" dir="ltr"
+                 [type]="showPasswords ? 'text' : 'password'"
+                 [class.is-invalid]="error('password', f.name)" [attr.aria-invalid]="error('password', f.name) ? true : null"
+                 [attr.aria-describedby]="'p-' + f.name + '-err'">
+          <p *ngIf="error('password', f.name)" [id]="'p-' + f.name + '-err'" class="field-error">{{ error('password', f.name) }}</p>
+        </div>
+        <div class="form-check">
+          <input id="p-show" class="form-check-input" type="checkbox" [checked]="showPasswords" (change)="showPasswords = !showPasswords">
+          <label for="p-show" class="form-check-label">إظهار كلمات المرور</label>
+        </div>
+        <div class="form-card__actions">
+          <button type="submit" class="btn btn-primary" [disabled]="savingPassword">
+            <span *ngIf="savingPassword" class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+            تغيير كلمة المرور
+          </button>
+        </div>
+      </form>
+    </div>
+  </ng-container>
 </div>

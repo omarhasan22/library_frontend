@@ -1,181 +1,134 @@
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { AuthService, User } from '../../services/auth.service';
+import { AbstractControl, FormBuilder, FormGroup, ValidationErrors, Validators } from '@angular/forms';
+import { AuthService } from '../../services/auth.service';
+import { ToastService } from '../../shared/services/toast.service';
 
+const LABELS: Record<string, string> = {
+  username: 'اسم المستخدم', email: 'البريد الإلكتروني',
+  currentPassword: 'كلمة المرور الحالية', newPassword: 'كلمة المرور الجديدة', confirmPassword: 'تأكيد كلمة المرور'
+};
+const DATE_FMT = new Intl.DateTimeFormat('ar-u-nu-latn', { dateStyle: 'long' });
+
+/** /profile — account details and password, each saved on its own. */
 @Component({
-   selector: 'app-user-profile',
-   templateUrl: './user-profile.component.html',
-   styleUrls: ['./user-profile.component.css']
+  selector: 'app-user-profile',
+  templateUrl: './user-profile.component.html',
+  styleUrls: ['./user-profile.component.css']
 })
 export class UserProfileComponent implements OnInit {
-   profileForm: FormGroup;
-   passwordForm: FormGroup;
-   currentUser: User | null = null;
-   loading = false;
-   message = '';
-   messageType = '';
-   isEditingProfile = false;
-   isEditingPassword = false;
+  currentUser: any = null;
+  loadingUser = true;
+  profileForm: FormGroup;
+  passwordForm: FormGroup;
+  savingProfile = false;
+  savingPassword = false;
+  profileSubmitted = false;
+  passwordSubmitted = false;
+  profileError = '';
+  passwordError = '';
+  showPasswords = false;
 
-   constructor(
-      private fb: FormBuilder,
-      private authService: AuthService
-   ) {
-      this.profileForm = this.fb.group({
-         username: ['', [Validators.required, Validators.minLength(3)]],
-         email: ['', [Validators.required, Validators.email]]
-      });
+  constructor(private fb: FormBuilder, private authService: AuthService, private toast: ToastService) {
+    this.profileForm = this.fb.group({
+      username: ['', [Validators.required, Validators.minLength(3)]],
+      email: ['', [Validators.required, Validators.email]]
+    });
+    this.passwordForm = this.fb.group({
+      currentPassword: ['', Validators.required],
+      newPassword: ['', [Validators.required, Validators.minLength(6)]],
+      confirmPassword: ['', Validators.required]
+    }, { validators: (g: AbstractControl): ValidationErrors | null => {
+      const a = g.get('newPassword')?.value;
+      const b = g.get('confirmPassword')?.value;
+      return a && b && a !== b ? { passwordMismatch: true } : null;
+    } });
+  }
 
-      this.passwordForm = this.fb.group({
-         currentPassword: ['', [Validators.required]],
-         newPassword: ['', [Validators.required, Validators.minLength(6)]],
-         confirmPassword: ['', [Validators.required]]
-      }, { validators: this.passwordMatchValidator });
-   }
+  ngOnInit(): void {
+    this.authService.getProfile().subscribe({
+      next: user => this.setUser(user),
+      error: () => this.setUser(this.authService.currentUser)
+    });
+  }
 
-   ngOnInit(): void {
-      this.loadCurrentUser();
-   }
+  private setUser(user: any): void {
+    this.loadingUser = false;
+    this.currentUser = user;
+    if (user) this.profileForm.reset({ username: user.username, email: user.email });
+  }
 
-   loadCurrentUser(): void {
-      // First try to get fresh data from API
-      this.authService.getProfile().subscribe({
-         next: (user) => {
-            this.currentUser = user;
-            this.profileForm.patchValue({
-               username: user.username,
-               email: user.email
-            });
-         },
-         error: () => {
-            // Fallback to cached user data (a one-off read, not a subscription that outlives the page)
-            const user = this.authService.currentUser;
-            if (user) {
-               this.currentUser = user;
-               this.profileForm.patchValue({
-                  username: user.username,
-                  email: user.email
-               });
-            }
-         }
-      });
-   }
+  get initial(): string {
+    return (this.currentUser?.username || '؟').charAt(0).toUpperCase();
+  }
 
-   passwordMatchValidator(form: FormGroup) {
-      const newPassword = form.get('newPassword');
-      const confirmPassword = form.get('confirmPassword');
+  get joined(): string {
+    const d = this.currentUser?.createdAt ? new Date(this.currentUser.createdAt) : null;
+    return d && !Number.isNaN(d.getTime()) ? DATE_FMT.format(d) : '';
+  }
 
-      if (newPassword && confirmPassword && newPassword.value !== confirmPassword.value) {
-         confirmPassword.setErrors({ ...(confirmPassword.errors || {}), passwordMismatch: true });
-         return { passwordMismatch: true };
+  get profileChanged(): boolean {
+    const v = this.profileForm.value;
+    return v.username !== this.currentUser?.username || v.email !== this.currentUser?.email;
+  }
+
+  error(form: 'profile' | 'password', name: string): string | null {
+    const submitted = form === 'profile' ? this.profileSubmitted : this.passwordSubmitted;
+    const group = form === 'profile' ? this.profileForm : this.passwordForm;
+    if (!submitted) return null;
+    const e = group.get(name)?.errors;
+    if (e?.['required']) return `${LABELS[name]} مطلوب.`;
+    if (e?.['email']) return 'صيغة البريد الإلكتروني غير صحيحة.';
+    if (e?.['minlength']) return `${LABELS[name]}: ${e['minlength'].requiredLength} أحرف على الأقل.`;
+    if (name === 'confirmPassword' && group.errors?.['passwordMismatch']) return 'كلمتا المرور غير متطابقتين.';
+    return null;
+  }
+
+  saveProfile(): void {
+    this.profileSubmitted = true;
+    this.profileError = '';
+    if (this.profileForm.invalid || !this.profileChanged) return;
+    const { username, email } = this.profileForm.value;
+    this.savingProfile = true;
+    this.authService.updateProfile({ username: String(username).trim(), email: String(email).trim() }).subscribe({
+      next: () => {
+        this.savingProfile = false;
+        this.profileSubmitted = false;
+        this.currentUser = { ...this.currentUser, username, email };
+        this.toast.success('تم حفظ بيانات الحساب');
+      },
+      error: err => {
+        this.savingProfile = false;
+        const server = String(err?.error?.error || '');
+        this.profileError = /exist|taken|duplicate|E11000/i.test(server)
+          ? 'اسم المستخدم أو البريد مستخدم من قبل.' : 'تعذّر حفظ البيانات. حاول مرة أخرى.';
       }
+    });
+  }
 
-      // Passwords match again: clear the mismatch error we set (it was never removed before,
-      // so the form stayed invalid until the confirmation was retyped).
-      if (confirmPassword?.hasError('passwordMismatch')) {
-         const { passwordMismatch, ...rest } = confirmPassword.errors || {};
-         confirmPassword.setErrors(Object.keys(rest).length ? rest : null);
+  resetProfile(): void {
+    this.profileSubmitted = false;
+    this.profileError = '';
+    this.profileForm.reset({ username: this.currentUser?.username, email: this.currentUser?.email });
+  }
+
+  savePassword(): void {
+    this.passwordSubmitted = true;
+    this.passwordError = '';
+    if (this.passwordForm.invalid) return;
+    const { currentPassword, newPassword } = this.passwordForm.value;
+    this.savingPassword = true;
+    this.authService.updateProfile({ currentPassword, newPassword }).subscribe({
+      next: () => {
+        this.savingPassword = false;
+        this.passwordSubmitted = false;
+        this.passwordForm.reset();
+        this.toast.success('تم تغيير كلمة المرور');
+      },
+      error: err => {
+        this.savingPassword = false;
+        this.passwordError = err?.status === 400 || err?.status === 401
+          ? 'كلمة المرور الحالية غير صحيحة.' : 'تعذّر تغيير كلمة المرور. حاول مرة أخرى.';
       }
-      return null;
-   }
-
-   startEditingProfile(): void {
-      this.isEditingProfile = true;
-      this.message = '';
-   }
-
-   cancelEditingProfile(): void {
-      this.isEditingProfile = false;
-      this.profileForm.patchValue({
-         username: this.currentUser?.username || '',
-         email: this.currentUser?.email || ''
-      });
-      this.message = '';
-   }
-
-   onProfileSubmit(): void {
-      if (this.profileForm.valid) {
-         this.loading = true;
-         this.message = '';
-
-         const { username, email } = this.profileForm.value;
-
-         this.authService.updateProfile({ username, email }).subscribe({
-            next: (response) => {
-               this.message = 'تم تحديث الملف الشخصي بنجاح';
-               this.messageType = 'success';
-               this.loading = false;
-               this.isEditingProfile = false;
-            },
-            error: (error) => {
-               this.message = error.error?.error || 'حدث خطأ أثناء تحديث الملف الشخصي';
-               this.messageType = 'error';
-               this.loading = false;
-            }
-         });
-      }
-   }
-
-   startEditingPassword(): void {
-      this.isEditingPassword = true;
-      this.passwordForm.reset();
-      this.message = '';
-   }
-
-   cancelEditingPassword(): void {
-      this.isEditingPassword = false;
-      this.passwordForm.reset();
-      this.message = '';
-   }
-
-   onPasswordSubmit(): void {
-      if (this.passwordForm.valid) {
-         this.loading = true;
-         this.message = '';
-
-         const { currentPassword, newPassword } = this.passwordForm.value;
-
-         this.authService.updateProfile({
-            currentPassword,
-            newPassword
-         }).subscribe({
-            next: (response) => {
-               this.message = 'تم تحديث كلمة المرور بنجاح';
-               this.messageType = 'success';
-               this.passwordForm.reset();
-               this.loading = false;
-               this.isEditingPassword = false;
-            },
-            error: (error) => {
-               this.message = error.error?.error || 'حدث خطأ أثناء تحديث كلمة المرور';
-               this.messageType = 'error';
-               this.loading = false;
-            }
-         });
-      }
-   }
-
-   getFieldError(fieldName: string): string {
-      const field = this.profileForm.get(fieldName);
-      if (field?.errors && field.touched) {
-         if (field.errors['required']) return `${fieldName} مطلوب`;
-         if (field.errors['email']) return 'البريد الإلكتروني غير صحيح';
-         if (field.errors['minlength']) return `${fieldName} يجب أن يكون 3 أحرف على الأقل`;
-      }
-      return '';
-   }
-
-   getPasswordFieldError(fieldName: string): string {
-      const field = this.passwordForm.get(fieldName);
-      if (field?.errors && field.touched) {
-         if (field.errors['required']) return `${fieldName} مطلوب`;
-         if (field.errors['minlength']) return 'كلمة المرور يجب أن تكون 6 أحرف على الأقل';
-         if (field.errors['passwordMismatch']) return 'كلمات المرور غير متطابقة';
-      }
-      return '';
-   }
-
-   clearMessage(): void {
-      this.message = '';
-   }
+    });
+  }
 }

@@ -1,98 +1,96 @@
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
+import { AbstractControl, FormBuilder, FormGroup, ValidationErrors, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { RegistrationService } from '../services/registration.service';
+import { ToastService } from '../shared/services/toast.service';
 
+type Field = 'username' | 'email' | 'password' | 'confirmPassword';
+
+/** /register — creates a regular (non-admin) account, then hands over to /login with the username filled in. */
 @Component({
   selector: 'app-register',
   templateUrl: './register.component.html',
-  styleUrls: ['./register.component.css'],
-  standalone: false,
+  styleUrls: ['../shared/styles/auth.css', './register.component.css'],
+  standalone: false
 })
 export class RegisterComponent implements OnInit {
-
   registerForm!: FormGroup;
-  success = false;
   errMessage = '';
   isLoading = false;
+  submitted = false;
+  showPassword = false;
 
   constructor(
     private formBuilder: FormBuilder,
     private registerService: RegistrationService,
-    private router: Router
-  ) { }
+    private router: Router,
+    private toast: ToastService
+  ) {}
 
   ngOnInit(): void {
     this.registerForm = this.formBuilder.group({
-      username: ['', [
-        Validators.required,
-        Validators.minLength(3),
-        Validators.maxLength(20)
-      ]],
-      email: ['', [
-        Validators.required,
-        Validators.email
-      ]],
-      password: ['', [
-        Validators.required,
-        Validators.minLength(6),
-        // Validators.pattern('^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9]).{6,}$')
-      ]],
-      confirmPassword: ['', Validators.required],
-      // terms: [false, Validators.requiredTrue]
-    }, {
-      validators: this.passwordMatchValidator
-    });
+      username: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(20)]],
+      email: ['', [Validators.required, Validators.email]],
+      password: ['', [Validators.required, Validators.minLength(6)]],
+      confirmPassword: ['', Validators.required]
+    }, { validators: this.passwordMatchValidator });
   }
 
-  // Custom validator for password matching
   passwordMatchValidator(control: AbstractControl): ValidationErrors | null {
     const password = control.get('password');
-    const confirmPassword = control.get('confirmPassword');
+    const confirm = control.get('confirmPassword');
+    if (!password || !confirm || !confirm.value) return null;
+    return password.value !== confirm.value ? { passwordMismatch: true } : null;
+  }
 
-    if (!password || !confirmPassword) {
-      return null;
+  error(field: Field): string | null {
+    if (!this.submitted) return null;
+    const c = this.registerForm.get(field);
+    const e = c?.errors;
+    switch (field) {
+      case 'username':
+        if (e?.['required']) return 'اختر اسم مستخدم.';
+        if (e?.['minlength']) return 'اسم المستخدم 3 أحرف على الأقل.';
+        if (e?.['maxlength']) return 'اسم المستخدم 20 حرفاً على الأكثر.';
+        return null;
+      case 'email':
+        if (e?.['required']) return 'اكتب بريدك الإلكتروني.';
+        if (e?.['email']) return 'صيغة البريد الإلكتروني غير صحيحة.';
+        return null;
+      case 'password':
+        if (e?.['required']) return 'اختر كلمة مرور.';
+        if (e?.['minlength']) return 'كلمة المرور 6 أحرف على الأقل.';
+        return null;
+      case 'confirmPassword':
+        if (e?.['required']) return 'أعد كتابة كلمة المرور.';
+        if (this.registerForm.errors?.['passwordMismatch']) return 'كلمتا المرور غير متطابقتين.';
+        return null;
     }
-
-    if (password.value !== confirmPassword.value) {
-      return { passwordMismatch: true };
-    }
-
-    return null;
   }
 
   register(): void {
-    // Mark all fields as touched to show validation errors
+    this.submitted = true;
+    this.errMessage = '';
     if (this.registerForm.invalid) {
-      Object.keys(this.registerForm.controls).forEach(key => {
-        this.registerForm.get(key)?.markAsTouched();
-      });
+      const order: Field[] = ['username', 'email', 'password', 'confirmPassword'];
+      const first = order.find(f => this.error(f));
+      if (first) document.getElementById('reg-' + first)?.focus();
       return;
     }
-
     this.isLoading = true;
-    this.errMessage = '';
-
-    const formValue = this.registerForm.value;
-
-    this.registerService.register(
-      formValue.email,
-      formValue.username,
-      formValue.password
-    ).subscribe({
-      next: (response) => {
-        this.success = true;
+    const v = this.registerForm.value;
+    this.registerService.register(v.email, v.username, v.password).subscribe({
+      next: () => {
         this.isLoading = false;
-
-        // Redirect to login after 2 seconds
-        setTimeout(() => {
-          this.router.navigate(['/login']);
-        }, 2000);
+        this.toast.success('تم إنشاء الحساب. سجّل الدخول الآن.');
+        this.router.navigate(['/login'], { queryParams: { u: String(v.username).trim() } });
       },
-      error: (err) => {
+      error: err => {
         this.isLoading = false;
-        // RegistrationService rethrows a plain Error carrying the server's message.
-        this.errMessage = err?.message || 'Registration failed. Please try again.';
+        const server = String(err?.error?.error || err?.error?.message || '');
+        this.errMessage = /exist|taken|duplicate|E11000/i.test(server)
+          ? 'اسم المستخدم أو البريد الإلكتروني مستخدم من قبل.'
+          : /[؀-ۿ]/.test(server) ? server : 'تعذّر إنشاء الحساب. حاول مرة أخرى.';
       }
     });
   }

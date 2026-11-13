@@ -154,7 +154,7 @@
       </app-pagination>
    </div>
 
-   <div class="pagination-info">
+   <div class="pagination-info" *ngIf="totalBorrows > 0">
       عرض {{ (currentPage - 1) * limit + 1 }} - {{ Math.min(currentPage * limit, totalBorrows) }} من أصل {{ totalBorrows
       }} استعارة
    </div>

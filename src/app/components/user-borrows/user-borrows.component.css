@@ -2,7 +2,6 @@
   max-width: 1200px;
   margin: 0 auto;
   padding: 2rem;
-  font-family: 'Cairo', sans-serif;
   margin-top: 0; /* header is sticky now: no offset needed */
 }
 
@@ -14,18 +13,18 @@
 .page-title {
   font-size: 2.5rem;
   font-weight: 700;
-  color: #2c3e50;
+  color: var(--ink-900);
   margin-bottom: 0.5rem;
 }
 
 .page-title i {
   margin-left: 1rem;
-  color: #667eea;
+  color: var(--brand-600);
 }
 
 .page-subtitle {
   font-size: 1.1rem;
-  color: #666;
+  color: var(--ink-600);
   margin: 0;
 }
 
@@ -78,12 +77,12 @@
   font-size: 1.8rem;
   font-weight: 700;
   margin: 0;
-  color: #2c3e50;
+  color: var(--ink-900);
 }
 
 .summary-content p {
   font-size: 0.9rem;
-  color: #666;
+  color: var(--ink-600);
   margin: 0.25rem 0 0 0;
 }
 
@@ -105,7 +104,7 @@
   background: transparent;
   border-radius: 10px;
   font-weight: 600;
-  color: #666;
+  color: var(--ink-600);
   cursor: pointer;
   transition: all 0.3s ease;
   white-space: nowrap;
@@ -116,12 +115,12 @@
 }
 
 .tab-button:hover {
-  color: #667eea;
+  color: var(--brand-600);
   background: rgba(102,126,234,0.1);
 }
 
 .tab-button.active {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--brand-600);
   color: white;
   box-shadow: 0 4px 15px rgba(102,126,234,0.3);
 }
@@ -130,7 +129,7 @@
 .loading {
   text-align: center;
   padding: 3rem;
-  color: #667eea;
+  color: var(--brand-600);
   font-size: 1.2rem;
 }
 
@@ -182,7 +181,7 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--line);
 }
 
 .book-info {
@@ -192,14 +191,14 @@
 .book-title {
   font-size: 1.2rem;
   font-weight: 700;
-  color: #2c3e50;
+  color: var(--ink-900);
   margin: 0 0 0.5rem 0;
   line-height: 1.3;
 }
 
 .book-authors {
   font-size: 0.9rem;
-  color: #666;
+  color: var(--ink-600);
   margin: 0;
 }
 
@@ -209,23 +208,23 @@
   border-radius: 20px;
   font-size: 0.8rem;
   font-weight: 600;
-  text-transform: uppercase;
+  
   white-space: nowrap;
 }
 
 .status-badge.status-active {
-  background: #d4edda;
-  color: #155724;
+  background: var(--success-50);
+  color: var(--success-700);
 }
 
 .status-badge.status-warning {
-  background: #fff3cd;
-  color: #856404;
+  background: var(--warning-50);
+  color: var(--warning-700);
 }
 
 .status-badge.status-overdue {
-  background: #f8d7da;
-  color: #721c24;
+  background: var(--danger-50);
+  color: var(--danger-700);
 }
 
 .status-badge.status-returned {
@@ -252,7 +251,7 @@
 
 .date-item i {
   width: 20px;
-  color: #667eea;
+  color: var(--brand-600);
 }
 
 .date-item > div {
@@ -262,17 +261,17 @@
 
 .date-label {
   font-size: 0.8rem;
-  color: #666;
+  color: var(--ink-600);
   margin-bottom: 0.25rem;
 }
 
 .date-value {
   font-weight: 600;
-  color: #2c3e50;
+  color: var(--ink-900);
 }
 
 .date-value.overdue {
-  color: #dc3545;
+  color: var(--danger-600);
 }
 
 /* Progress Section */
@@ -293,20 +292,20 @@
 }
 
 .overdue-text {
-  color: #dc3545;
+  color: var(--danger-600);
 }
 
 .warning-text {
-  color: #ffc107;
+  color: var(--warning-600);
 }
 
 .normal-text {
-  color: #28a745;
+  color: var(--success-600);
 }
 
 .progress-bar {
   height: 8px;
-  background: #e9ecef;
+  background: var(--line);
   border-radius: 10px;
   overflow: hidden;
 }
@@ -318,15 +317,15 @@
 }
 
 .progress-fill.status-active {
-  background: linear-gradient(90deg, #28a745 0%, #20c997 100%);
+  background: linear-gradient(90deg, var(--success-600) 0%, #20c997 100%);
 }
 
 .progress-fill.status-warning {
-  background: linear-gradient(90deg, #ffc107 0%, #fd7e14 100%);
+  background: linear-gradient(90deg, var(--warning-600) 0%, #fd7e14 100%);
 }
 
 .progress-fill.status-overdue {
-  background: linear-gradient(90deg, #dc3545 0%, #e74c3c 100%);
+  background: linear-gradient(90deg, var(--danger-600) 0%, #e74c3c 100%);
 }
 
 /* Return Section */
@@ -336,7 +335,7 @@
 }
 
 .btn-return {
-  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  background: var(--success-600);
   color: white;
   border: none;
   padding: 0.75rem 1.5rem;
@@ -367,7 +366,7 @@
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  color: #28a745;
+  color: var(--success-600);
   font-weight: 600;
   font-size: 0.9rem;
   margin-top: 1rem;
@@ -379,12 +378,12 @@
 
 .card-footer {
   padding: 1rem 1.5rem;
-  background: #f8f9fa;
+  background: var(--surface-page);
   display: flex;
   justify-content: space-between;
   align-items: center;
   font-size: 0.85rem;
-  color: #666;
+  color: var(--ink-600);
 }
 
 .borrow-duration,
@@ -395,7 +394,7 @@
 }
 
 .view-book {
-  color: #667eea;
+  color: var(--brand-600);
   font-weight: 600;
 }
 
@@ -403,7 +402,7 @@
 .empty-state {
   text-align: center;
   padding: 3rem;
-  color: #666;
+  color: var(--ink-600);
 }
 
 .empty-state i {
@@ -413,7 +412,7 @@
 }
 
 .empty-state h3 {
-  color: #2c3e50;
+  color: var(--ink-900);
   margin-bottom: 0.5rem;
 }
 
@@ -435,13 +434,13 @@
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--brand-600);
   color: white;
   box-shadow: 0 4px 15px rgba(102,126,234,0.3);
 }
 
 .btn-primary:hover {
-  background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+  background: var(--brand-700);
   transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(102,126,234,0.4);
   color: white;

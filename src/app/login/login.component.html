@@ -1,58 +1,42 @@
-<section class="gradient-strip" aria-label="تسجيل الدخول">
-  <div class="auth-card" role="region" aria-labelledby="loginTitle">
-    <div class="header">
-      <h2 id="loginTitle">مرحباً بعودتك</h2>
-      <p>سجّل الدخول لمتابعة حسابك</p>
+<div class="auth">
+  <div class="auth-card">
+    <img class="auth-card__logo" src="assets/img/logos/logo-360.png" alt="" width="160" height="52">
+    <h1 class="auth-card__title">تسجيل الدخول</h1>
+    <p class="auth-card__sub">لإدارة الفهرس وإضافة الكتب. التصفّح والبحث متاحان للجميع دون حساب.</p>
+
+    <div *ngIf="message" class="auth-alert auth-alert--error" role="alert">
+      <i class="fas fa-circle-exclamation" aria-hidden="true"></i><span>{{ message }}</span>
     </div>
 
-    <!-- تنبيهات -->
-    <div *ngIf="message && !isSuccess" class="alert alert-danger" role="alert">{{ message }}</div>
-    <div *ngIf="message && isSuccess" class="alert alert-success" role="alert">{{ message }}</div>
-
-    <form [formGroup]="loginForm" (ngSubmit)="login()" novalidate>
-
-      <div class="form-group">
-        <input type="text" id="emailOrUsername" class="form-control" formControlName="emailOrUsername"
-          placeholder="البريد الإلكتروني أو اسم المستخدم" autocomplete="username"
-          [class.is-invalid]="loginForm.get('emailOrUsername')?.invalid && loginForm.get('emailOrUsername')?.touched"
-          aria-label="البريد الإلكتروني أو اسم المستخدم">
+    <form *ngIf="loginForm" class="auth-form" [formGroup]="loginForm" (ngSubmit)="login()" novalidate>
+      <div>
+        <label for="login-user" class="form-label">اسم المستخدم أو البريد الإلكتروني</label>
+        <input id="login-user" class="form-control" formControlName="emailOrUsername" autocomplete="username"
+               dir="auto" [class.is-invalid]="error('emailOrUsername')"
+               [attr.aria-invalid]="error('emailOrUsername') ? true : null" aria-describedby="login-user-err">
+        <p *ngIf="error('emailOrUsername')" id="login-user-err" class="field-error">{{ error('emailOrUsername') }}</p>
       </div>
 
-      <div class="form-group">
-        <input type="password" id="password" class="form-control" formControlName="password" placeholder="كلمة المرور"
-          autocomplete="current-password"
-          [class.is-invalid]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
-          aria-label="كلمة المرور">
-      </div>
-
-      <div class="d-flex justify-content-between align-items-center" style="margin-bottom:.9rem;">
-        <!-- <label class="form-check" style="margin:0;">
-          <input type="checkbox" class="form-check-input" formControlName="rememberMe" id="rememberMe">
-          <span style="font-size:.95rem;">تذكرني</span>
-        </label> -->
-
-        <!-- <a href="#" class="small-link primary">هل نسيت كلمة المرور؟</a> -->
-      </div>
-
-      <div style="position:relative;">
-        <button type="submit" class="btn-primary" [disabled]="loginForm.invalid || isLoading"
-          style="background: #2ea297;">
-          <ng-container *ngIf="!isLoading">تسجيل الدخول</ng-container>
-          <ng-container *ngIf="isLoading">جاري الدخول...</ng-container>
-        </button>
-
-        <div *ngIf="isLoading" class="loading-overlay" style="background: #2ea297;">
-          <div aria-hidden="true" style="color: white;">...تحميل</div>
+      <div>
+        <label for="login-password" class="form-label">كلمة المرور</label>
+        <div class="password">
+          <input id="login-password" class="form-control" formControlName="password" autocomplete="current-password"
+                 [type]="showPassword ? 'text' : 'password'" dir="ltr" [class.is-invalid]="error('password')"
+                 [attr.aria-invalid]="error('password') ? true : null" aria-describedby="login-password-err">
+          <button type="button" class="password__toggle" (click)="showPassword = !showPassword"
+                  [attr.aria-pressed]="showPassword" [attr.aria-label]="showPassword ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'">
+            <i class="fas" [class.fa-eye]="!showPassword" [class.fa-eye-slash]="showPassword" aria-hidden="true"></i>
+          </button>
         </div>
+        <p *ngIf="error('password')" id="login-password-err" class="field-error">{{ error('password') }}</p>
       </div>
 
+      <button type="submit" class="btn btn-primary auth-submit" [disabled]="isLoading">
+        <span *ngIf="isLoading" class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+        {{ isLoading ? 'جارٍ الدخول…' : 'دخول' }}
+      </button>
     </form>
 
-    <hr style="margin:1rem 0; border:none; border-top:1px solid #eef2ff;">
-
-    <p style="text-align:center; font-size:.95rem; color:#6b7280; margin:0;">
-      ليس لديك حساب؟
-      <a routerLink="/register" class="small-link primary">أنشئ حسابًا</a>
-    </p>
+    <p class="auth-switch">ليس لديك حساب؟ <a routerLink="/register">إنشاء حساب</a></p>
   </div>
-</section>
+</div>

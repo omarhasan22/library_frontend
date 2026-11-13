@@ -1,62 +1,54 @@
-<section class="gradient-strip" aria-label="إنشاء حساب">
-  <div class="auth-card" role="region" aria-labelledby="registerTitle">
-    <div class="header">
-      <h2 id="registerTitle">إنشاء حساب جديد</h2>
-      <p>ابدأ باستخدام حسابك الآن</p>
+<div class="auth">
+  <div class="auth-card">
+    <img class="auth-card__logo" src="assets/img/logos/logo-360.png" alt="" width="160" height="52">
+    <h1 class="auth-card__title">إنشاء حساب</h1>
+    <p class="auth-card__sub">حساب عادي للمتابعة؛ صلاحيات الإدارة يمنحها مشرف المكتبة.</p>
+
+    <div *ngIf="errMessage" class="auth-alert auth-alert--error" role="alert">
+      <i class="fas fa-circle-exclamation" aria-hidden="true"></i><span>{{ errMessage }}</span>
     </div>
 
-    <div *ngIf="success" class="alert alert-success">تم التسجيل بنجاح. جاري التحويل...</div>
-    <div *ngIf="errMessage" class="alert alert-danger">{{ errMessage }}</div>
-
-    <form [formGroup]="registerForm" (ngSubmit)="register()" novalidate>
-
-      <div class="form-group">
-        <input type="text" id="username" class="form-control" formControlName="username" placeholder="اسم المستخدم"
-          autocomplete="username"
-          [class.is-invalid]="registerForm.get('username')?.invalid && registerForm.get('username')?.touched"
-          aria-label="اسم المستخدم">
+    <form class="auth-form" [formGroup]="registerForm" (ngSubmit)="register()" novalidate>
+      <div>
+        <label for="reg-username" class="form-label">اسم المستخدم</label>
+        <input id="reg-username" class="form-control" formControlName="username" autocomplete="username" dir="auto"
+               [class.is-invalid]="error('username')" [attr.aria-invalid]="error('username') ? true : null" aria-describedby="reg-username-err">
+        <p *ngIf="error('username')" id="reg-username-err" class="field-error">{{ error('username') }}</p>
       </div>
-
-      <div class="form-group">
-        <input type="email" id="email" class="form-control" formControlName="email" placeholder="البريد الإلكتروني"
-          autocomplete="email"
-          [class.is-invalid]="registerForm.get('email')?.invalid && registerForm.get('email')?.touched"
-          aria-label="البريد الإلكتروني">
+      <div>
+        <label for="reg-email" class="form-label">البريد الإلكتروني</label>
+        <input id="reg-email" type="email" class="form-control" formControlName="email" autocomplete="email" dir="ltr"
+               [class.is-invalid]="error('email')" [attr.aria-invalid]="error('email') ? true : null" aria-describedby="reg-email-err">
+        <p *ngIf="error('email')" id="reg-email-err" class="field-error">{{ error('email') }}</p>
       </div>
-
-      <div class="form-group">
-        <input type="password" id="password" class="form-control" formControlName="password" placeholder="كلمة المرور"
-          autocomplete="new-password"
-          [class.is-invalid]="registerForm.get('password')?.invalid && registerForm.get('password')?.touched"
-          aria-label="كلمة المرور">
-      </div>
-
-      <div class="form-group">
-        <input type="password" id="confirmPassword" class="form-control" formControlName="confirmPassword"
-          placeholder="تأكيد كلمة المرور"
-          [class.is-invalid]="registerForm.get('confirmPassword')?.invalid && registerForm.get('confirmPassword')?.touched"
-          aria-label="تأكيد كلمة المرور">
-      </div>
-
-      <div style="position:relative;">
-        <button type="submit" class="btn-primary" [disabled]="registerForm.invalid || isLoading"
-          style="background: #2ea297;">
-          <ng-container *ngIf="!isLoading">إنشاء الحساب</ng-container>
-          <ng-container *ngIf="isLoading">جاري الإنشاء...</ng-container>
-        </button>
-
-        <div *ngIf="isLoading" class="loading-overlay">
-          <div aria-hidden="true">...تحميل</div>
+      <div>
+        <label for="reg-password" class="form-label">كلمة المرور</label>
+        <div class="password">
+          <input id="reg-password" class="form-control" formControlName="password" autocomplete="new-password" dir="ltr"
+                 [type]="showPassword ? 'text' : 'password'" [class.is-invalid]="error('password')"
+                 [attr.aria-invalid]="error('password') ? true : null" aria-describedby="reg-password-err reg-password-hint">
+          <button type="button" class="password__toggle" (click)="showPassword = !showPassword"
+                  [attr.aria-pressed]="showPassword" [attr.aria-label]="showPassword ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'">
+            <i class="fas" [class.fa-eye]="!showPassword" [class.fa-eye-slash]="showPassword" aria-hidden="true"></i>
+          </button>
         </div>
+        <p *ngIf="error('password'); else pwHint" id="reg-password-err" class="field-error">{{ error('password') }}</p>
+        <ng-template #pwHint><p id="reg-password-hint" class="form-text mb-0">6 أحرف على الأقل.</p></ng-template>
+      </div>
+      <div>
+        <label for="reg-confirmPassword" class="form-label">تأكيد كلمة المرور</label>
+        <input id="reg-confirmPassword" class="form-control" formControlName="confirmPassword" autocomplete="new-password" dir="ltr"
+               [type]="showPassword ? 'text' : 'password'" [class.is-invalid]="error('confirmPassword')"
+               [attr.aria-invalid]="error('confirmPassword') ? true : null" aria-describedby="reg-confirm-err">
+        <p *ngIf="error('confirmPassword')" id="reg-confirm-err" class="field-error">{{ error('confirmPassword') }}</p>
       </div>
 
+      <button type="submit" class="btn btn-primary auth-submit" [disabled]="isLoading">
+        <span *ngIf="isLoading" class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+        {{ isLoading ? 'جارٍ إنشاء الحساب…' : 'إنشاء الحساب' }}
+      </button>
     </form>
 
-    <hr style="margin:1rem 0; border:none; border-top:1px solid #eef2ff;">
-
-    <p style="text-align:center; font-size:.95rem; color:#6b7280; margin:0;">
-      لديك حساب بالفعل؟
-      <a routerLink="/login" class="small-link primary">سجّل الدخول</a>
-    </p>
+    <p class="auth-switch">لديك حساب؟ <a routerLink="/login">تسجيل الدخول</a></p>
   </div>
-</section>
+</div>

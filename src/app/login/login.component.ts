@@ -1,24 +1,28 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { Router, ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
+import { of } from 'rxjs';
+import { switchMap } from 'rxjs/operators';
+
 import { LoginService } from '../services/login.service';
 import { TokenService } from '../services/token.service';
 import { AuthService } from '../services/auth.service';
-import { switchMap } from 'rxjs/operators';
-import { of } from 'rxjs';
+import { ToastService } from '../shared/services/toast.service';
 
+/** /login — accepts a username or an email. Returns to ?returnUrl= after signing in. */
 @Component({
   selector: 'app-login',
   templateUrl: './login.component.html',
-  styleUrls: ['./login.component.css'],
+  styleUrls: ['../shared/styles/auth.css', './login.component.css'],
   standalone: false
 })
 export class LoginComponent implements OnInit {
   loginForm!: FormGroup;
   message = '';
   isLoading = false;
-  isSuccess = false;
-  returnUrl: string = '/';
+  submitted = false;
+  showPassword = false;
+  returnUrl = '/';
 
   constructor(
     private formBuilder: FormBuilder,
@@ -26,85 +30,76 @@ export class LoginComponent implements OnInit {
     private router: Router,
     private route: ActivatedRoute,
     private tokenService: TokenService,
-    private authService: AuthService
-  ) { }
+    private authService: AuthService,
+    private toast: ToastService
+  ) {}
 
   ngOnInit(): void {
-    // Check if already logged in
+    this.returnUrl = this.safeReturnUrl(this.route.snapshot.queryParams['returnUrl']);
     if (this.authService.isAuthenticated()) {
-      this.router.navigate(['/']);
+      this.router.navigateByUrl(this.returnUrl);
+      return;
     }
-
-    this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/';
-
     this.loginForm = this.formBuilder.group({
-      emailOrUsername: ['', [Validators.required]],
+      // Prefilled after registering (?u=username).
+      emailOrUsername: [this.route.snapshot.queryParams['u'] || '', [Validators.required]],
       password: ['', [Validators.required, Validators.minLength(6)]],
       rememberMe: [false]
     });
   }
 
+  error(name: 'emailOrUsername' | 'password'): string | null {
+    const c = this.loginForm.get(name);
+    if (!this.submitted || !c?.errors) return null;
+    if (name === 'emailOrUsername') return 'اكتب اسم المستخدم أو البريد الإلكتروني.';
+    return c.errors['required'] ? 'اكتب كلمة المرور.' : 'كلمة المرور 6 أحرف على الأقل.';
+  }
+
   login(): void {
+    this.submitted = true;
+    this.message = '';
     if (this.loginForm.invalid) {
-      Object.keys(this.loginForm.controls).forEach(key => {
-        this.loginForm.get(key)?.markAsTouched();
-      });
+      const first = this.error('emailOrUsername') ? 'login-user' : 'login-password';
+      document.getElementById(first)?.focus();
       return;
     }
 
     this.isLoading = true;
-    this.message = '';
-
     const { emailOrUsername, password, rememberMe } = this.loginForm.value;
-    const isEmail = this.isValidEmail(emailOrUsername);
+    const identifier = String(emailOrUsername).trim();
+    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identifier);
 
-    // First login to get tokens
-    this.loginService.login(emailOrUsername, password, isEmail).pipe(
-      switchMap(loginResponse => {
-        // Store tokens
-        this.tokenService.storeAccessToken(loginResponse.accessToken, rememberMe);
-        this.tokenService.storeRefreshToken(loginResponse.refreshToken, rememberMe);
-
-        // Set initial login state
+    this.loginService.login(identifier, password, isEmail).pipe(
+      switchMap(res => {
+        this.tokenService.storeAccessToken(res.accessToken, rememberMe);
+        this.tokenService.storeRefreshToken(res.refreshToken, rememberMe);
         this.authService.setLoginState(true);
-
-        // If user data is included in login response, use it
-        if (loginResponse.user) {
-          this.authService.setUserInfo(loginResponse.user);
-          return of(loginResponse.user);
+        if (res.user) {
+          this.authService.setUserInfo(res.user);
+          return of(res.user);
         }
-
-        // Otherwise, fetch user data
         return this.authService.loadUserData();
       })
     ).subscribe({
-      next: () => {
-        this.isSuccess = true;
-        this.message = 'Login successful! Redirecting...';
-
-        setTimeout(() => {
-          this.router.navigate([this.returnUrl]);
-        }, 1000);
-      },
-      error: (err) => {
+      next: (user: any) => {
         this.isLoading = false;
-
-        if (err.status === 401) {
-          this.message = 'Invalid email/username or password';
-        } else if (err.status === 404) {
-          this.message = 'User not found';
-        } else {
-          this.message = err?.error?.message || 'Login failed. Please try again.';
-        }
-
-        // Clear any partial login state
+        this.toast.success(user?.username ? `أهلاً بك، ${user.username}` : 'تم تسجيل الدخول');
+        this.router.navigateByUrl(this.returnUrl);
+      },
+      error: err => {
+        this.isLoading = false;
+        this.message = err?.status === 401 || err?.status === 404 || err?.status === 400
+          ? 'اسم المستخدم أو كلمة المرور غير صحيحة.'
+          : err?.status === 429
+            ? 'محاولات كثيرة. انتظر قليلاً ثم حاول مجدداً.'
+            : 'تعذّر تسجيل الدخول. تحقّق من الاتصال وحاول مرة أخرى.';
         this.authService.logout();
       }
     });
   }
 
-  private isValidEmail(email: string): boolean {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
+  /** Only same-site paths (never an absolute URL from the query string). */
+  private safeReturnUrl(url: unknown): string {
+    return typeof url === 'string' && url.startsWith('/') && !url.startsWith('//') ? url : '/';
   }
 }

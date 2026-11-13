@@ -1,0 +1,50 @@
+/* Shared layout for login and register: a centred card on a quiet, patterned background. */
+:host { display: block; }
+.auth {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: calc(100vh - var(--header-h) - 80px);
+  padding: 32px var(--gutter) 48px;
+  background: linear-gradient(180deg, var(--brand-50), var(--surface-page) 70%);
+  overflow: hidden;
+}
+.auth::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url('/assets/img/display/pattern-teal.svg');
+  background-size: 160px 160px;
+  opacity: 0.07;
+  pointer-events: none;
+}
+.auth-card {
+  position: relative;
+  width: min(420px, 100%);
+  padding: 28px 24px 24px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-2);
+}
+@media (min-width: 576px) { .auth-card { padding: 36px 32px 28px; } }
+.auth-card__logo { display: block; height: 52px; width: auto; margin: 0 auto 16px; }
+.auth-card__title { margin: 0; text-align: center; font-size: var(--fs-xl); }
+.auth-card__sub { margin: 6px 0 22px; text-align: center; color: var(--ink-600); }
+.auth-form { display: flex; flex-direction: column; gap: 14px; }
+.field-error { margin: 4px 0 0; color: var(--danger-600); font-size: var(--fs-xs); font-weight: 500; }
+.form-control.is-invalid { border-color: var(--danger-600); background-image: none; }
+.password { position: relative; }
+.password .form-control { padding-inline-end: 44px; }
+.password__toggle {
+  position: absolute; inset-inline-end: 4px; top: 50%; transform: translateY(-50%);
+  display: grid; place-items: center; width: 36px; height: 36px; border: 0; border-radius: var(--radius-sm);
+  background: transparent; color: var(--ink-600);
+}
+.password__toggle:hover { background: var(--surface-sunken); color: var(--ink-900); }
+.auth-alert { display: flex; gap: 8px; align-items: flex-start; margin: 0 0 16px; padding: 10px 12px; border-radius: var(--radius-sm); font-size: var(--fs-sm); }
+.auth-alert--error { background: var(--danger-50); color: var(--danger-700); border: 1px solid var(--danger-100); }
+.auth-alert--ok { background: var(--success-50); color: var(--success-700); border: 1px solid var(--success-100); }
+.auth-submit { width: 100%; margin-top: 4px; height: 46px; }
+.auth-switch { margin: 18px 0 0; text-align: center; color: var(--ink-600); font-size: var(--fs-sm); }
+.auth-switch a { font-weight: 600; text-decoration: none; }
