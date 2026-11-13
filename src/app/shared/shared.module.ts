@@ -11,6 +11,7 @@ import { SkeletonComponent } from './components/skeleton/skeleton.component';
 import { StatTileComponent } from './components/stat-tile/stat-tile.component';
 import { LocationBadgeComponent } from './components/location-badge/location-badge.component';
 import { PaginationComponent } from './components/pagination/pagination.component';
+import { EntityPickerComponent } from './components/entity-picker/entity-picker.component';
 import { ArCountPipe, NumPipe } from './pipes/ar-count.pipe';
 
 const KIT = [
@@ -22,6 +23,7 @@ const KIT = [
   StatTileComponent,
   LocationBadgeComponent,
   PaginationComponent,
+  EntityPickerComponent,
   ArCountPipe,
   NumPipe
 ];

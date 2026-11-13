@@ -1,375 +1,180 @@
-<div class="main-container fade-in">
-  <div class="book-card">
-    <div class="book-header">
-      <h2 class="book-title text-center">{{ isEditMode ? 'تعديل الكتاب' : 'إضافة كتاب جديد' }}</h2>
-    </div>
+<div class="app-container page book-form-page">
+  <app-page-header [title]="isEditMode ? 'تعديل كتاب' : 'إضافة كتاب'"
+                   [crumbs]="isEditMode
+                     ? [{ label: 'الكتب', link: '/books' }, { label: newBook.title || 'كتاب', link: ['/books', bookId] }, { label: 'تعديل' }]
+                     : [{ label: 'الكتب', link: '/books' }, { label: 'إضافة كتاب' }]">
+    <p subtitle class="text-ink-600">
+      {{ isEditMode ? 'عدّل البيانات ثم احفظ التغييرات.' : 'الحقول المعلَّمة بـ * مطلوبة. بعد الحفظ يمكنك متابعة إدخال الكتاب التالي على الرف نفسه.' }}
+    </p>
+  </app-page-header>
 
-    <div class="book-content">
-      <div *ngIf="loading" class="loader-overlay">
-        <div class="spinner-border text-primary" role="status">
-          <span class="visually-hidden">Loading...</span>
-        </div>
-        <p>{{ isEditMode ? 'جاري تحديث الكتاب...' : 'جاري إضافة الكتاب...' }}</p>
+  <div *ngIf="listsFailed" class="alert alert-warning d-flex align-items-center gap-2" role="alert">
+    <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
+    <span class="flex-fill">تعذّر تحميل قوائم المؤلفين والناشرين والأقسام، فلن تظهر الاقتراحات.</span>
+    <button type="button" class="btn btn-sm btn-secondary" (click)="loadLists()">إعادة المحاولة</button>
+  </div>
+
+  <div *ngIf="loadingBook" class="surface surface-pad">
+    <app-skeleton variant="lines" [count]="8" label="جارٍ تحميل بيانات الكتاب…"></app-skeleton>
+  </div>
+
+  <form *ngIf="!loadingBook" #f="ngForm" class="book-form" novalidate (submit)="$event.preventDefault()"
+        (keydown)="onFormKeydown($event, f)">
+
+    <!-- 1. Basics -->
+    <section class="form-card surface" aria-labelledby="sec-basic">
+      <h2 id="sec-basic" class="form-card__title"><span class="form-card__num" aria-hidden="true">1</span> البيانات الأساسية</h2>
+
+      <div class="field">
+        <label for="book-title" class="form-label">عنوان الكتاب<span class="req" aria-hidden="true"> *</span></label>
+        <input id="book-title" name="title" class="form-control form-control-lg" [(ngModel)]="newBook.title"
+               required autocomplete="off" [class.is-invalid]="submitted && titleMissing"
+               [attr.aria-invalid]="submitted && titleMissing ? true : null" aria-describedby="book-title-err">
+        <p *ngIf="submitted && titleMissing" id="book-title-err" class="field-error">
+          <i class="fas fa-circle-exclamation" aria-hidden="true"></i> اكتب عنوان الكتاب.
+        </p>
       </div>
 
-      <form (ngSubmit)="addBook()" #bookForm="ngForm">
-        <div class="form-section">
-          <div class="form-section-title">
-            <i class="fas fa-book"></i>
-            عنوان الكتاب
-          </div>
-          <input type="text" id="title" class="form-control" placeholder="أضف كتابا جديدًا" [(ngModel)]="newBook.title"
-            name="title" required />
+      <div class="field-grid field-grid--2">
+        <app-entity-picker name="category" [(ngModel)]="newBook.category" [options]="categories" labelKey="title"
+                           label="القسم" [required]="true" newItemLabel="قسم" [createFn]="createCategory"
+                           inputId="book-category" [hint]="loadingLists ? 'جارٍ تحميل الأقسام…' : undefined"
+                           [errorText]="submitted && categoryMissing ? 'اختر القسم الذي يوضع فيه الكتاب.' : null"></app-entity-picker>
+        <app-entity-picker name="subject" [(ngModel)]="newBook.subject" [options]="subjects" labelKey="title"
+                           label="الموضوع" newItemLabel="موضوع" [createFn]="createSubject" inputId="book-subject"
+                           [preferredIds]="subjectIdsForCategory"
+                           [hint]="subjectIdsForCategory.length ? 'تظهر مواضيع القسم المختار أولاً.' : undefined"></app-entity-picker>
+      </div>
+    </section>
+
+    <!-- 2. People -->
+    <section class="form-card surface" aria-labelledby="sec-people">
+      <h2 id="sec-people" class="form-card__title"><span class="form-card__num" aria-hidden="true">2</span> المؤلفون والمحققون</h2>
+      <p class="form-card__hint">اكتب جزءاً من الاسم للبحث بين {{ people.author.length | num }} اسماً مسجّلاً، أو أضف اسماً جديداً.</p>
+      <div class="field-grid field-grid--2">
+        <app-entity-picker name="authors" [(ngModel)]="newBook.authors" [options]="people.author" [multiple]="true"
+                           label="المؤلف" newItemLabel="مؤلف" [createFn]="createAuthor" inputId="book-authors"></app-entity-picker>
+        <app-entity-picker name="editors" [(ngModel)]="newBook.editors" [options]="people.editor" [multiple]="true"
+                           label="المحقق" newItemLabel="محقق" [createFn]="createEditor" inputId="book-editors"></app-entity-picker>
+        <app-entity-picker name="commentators" [(ngModel)]="newBook.commentators" [options]="people.commentator" [multiple]="true"
+                           label="الشارح" newItemLabel="شارح" [createFn]="createCommentator" inputId="book-commentators"></app-entity-picker>
+        <app-entity-picker name="muhashis" [(ngModel)]="newBook.muhashis" [options]="people.muhashi" [multiple]="true"
+                           label="المحشي" newItemLabel="محشٍّ" [createFn]="createMuhashi" inputId="book-muhashis"></app-entity-picker>
+        <app-entity-picker name="caretakers" [(ngModel)]="newBook.caretakers" [options]="people.caretaker" [multiple]="true"
+                           label="المعتني" newItemLabel="معتنٍ" [createFn]="createCaretaker" inputId="book-caretakers"></app-entity-picker>
+      </div>
+    </section>
+
+    <!-- 3. Publication -->
+    <section class="form-card surface" aria-labelledby="sec-pub">
+      <h2 id="sec-pub" class="form-card__title"><span class="form-card__num" aria-hidden="true">3</span> النشر</h2>
+      <app-entity-picker name="publishers" [(ngModel)]="newBook.publishers" [options]="publishers" labelKey="title"
+                         [multiple]="true" label="الناشر" newItemLabel="ناشر" [createFn]="createPublisher"
+                         inputId="book-publishers"></app-entity-picker>
+
+      <div class="field-grid field-grid--5">
+        <div class="field">
+          <label for="book-edition" class="form-label">رقم الطبعة</label>
+          <input id="book-edition" name="editionNumber" type="number" lang="en" min="1" class="form-control" [(ngModel)]="newBook.editionNumber">
         </div>
-
-        <div class="form-section">
-          <div class="form-section-title">
-            <i class="fas fa-user-edit"></i>
-            المؤلفون
-          </div>
-          <div class="search-dropdown-container">
-            <input type="text" class="form-control" placeholder="ابحث عن ماتن أو أضف جديد"
-              [(ngModel)]="authorSearchTerm" name="authorSearch" (input)="onAuthorSearch(authorSearchTerm)"
-              (focus)="showAuthorDropdown = true" />
-
-            <div class="dropdown-menu"
-              *ngIf="showAuthorDropdown && (filteredAuthors.length > 0 || authorSearchTerm.length > 0)">
-              <div class="dropdown-item" *ngFor="let author of filteredAuthors" (click)="selectAuthor(author)">
-                {{ author.name }}
-              </div>
-              <div class="dropdown-item add-new" *ngIf="authorSearchTerm.length > 0" (click)="addNewAuthor()">
-                <i class="fas fa-plus"></i> إضافة "{{ authorSearchTerm }}" كماتن جديد
-              </div>
-            </div>
-          </div>
-
-          <ul class="dynamic-list" *ngIf="newBook.authors?.length">
-            <li *ngFor="let author of newBook.authors; let i = index">
-              <span>{{ author.name }}</span>
-              <button type="button" class="btn-remove" (click)="removeAuthor(i)">حذف</button>
-            </li>
-          </ul>
+        <div class="field">
+          <label for="book-year" class="form-label">سنة النشر</label>
+          <input id="book-year" name="publicationYear" type="number" lang="en" min="1" class="form-control" placeholder="مثل 2012"
+                 [(ngModel)]="newBook.publicationYear">
         </div>
-
-        <div class="form-section">
-          <div class="form-section-title">
-            <i class="fas fa-chalkboard-teacher"></i>
-            الشارحون
-          </div>
-          <div class="search-dropdown-container">
-            <input type="text" class="form-control" placeholder="ابحث عن شارح أو أضف جديد"
-              [(ngModel)]="commentatorSearchTerm" name="commentatorSearch"
-              (input)="onCommentatorSearch(commentatorSearchTerm)" (focus)="showCommentatorDropdown = true" />
-
-            <div class="dropdown-menu"
-              *ngIf="showCommentatorDropdown && (filteredCommentators.length > 0 || commentatorSearchTerm.length > 0)">
-              <div class="dropdown-item" *ngFor="let commentator of filteredCommentators"
-                (click)="selectCommentator(commentator)">
-                {{ commentator.name }}
-              </div>
-              <div class="dropdown-item add-new" *ngIf="commentatorSearchTerm.length > 0" (click)="addNewCommentator()">
-                <i class="fas fa-plus"></i> إضافة "{{ commentatorSearchTerm }}" كشارح جديد
-              </div>
-            </div>
-          </div>
-
-          <ul class="dynamic-list" *ngIf="newBook.commentators?.length">
-            <li *ngFor="let commentator of newBook.commentators; let i = index">
-              <span>{{ commentator.name }}</span>
-              <button type="button" class="btn-remove" (click)="removeCommentator(i)">حذف</button>
-            </li>
-          </ul>
+        <div class="field">
+          <label for="book-volumes" class="form-label">عدد الأجزاء</label>
+          <input id="book-volumes" name="numberOfVolumes" type="number" lang="en" min="1" class="form-control" [(ngModel)]="newBook.numberOfVolumes">
         </div>
-
-        <div class="form-section">
-          <div class="form-section-title">
-            <i class="fas fa-pen-nib"></i>
-            المحشّون
-          </div>
-          <div class="search-dropdown-container">
-            <input type="text" class="form-control" placeholder="ابحث عن محشٍّ أو أضف جديد"
-              [(ngModel)]="muhashiSearchTerm" name="muhashiSearch" (input)="onMuhashiSearch(muhashiSearchTerm)"
-              (focus)="showMuhashiDropdown = true" />
-
-            <div class="dropdown-menu"
-              *ngIf="showMuhashiDropdown && (filteredMuhashis.length > 0 || muhashiSearchTerm.length > 0)">
-              <div class="dropdown-item" *ngFor="let muhashi of filteredMuhashis" (click)="selectMuhashi(muhashi)">
-                {{ muhashi.name }}
-              </div>
-              <div class="dropdown-item add-new" *ngIf="muhashiSearchTerm.length > 0" (click)="addNewMuhashi()">
-                <i class="fas fa-plus"></i> إضافة "{{ muhashiSearchTerm }}" كمحشٍّ جديد
-              </div>
-            </div>
-          </div>
-
-          <ul class="dynamic-list" *ngIf="newBook.muhashis?.length">
-            <li *ngFor="let muhashi of newBook.muhashis; let i = index">
-              <span>{{ muhashi.name }}</span>
-              <button type="button" class="btn-remove" (click)="removeMuhashi(i)">حذف</button>
-            </li>
-          </ul>
+        <div class="field">
+          <label for="book-folders" class="form-label">عدد المجلدات</label>
+          <input id="book-folders" name="numberOfFolders" type="number" lang="en" min="1" class="form-control" [(ngModel)]="newBook.numberOfFolders">
         </div>
-
-        <div class="form-section">
-          <div class="form-section-title">
-            <i class="fas fa-search"></i>
-            المحققون
-          </div>
-          <div class="search-dropdown-container">
-            <input type="text" class="form-control" placeholder="ابحث عن محقق أو أضف جديد"
-              [(ngModel)]="editorSearchTerm" name="editorSearch" (input)="onEditorSearch(editorSearchTerm)"
-              (focus)="showEditorDropdown = true" />
-
-            <div class="dropdown-menu"
-              *ngIf="showEditorDropdown && (filteredEditors.length > 0 || editorSearchTerm.length > 0)">
-              <div class="dropdown-item" *ngFor="let editor of filteredEditors" (click)="selectEditor(editor)">
-                {{ editor.name }}
-              </div>
-              <div class="dropdown-item add-new" *ngIf="editorSearchTerm.length > 0" (click)="addNewEditor()">
-                <i class="fas fa-plus"></i> إضافة "{{ editorSearchTerm }}" كمحقق جديد
-              </div>
-            </div>
-          </div>
-
-          <ul class="dynamic-list" *ngIf="newBook.editors?.length">
-            <li *ngFor="let editor of newBook.editors; let i = index">
-              <span>{{ editor.name }}</span>
-              <button type="button" class="btn-remove" (click)="removeEditor(i)">حذف</button>
-            </li>
-          </ul>
+        <div class="field">
+          <label for="book-pages" class="form-label">عدد الصفحات</label>
+          <input id="book-pages" name="pageCount" class="form-control" inputmode="numeric" autocomplete="off"
+                 [ngModel]="pageCountInput" (ngModelChange)="onPageCountChange($event)" placeholder="مثل 350+420"
+                 [class.is-invalid]="pageCountInput && pageCountTotal === null"
+                 [attr.aria-invalid]="pageCountInput && pageCountTotal === null ? true : null" aria-describedby="book-pages-help">
+          <p id="book-pages-help" class="field-help" [class.field-error]="pageCountInput && pageCountTotal === null">
+            <ng-container *ngIf="pageCountInput && pageCountTotal === null">أدخل رقماً أو مجموعاً مثل 350+420.</ng-container>
+            <ng-container *ngIf="pageCountIsExpression && pageCountTotal !== null">المجموع: {{ pageCountTotal | num }}</ng-container>
+            <ng-container *ngIf="!pageCountInput">لأكثر من جزء اكتب المجموع، مثل 350+420.</ng-container>
+          </p>
         </div>
+      </div>
+    </section>
 
-        <div class="form-section">
-          <div class="form-section-title">
-            <i class="fas fa-hands-helping"></i>
-            اعتنى به
-          </div>
-          <div class="search-dropdown-container">
-            <input type="text" class="form-control" placeholder="ابحث عن معتنٍ أو أضف جديد"
-              [(ngModel)]="caretakerSearchTerm" name="caretakerSearch" (input)="onCaretakerSearch(caretakerSearchTerm)"
-              (focus)="showCaretakerDropdown = true" />
-
-            <div class="dropdown-menu"
-              *ngIf="showCaretakerDropdown && (filteredCaretakers.length > 0 || caretakerSearchTerm.length > 0)">
-              <div class="dropdown-item" *ngFor="let caretaker of filteredCaretakers"
-                (click)="selectCaretaker(caretaker)">
-                {{ caretaker.name }}
-              </div>
-              <div class="dropdown-item add-new" *ngIf="caretakerSearchTerm.length > 0" (click)="addNewCaretaker()">
-                <i class="fas fa-plus"></i> إضافة "{{ caretakerSearchTerm }}" كمعتنٍ جديد
-              </div>
-            </div>
-          </div>
-
-          <ul class="dynamic-list" *ngIf="newBook.caretakers?.length">
-            <li *ngFor="let caretaker of newBook.caretakers; let i = index">
-              <span>{{ caretaker.name }}</span>
-              <button type="button" class="btn-remove" (click)="removeCaretaker(i)">حذف</button>
-            </li>
-          </ul>
+    <!-- 4. Location -->
+    <section class="form-card surface" aria-labelledby="sec-loc">
+      <h2 id="sec-loc" class="form-card__title"><span class="form-card__num" aria-hidden="true">4</span> الموقع في المكتبة</h2>
+      <div class="field-grid field-grid--4">
+        <div class="field">
+          <label for="book-room" class="form-label">الغرفة</label>
+          <input id="book-room" name="roomNumber" class="form-control" list="rooms-list" autocomplete="off"
+                 [(ngModel)]="newBook.address.roomNumber" (blur)="normalizeDigits('roomNumber'); loadWalls()">
+          <datalist id="rooms-list"><option *ngFor="let r of rooms" [value]="r"></option></datalist>
         </div>
-
-        <div class="info-item">
-          <div class="info-label">
-            <i class="fas fa-layer-group"></i>
-            عدد الأجزاء
-          </div>
-          <input type="number" id="numberOfVolumes" class="form-control" [(ngModel)]="newBook.numberOfVolumes"
-            name="numberOfVolumes" min="1" required />
+        <div class="field">
+          <label for="book-wall" class="form-label">الاستاند</label>
+          <input id="book-wall" name="wallNumber" class="form-control" list="walls-list" autocomplete="off"
+                 [(ngModel)]="newBook.address.wallNumber" (focus)="loadWalls()" (blur)="normalizeDigits('wallNumber')">
+          <datalist id="walls-list"><option *ngFor="let w of walls" [value]="w"></option></datalist>
         </div>
-
-        <div class="info-item">
-          <div class="info-label">
-            <i class="fas fa-layer-group"></i>
-            عدد المجلدات
-          </div>
-          <input type="number" id="numberOfFolders" class="form-control" [(ngModel)]="newBook.numberOfFolders"
-            name="numberOfFolders" min="1" required />
+        <div class="field">
+          <label for="book-shelf" class="form-label">الرف</label>
+          <input id="book-shelf" name="shelfNumber" class="form-control" inputmode="numeric" autocomplete="off"
+                 [(ngModel)]="newBook.address.shelfNumber" (blur)="normalizeDigits('shelfNumber')">
         </div>
-
-        <div class="form-section">
-          <div class="form-section-title">
-            <i class="fas fa-building"></i>
-            دور النشر
-          </div>
-          <div class="search-dropdown-container">
-            <input type="text" class="form-control" placeholder="ابحث عن دار نشر أو أضف جديدة"
-              [(ngModel)]="publisherSearchTerm" name="publisherSearch" (input)="onPublisherSearch(publisherSearchTerm)"
-              (focus)="showPublisherDropdown = true" />
-
-            <div class="dropdown-menu"
-              *ngIf="showPublisherDropdown && (filteredPublishers.length > 0 || publisherSearchTerm.length > 0)">
-              <div class="dropdown-item" *ngFor="let publisher of filteredPublishers"
-                (click)="selectPublisher(publisher)">
-                {{ publisher.title }}
-              </div>
-              <div class="dropdown-item add-new" *ngIf="publisherSearchTerm.length > 0" (click)="addNewPublisher()">
-                <i class="fas fa-plus"></i> إضافة "{{ publisherSearchTerm }}" كدار نشر جديدة
-              </div>
-            </div>
-          </div>
-
-          <ul class="dynamic-list" *ngIf="newBook.publishers?.length">
-            <li *ngFor="let publisher of newBook.publishers; let i = index">
-              <span>{{ publisher.title }}</span>
-              <button type="button" class="btn-remove" (click)="removePublisher(i)">حذف</button>
-            </li>
-          </ul>
+        <div class="field">
+          <label for="book-number" class="form-label">رقم الكتاب</label>
+          <input id="book-number" name="bookNumber" class="form-control" inputmode="numeric" autocomplete="off"
+                 [(ngModel)]="newBook.address.bookNumber" (blur)="normalizeDigits('bookNumber')">
         </div>
+      </div>
+      <p class="loc-preview" *ngIf="hasLocation">
+        <span class="text-ink-600">يظهر في الفهرس هكذا:</span>
+        <app-location-badge [address]="newBook.address" variant="code"></app-location-badge>
+      </p>
+    </section>
 
-        <div class="form-section">
-          <div class="form-section-title">
-            <i class="fas fa-print"></i>
-            معلومات الطباعة
-          </div>
-          <div class="row">
-            <div class="col-md-6">
-              <div class="info-item">
-                <div class="info-label">رقم الطبعة</div>
-                <input type="number" id="editionNumber" class="form-control" [(ngModel)]="newBook.editionNumber"
-                  name="editionNumber" min="1" required />
-              </div>
-            </div>
-            <div class="col-md-6">
-              <div class="info-item">
-                <div class="info-label">سنة الطباعة</div>
-                <input type="number" id="publicationYear" class="form-control" [(ngModel)]="newBook.publicationYear"
-                  name="publicationYear" min="0" required />
-              </div>
-            </div>
-          </div>
-        </div>
+    <!-- 5. Notes -->
+    <section class="form-card surface" aria-labelledby="sec-notes">
+      <h2 id="sec-notes" class="form-card__title"><span class="form-card__num" aria-hidden="true">5</span> ملاحظات</h2>
+      <label for="book-notes" class="visually-hidden">ملاحظات</label>
+      <textarea id="book-notes" name="notes" class="form-control" rows="3" [(ngModel)]="newBook.notes"
+                placeholder="أي معلومة إضافية عن النسخة: نقص، تجليد، إهداء…"></textarea>
+    </section>
 
-        <div class="form-section">
-          <div class="form-section-title">
-            <i class="fas fa-tags"></i>
-            التصنيف
-          </div>
-          <div class="search-dropdown-container">
-            <input type="text" class="form-control" placeholder="ابحث عن تصنيف أو أضف جديد"
-              [(ngModel)]="categorySearchTerm" name="categorySearch" (input)="onCategorySearch(categorySearchTerm)"
-              (focus)="showCategoryDropdown = true" />
-
-            <div class="dropdown-menu"
-              *ngIf="showCategoryDropdown && (filteredCategories.length > 0 || categorySearchTerm.length > 0)">
-              <div class="dropdown-item" *ngFor="let category of filteredCategories" (click)="selectCategory(category)">
-                {{ category.title }}
-              </div>
-              <div class="dropdown-item add-new" *ngIf="categorySearchTerm.length > 0" (click)="addNewCategory()">
-                <i class="fas fa-plus"></i> إضافة "{{ categorySearchTerm }}" كتصنيف جديد
-              </div>
-            </div>
-          </div>
-
-          <div class="selected-item" *ngIf="newBook.category?.title">
-            <span>{{ newBook.category.title }}</span>
-            <button type="button" class="btn-remove" (click)="newBook.category = { title: '', _id: '' }">حذف</button>
-          </div>
-        </div>
-
-        <div class="form-section">
-          <div class="form-section-title">
-            <i class="fas fa-tag"></i>
-            التصنيف الفرعي
-          </div>
-          <div class="search-dropdown-container">
-            <input type="text" class="form-control" placeholder="ابحث عن تصنيف فرعي أو أضف جديد"
-              [(ngModel)]="subjectSearchTerm" name="subjectSearch" (input)="onSubjectSearch(subjectSearchTerm)"
-              (focus)="showSubjectDropdown = true" />
-
-            <div class="dropdown-menu"
-              *ngIf="showSubjectDropdown && (filteredSubjects.length > 0 || subjectSearchTerm.length > 0)">
-              <div class="dropdown-item" *ngFor="let subject of filteredSubjects" (click)="selectSubject(subject)">
-                {{ subject.title }}
-              </div>
-              <div class="dropdown-item add-new" *ngIf="subjectSearchTerm.length > 0" (click)="addNewSubject()">
-                <i class="fas fa-plus"></i> إضافة "{{ subjectSearchTerm }}" كتصنيف فرعي جديد
-              </div>
-            </div>
-          </div>
-
-          <div class="selected-item" *ngIf="newBook.subject?.title">
-            <span>{{ newBook.subject.title }}</span>
-            <button type="button" class="btn-remove" (click)="newBook.subject = { title: '', _id: '' }">حذف</button>
-          </div>
-        </div>
-
-        <div class="info-item">
-          <div class="info-label">
-            <i class="fas fa-file-alt"></i>
-            عدد الصفحات
-          </div>
-          <input type="text" id="pageCount" class="form-control" [(ngModel)]="pageCountInput" name="pageCount"
-            (ngModelChange)="onPageCountChange($event)" placeholder="مثال: 300 أو 100+50 أو 250*5" required />
-          <small *ngIf="pageCountTotal !== null">
-            الإجمالي: {{ pageCountTotal }}
-          </small>
-          <small *ngIf="pageCountTotal === null && pageCountInput">
-            صيغة غير صحيحة
-          </small>
-        </div>
-
-        <div class="info-item">
-          <div class="info-label">
-            <i class="fas fa-image"></i>
-            صورة الكتاب
-          </div>
-          <input type="file" id="image" class="form-control" (change)="onImageSelected($event)" accept="image/*" />
-        </div>
-
-        <div class="form-section">
-          <div class="form-section-title">
-            <i class="fas fa-map-marker-alt"></i>
-            موقع الكتاب
-          </div>
-          <div class="row">
-            <div class="col-md-3">
-              <div class="info-item">
-                <div class="info-label">الغرفة</div>
-                <input type="text" id="roomNumber" class="form-control" [(ngModel)]="newBook.address.roomNumber"
-                  name="addressRoom" />
-              </div>
-            </div>
-            <div class="col-md-3">
-              <div class="info-item">
-                <div class="info-label">الاستاند</div>
-                <input type="text" id="wallNumber" class="form-control" [(ngModel)]="newBook.address.wallNumber"
-                  name="addressWall" />
-              </div>
-            </div>
-            <div class="col-md-3">
-              <div class="info-item">
-                <div class="info-label">الرف</div>
-                <input type="text" id="shelfNumber" class="form-control" [(ngModel)]="newBook.address.shelfNumber"
-                  name="addressShelf" />
-              </div>
-            </div>
-            <div class="col-md-3">
-              <div class="info-item">
-                <div class="info-label">الكتاب</div>
-                <input type="text" id="bookNumber" class="form-control" [(ngModel)]="newBook.address.bookNumber"
-                  name="addressBook" />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="form-section">
-          <div class="form-section-title">
-            <i class="fas fa-sticky-note"></i>
-            ملاحظات
-          </div>
-          <textarea id="notes" class="form-control" placeholder="أضف ملاحظات" [(ngModel)]="newBook.notes" name="notes"
-            required></textarea>
-        </div>
-
-        <div class="text-center mt-4">
-          <button type="button" class="btn-save" [disabled]="loading" (click)="addBook()">
-            <i class="fas {{ isEditMode ? 'fa-save' : 'fa-plus-circle' }} me-2"></i>
-            {{ loading ? (isEditMode ? 'جاري التحديث...' : 'جاري الإضافة...') : (isEditMode ? 'تحديث الكتاب' : 'إضافة الكتاب') }}
+    <!-- Sticky actions -->
+    <div class="action-bar">
+      <div class="action-bar__info">
+        <ng-container *ngIf="!isEditMode && hasLocation">
+          <span class="text-ink-600">الكتاب التالي بعد الحفظ:</span>
+          <app-location-badge [address]="nextAddress" variant="code"></app-location-badge>
+        </ng-container>
+        <span *ngIf="isDirty" class="dirty"><span class="dirty__dot" aria-hidden="true"></span> تغييرات غير محفوظة</span>
+        <a *ngIf="lastSaved && !isEditMode" class="last-saved" [routerLink]="['/books', lastSaved.id]">
+          <i class="fas fa-check" aria-hidden="true"></i> أُضيف: {{ lastSaved.title }}
+        </a>
+      </div>
+      <div class="action-bar__buttons">
+        <ng-container *ngIf="!isEditMode; else editButtons">
+          <button type="button" class="btn btn-primary" (click)="save(f, 'next')" [disabled]="saving">
+            <span *ngIf="saving" class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+            حفظ وإضافة التالي
           </button>
-        </div>
-      </form>
+          <button type="button" class="btn btn-secondary" (click)="save(f, 'view')" [disabled]="saving">حفظ وعرض الكتاب</button>
+        </ng-container>
+        <ng-template #editButtons>
+          <button type="button" class="btn btn-primary" (click)="save(f, 'view')" [disabled]="saving">
+            <span *ngIf="saving" class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+            حفظ التغييرات
+          </button>
+        </ng-template>
+        <button type="button" class="btn btn-link" (click)="cancel()" [disabled]="saving">إلغاء</button>
+        <span class="kbd-hint d-none d-lg-inline"><kbd>Ctrl</kbd> + <kbd>Enter</kbd> للحفظ</span>
+      </div>
     </div>
-  </div>
+  </form>
 </div>

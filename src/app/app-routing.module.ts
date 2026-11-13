@@ -18,6 +18,7 @@ import { DisplayScreenComponent } from './components/display/display-screen/disp
 import { DisplayAdminComponent } from './components/display/display-admin/display-admin.component';
 import { NotFoundComponent } from './pages/not-found/not-found.component';
 import { authGuard, adminGuard } from './guards/auth.guard';
+import { unsavedChangesGuard } from './guards/unsaved-changes.guard';
 
 
 const routes: Routes = [
@@ -36,8 +37,8 @@ const routes: Routes = [
   { path: 'publishers', component: PublisherDashboardComponent, canActivate: [adminGuard], title: 'الناشرون' },
   { path: 'exports', component: ExportsComponent, canActivate: [adminGuard], title: 'التصدير' },
   { path: 'bulk-update', component: BulkUpdateComponent, canActivate: [adminGuard], title: 'التحديث الجماعي' },
-  { path: 'add-book', component: AddBookComponent, canActivate: [adminGuard], title: 'إضافة كتاب' },
-  { path: 'edit-book/:id', component: AddBookComponent, canActivate: [adminGuard], title: 'تعديل كتاب' },
+  { path: 'add-book', component: AddBookComponent, canActivate: [adminGuard], canDeactivate: [unsavedChangesGuard], title: 'إضافة كتاب' },
+  { path: 'edit-book/:id', component: AddBookComponent, canActivate: [adminGuard], canDeactivate: [unsavedChangesGuard], title: 'تعديل كتاب' },
   { path: 'admin/borrows', component: AdminBorrowsComponent, canActivate: [adminGuard], title: 'إدارة الاستعارات' },
   { path: 'admin/display', component: DisplayAdminComponent, canActivate: [adminGuard], title: 'إدارة شاشة العرض' },
 

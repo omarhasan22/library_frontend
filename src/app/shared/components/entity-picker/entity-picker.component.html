@@ -1,0 +1,46 @@
+<label *ngIf="label" class="form-label" [for]="inputId">
+  {{ label }}<span *ngIf="required" class="req" aria-hidden="true"> *</span>
+</label>
+
+<div class="picker" [class.is-open]="open" [class.is-invalid]="!!errorText" [class.is-disabled]="disabled">
+  <div class="picker__control" (click)="input.focus()">
+    <ul *ngIf="selected.length" class="picker__chips" [attr.aria-label]="label ? 'المختار في ' + label : 'المختار'">
+      <li *ngFor="let item of selected; let i = index" class="chip" [class.chip--single]="!multiple">
+        <span class="chip__text">{{ labelOf(item) }}</span>
+        <button type="button" class="chip-remove" (click)="remove(i); $event.stopPropagation()" [disabled]="disabled"
+                [attr.aria-label]="'إزالة ' + labelOf(item)">
+          <i class="fas fa-xmark" aria-hidden="true"></i>
+        </button>
+      </li>
+    </ul>
+    <input #input class="picker__input" type="text" role="combobox" autocomplete="off"
+           [id]="inputId" [value]="text" [placeholder]="placeholderText" [disabled]="disabled"
+           [attr.aria-expanded]="open && optionCount > 0" [attr.aria-controls]="listId" aria-autocomplete="list"
+           [attr.aria-activedescendant]="activeOptionId" [attr.aria-required]="required || null"
+           [attr.aria-invalid]="errorText ? true : null"
+           [attr.aria-describedby]="(hint || errorText || createError) ? inputId + '-desc' : null"
+           (input)="onInput($any($event.target).value)" (focus)="onFocus()" (blur)="onBlur()" (keydown)="onKeydown($event)">
+    <span *ngIf="busy" class="spinner-border spinner-border-sm picker__busy" aria-hidden="true"></span>
+  </div>
+
+  <ul *ngIf="open && optionCount > 0" class="picker__list" role="listbox" [id]="listId" [attr.aria-label]="label || null">
+    <li *ngFor="let item of filtered; let i = index; trackBy: trackById" role="option"
+        [id]="inputId + '-opt-' + i" class="picker__option" [class.is-active]="i === activeIndex"
+        [attr.aria-selected]="i === activeIndex" (mousedown)="$event.preventDefault()" (click)="choose(item)">
+      {{ labelOf(item) }}
+    </li>
+    <li *ngIf="canCreate" role="option" [id]="inputId + '-opt-' + createIndex" class="picker__option picker__option--create"
+        [class.is-active]="activeIndex === createIndex" [attr.aria-selected]="activeIndex === createIndex"
+        (mousedown)="$event.preventDefault()" (click)="create()">
+      <i class="fas fa-plus" aria-hidden="true"></i>
+      إضافة «{{ text.trim() }}»<ng-container *ngIf="newItemLabel"> ({{ newItemLabel }} جديد)</ng-container>
+    </li>
+  </ul>
+</div>
+
+<p *ngIf="hint || errorText || createError" class="picker__desc" [class.is-error]="!!(errorText || createError)" [id]="inputId + '-desc'">
+  <ng-container *ngIf="errorText || createError; else hintTpl">
+    <i class="fas fa-circle-exclamation" aria-hidden="true"></i> {{ createError || errorText }}
+  </ng-container>
+  <ng-template #hintTpl>{{ hint }}</ng-template>
+</p>
