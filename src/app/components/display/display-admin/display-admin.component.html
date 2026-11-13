@@ -107,9 +107,9 @@
             <h5>إعدادات الشاشة</h5>
           </div>
 
-          <label class="form-label">رابط الشاشة</label>
+          <label class="form-label" for="display-screen-url">رابط الشاشة</label>
           <div class="input-group mb-1 ltr-group">
-            <input class="form-control" [value]="screenUrl" readonly dir="ltr">
+            <input id="display-screen-url" class="form-control" [value]="screenUrl" readonly dir="ltr">
             <button type="button" class="btn btn-outline-teal" (click)="copyScreenUrl()">نسخ</button>
           </div>
           <p class="hint">افتح هذا الرابط في متصفح الشاشة، ثم اضغط F لملء الشاشة.</p>
@@ -122,7 +122,7 @@
             <span class="switch-label">شريط الأخبار أسفل الشاشة</span>
           </label>
           <div *ngIf="settings.tickerEnabled" class="mb-3">
-            <textarea class="form-control" rows="4" maxlength="3000" [(ngModel)]="settings.tickerText"
+            <textarea class="form-control" rows="4" maxlength="3000" aria-label="أخبار الشريط" [(ngModel)]="settings.tickerText"
               placeholder="اكتب كل خبر في سطر مستقل"></textarea>
             <div class="hint">كل سطر يظهر كخبر مستقل يتحرك على الشريط.</div>
           </div>
@@ -133,16 +133,16 @@
             <span class="switch-label">إظهار الساعة والتاريخ</span>
           </label>
 
-          <label class="form-label">تعديل التاريخ الهجري</label>
-          <select class="form-select" [(ngModel)]="settings.hijriOffset">
+          <label class="form-label" for="display-hijri">تعديل التاريخ الهجري</label>
+          <select id="display-hijri" class="form-select" [(ngModel)]="settings.hijriOffset">
             <option *ngFor="let o of hijriOffsets" [ngValue]="o">
               {{ o === 0 ? 'بدون تعديل' : (o > 0 ? '+' + o : o) + (o === 1 || o === -1 ? ' يوم' : ' يومان') }}
             </option>
           </select>
           <div class="hint mb-3">اليوم على الشاشة: <strong>{{ hijriToday }}</strong></div>
 
-          <label class="form-label">الانتقال بين الشرائح</label>
-          <select class="form-select mb-3" [(ngModel)]="settings.transition">
+          <label class="form-label" for="display-transition">الانتقال بين الشرائح</label>
+          <select id="display-transition" class="form-select mb-3" [(ngModel)]="settings.transition">
             <option *ngFor="let t of transitions" [ngValue]="t.id">{{ t.name }}</option>
           </select>
 
@@ -194,8 +194,8 @@
         <div class="editor-form">
 
           <div class="mb-3">
-            <label class="form-label">القالب</label>
-            <select class="form-select" [ngModel]="ed.slide.template" (ngModelChange)="changeTemplate($event)">
+            <label class="form-label" for="slide-template">القالب</label>
+            <select id="slide-template" class="form-select" [ngModel]="ed.slide.template" (ngModelChange)="changeTemplate($event)">
               <option *ngFor="let t of templates" [ngValue]="t.id">{{ t.name }}</option>
             </select>
           </div>
@@ -215,8 +215,8 @@
 
           <!-- Featured book: fill from the library catalogue -->
           <div class="book-picker mb-3" *ngIf="ed.slide.template === 'book'">
-            <label class="form-label">اختيار كتاب من المكتبة <span class="muted">(اختياري)</span></label>
-            <input class="form-control" placeholder="ابحث بعنوان الكتاب..." [(ngModel)]="bookQuery" (ngModelChange)="onBookQuery($event)">
+            <label class="form-label" for="slide-book-q">اختيار كتاب من المكتبة <span class="muted">(اختياري)</span></label>
+            <input id="slide-book-q" class="form-control" placeholder="ابحث بعنوان الكتاب..." [(ngModel)]="bookQuery" (ngModelChange)="onBookQuery($event)">
             <div class="book-results" *ngIf="bookResults.length || bookSearching">
               <div class="muted p-2" *ngIf="bookSearching">جارٍ البحث...</div>
               <button type="button" *ngFor="let b of bookResults" (click)="pickBook(b)">

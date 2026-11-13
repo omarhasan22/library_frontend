@@ -1,187 +1,161 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
-import { PublisherService, Publisher, PublisherResponse, PublisherStats } from '../../services/publisher.service';
-import { AuthService } from '../../services/auth.service';
+import { Subject, Subscription, of } from 'rxjs';
+import { catchError, debounceTime, distinctUntilChanged, map, switchMap, tap } from 'rxjs/operators';
 
+import { Publisher, PublisherService, PublisherStats } from '../../services/publisher.service';
+import { BookService } from '../../services/book.service';
 import { ConfirmService } from '../../shared/services/confirm.service';
+import { ToastService } from '../../shared/services/toast.service';
+import { arCount } from '../../shared/utils/arabic';
+
+/** /publishers — publishers in the catalogue; same layout and behaviour as /authors. */
 @Component({
-   selector: 'app-publisher-dashboard',
-   templateUrl: './publisher-dashboard.component.html',
-   styleUrls: ['./publisher-dashboard.component.css']
+  selector: 'app-publisher-dashboard',
+  templateUrl: './publisher-dashboard.component.html',
+  styleUrls: ['../../shared/styles/entity-admin.css', './publisher-dashboard.component.css']
 })
-export class PublisherDashboardComponent implements OnInit {
-   publishers: Publisher[] = [];
-   stats: PublisherStats | null = null;
-   loading = false;
-   message = '';
-   messageType = '';
+export class PublisherDashboardComponent implements OnInit, OnDestroy {
+  @ViewChild('formDialog', { static: true }) formDialog!: ElementRef<HTMLDialogElement>;
 
-   // Pagination
-   currentPage = 1;
-   totalPages = 1;
-   total = 0;
-   limit = 10;
+  publishers: Publisher[] = [];
+  stats: PublisherStats | null = null;
+  state: 'loading' | 'ok' | 'error' = 'loading';
+  refreshing = false;
 
-   // Search
-   searchTerm = '';
+  search = '';
+  page = 1;
+  pageSize = 20;
+  totalPages = 1;
+  total = 0;
 
-   // Form
-   publisherForm: FormGroup;
-   isEditing = false;
-   editingPublisher: Publisher | null = null;
+  form: FormGroup;
+  editing: Publisher | null = null;
+  saving = false;
+  formSubmitted = false;
 
-   // Admin check
-   isAdmin = false;
+  private search$ = new Subject<string>();
+  private load$ = new Subject<void>();
+  private subs = new Subscription();
 
-   constructor(
-      private publisherService: PublisherService,
-      private fb: FormBuilder,
-      private authService: AuthService,
-      private router: Router,
-      private dialog: ConfirmService
-    ) {
-      this.publisherForm = this.fb.group({
-         title: ['', [Validators.required, Validators.minLength(2)]]
-      });
-   }
+  constructor(
+    private publisherService: PublisherService,
+    private bookService: BookService,
+    private fb: FormBuilder,
+    private toast: ToastService,
+    private dialog: ConfirmService
+  ) {
+    this.form = this.fb.group({ title: ['', [Validators.required, Validators.minLength(2)]] });
+  }
 
-   ngOnInit(): void {
-      // The route's adminGuard has already checked the role (and the API enforces it).
-      this.isAdmin = this.authService.isAdmin();
-      this.loadPublishers();
-      this.loadStats();
-   }
+  ngOnInit(): void {
+    this.subs.add(this.load$.pipe(
+      tap(() => (this.state === 'ok' ? (this.refreshing = true) : (this.state = 'loading'))),
+      switchMap(() => this.publisherService.getAllPublishers(this.page, this.pageSize, this.search.trim()).pipe(
+        map(res => ({ res })),
+        catchError(() => of({ res: null }))
+      ))
+    ).subscribe(({ res }) => {
+      this.refreshing = false;
+      if (!res) { this.state = 'error'; return; }
+      this.publishers = (res as any).publishers || [];
+      this.total = (res as any).total || 0;
+      this.totalPages = Math.max(1, (res as any).totalPages || 1);
+      this.state = 'ok';
+    }));
+    this.subs.add(this.search$.pipe(debounceTime(300), distinctUntilChanged()).subscribe(() => { this.page = 1; this.load(); }));
+    this.load();
+    this.loadStats();
+  }
 
-   loadPublishers(): void {
-      this.loading = true;
-      this.publisherService.getAllPublishers(this.currentPage, this.limit, this.searchTerm)
-         .subscribe({
-            next: (response: PublisherResponse) => {
-               this.publishers = response.publishers;
-               this.totalPages = response.totalPages;
-               this.total = response.total;
-               this.loading = false;
-            },
-            error: (error) => {
-               this.showMessage('حدث خطأ أثناء تحميل الناشرين', 'error');
-               this.loading = false;
-            }
-         });
-   }
+  ngOnDestroy(): void {
+    this.subs.unsubscribe();
+  }
 
-   loadStats(): void {
-      this.publisherService.getPublisherStats().subscribe({
-         next: (stats: PublisherStats) => {
-            this.stats = stats;
-         },
-         error: (error) => {
-            console.error('Failed to load stats:', error);
-         }
-      });
-   }
+  load(): void { this.load$.next(); }
 
-   onSearch(): void {
-      this.currentPage = 1;
-      this.loadPublishers();
-   }
+  loadStats(): void {
+    this.publisherService.getPublisherStats().pipe(catchError(() => of(null))).subscribe(s => (this.stats = s));
+  }
 
-   onPageChange(page: number): void {
-      if (page >= 1 && page <= this.totalPages) {
-         this.currentPage = page;
-         this.loadPublishers();
+  onSearch(value: string): void { this.search$.next(value.trim()); }
+  setPageSize(size: number): void { this.pageSize = +size; this.page = 1; this.load(); }
+  onPage(page: number): void { this.page = page; this.load(); }
+
+  openAdd(): void {
+    this.editing = null;
+    this.formSubmitted = false;
+    this.form.reset({ title: '' });
+    this.formDialog.nativeElement.showModal();
+  }
+
+  openEdit(p: Publisher): void {
+    this.editing = p;
+    this.formSubmitted = false;
+    this.form.reset({ title: p.title });
+    this.formDialog.nativeElement.showModal();
+  }
+
+  closeForm(): void {
+    this.formDialog.nativeElement.close();
+  }
+
+  get titleError(): string | null {
+    const c = this.form.get('title');
+    if (!this.formSubmitted || !c?.errors) return null;
+    return c.errors['required'] ? 'اكتب اسم الناشر.' : 'الاسم قصير جداً.';
+  }
+
+  save(): void {
+    this.formSubmitted = true;
+    if (this.form.invalid) {
+      (this.formDialog.nativeElement.querySelector('#publisher-title') as HTMLElement | null)?.focus();
+      return;
+    }
+    const title = String(this.form.value.title).trim();
+    this.saving = true;
+    const request = this.editing?._id
+      ? this.publisherService.updatePublisher(this.editing._id, { title })
+      : this.publisherService.createPublisher({ title });
+    request.subscribe({
+      next: () => {
+        this.saving = false;
+        this.closeForm();
+        this.toast.success(this.editing ? `تم حفظ «${title}»` : `تمت إضافة «${title}»`);
+        this.load();
+        this.loadStats();
+      },
+      error: err => {
+        this.saving = false;
+        this.toast.apiError(err, 'تعذّر الحفظ. حاول مرة أخرى.');
       }
-   }
+    });
+  }
 
-   openAddForm(): void {
-      this.isEditing = false;
-      this.editingPublisher = null;
-      this.publisherForm.reset();
-   }
+  async remove(p: Publisher): Promise<void> {
+    if (!p._id) return;
+    const used = await new Promise<number | null>(resolve =>
+      this.bookService.getAllBooks('advanced', JSON.stringify([{ field: 'publishers', value: p.title }]), 1, 1)
+        .pipe(catchError(() => of(null))).subscribe(r => resolve(r ? r.filteredCount : null)));
+    const ok = await this.dialog.ask({
+      title: `حذف الناشر «${p.title}»؟`,
+      message: used
+        ? `قد يظهر هذا الناشر في ${arCount(used, 'book')}، وسيختفي منها بعد الحذف. لا يمكن التراجع.`
+        : 'لا يمكن التراجع عن الحذف.',
+      confirmText: 'حذف',
+      tone: 'danger'
+    });
+    if (!ok) return;
+    this.publisherService.deletePublisher(p._id).subscribe({
+      next: () => {
+        this.toast.success(`تم حذف «${p.title}»`);
+        if (this.publishers.length === 1 && this.page > 1) this.page--;
+        this.load();
+        this.loadStats();
+      },
+      error: err => this.toast.apiError(err, 'تعذّر الحذف.')
+    });
+  }
 
-   openEditForm(publisher: Publisher): void {
-      this.isEditing = true;
-      this.editingPublisher = publisher;
-      this.publisherForm.patchValue({
-         title: publisher.title
-      });
-   }
-
-   closeForm(): void {
-      this.isEditing = false;
-      this.editingPublisher = null;
-      this.publisherForm.reset();
-   }
-
-   onSubmit(): void {
-      if (this.publisherForm.valid) {
-         const formData = this.publisherForm.value;
-
-         if (this.isEditing && this.editingPublisher) {
-            this.updatePublisher(this.editingPublisher._id!, formData);
-         } else {
-            this.createPublisher(formData);
-         }
-      }
-   }
-
-   createPublisher(publisherData: any): void {
-      this.loading = true;
-      this.publisherService.createPublisher(publisherData).subscribe({
-         next: (publisher) => {
-            this.showMessage('تم إضافة الناشر بنجاح', 'success');
-            this.loadPublishers();
-            this.loadStats();
-            this.closeForm();
-            this.loading = false;
-         },
-         error: (error) => {
-            this.showMessage('حدث خطأ أثناء إضافة الناشر', 'error');
-            this.loading = false;
-         }
-      });
-   }
-
-   updatePublisher(id: string, publisherData: any): void {
-      this.loading = true;
-      this.publisherService.updatePublisher(id, publisherData).subscribe({
-         next: (publisher) => {
-            this.showMessage('تم تحديث الناشر بنجاح', 'success');
-            this.loadPublishers();
-            this.closeForm();
-            this.loading = false;
-         },
-         error: (error) => {
-            this.showMessage('حدث خطأ أثناء تحديث الناشر', 'error');
-            this.loading = false;
-         }
-      });
-   }
-
-   async deletePublisher(publisher: Publisher): Promise<void> {
-      if ((await this.dialog.ask({ title: `حذف الناشر «${publisher.title}»؟`, message: 'لا يمكن التراجع عن الحذف.', confirmText: 'حذف', tone: 'danger' }))) {
-         this.loading = true;
-         this.publisherService.deletePublisher(publisher._id!).subscribe({
-            next: () => {
-               this.showMessage('تم حذف الناشر بنجاح', 'success');
-               this.loadPublishers();
-               this.loadStats();
-               this.loading = false;
-            },
-            error: (error) => {
-               this.showMessage('حدث خطأ أثناء حذف الناشر', 'error');
-               this.loading = false;
-            }
-         });
-      }
-   }
-
-   showMessage(message: string, type: 'success' | 'error'): void {
-      this.message = message;
-      this.messageType = type;
-      setTimeout(() => {
-         this.message = '';
-      }, 5000);
-   }
-
+  trackById = (_: number, p: Publisher) => p._id;
 }

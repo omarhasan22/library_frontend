@@ -1,207 +1,121 @@
-<div class="author-dashboard-container">
-   <div class="container">
-      <div class="row">
-         <div class="col-12">
-            <div class="dashboard-header">
-               <h2><i class="fas fa-users me-2"></i>إدارة المؤلفين</h2>
-               <button class="btn btn-primary" (click)="openAddForm()">
-                  <i class="fas fa-plus me-1"></i>إضافة مؤلف
-               </button>
-            </div>
+<div class="app-container page">
+  <app-page-header title="المؤلفون والمحققون" [crumbs]="[{ label: 'الإدارة' }, { label: 'المؤلفون' }]">
+    <p subtitle class="text-ink-600">
+      <ng-container *ngIf="stats">{{ stats.totalAuthors | num }} اسماً في الفهرس: مؤلفون ومحققون وشرّاح ومحشّون ومعتنون.</ng-container>&nbsp;
+    </p>
+    <button actions type="button" class="btn btn-primary" (click)="openAdd()">
+      <i class="fas fa-plus" aria-hidden="true"></i> إضافة اسم
+    </button>
+  </app-page-header>
 
-            <!-- Message Display -->
-            <div *ngIf="message" class="alert" [class]="messageType === 'success' ? 'alert-success' : 'alert-danger'"
-               role="alert">
-               <i class="fas" [class]="messageType === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'"></i>
-               {{ message }}
-            </div>
+  <div class="stats-row" role="group" aria-label="تصفية حسب النوع">
+    <button type="button" class="type-chip" [class.is-on]="!type" [attr.aria-pressed]="!type" (click)="setType('')">
+      الكل <span class="type-chip__n">{{ stats ? (stats.totalAuthors | num) : '' }}</span>
+    </button>
+    <button *ngFor="let t of types" type="button" class="type-chip" [class.is-on]="type === t.value"
+            [attr.aria-pressed]="type === t.value" (click)="setType(t.value)">
+      {{ t.label }} <span class="type-chip__n">{{ typeCount(t.value) | num }}</span>
+    </button>
+  </div>
 
-            <!-- Statistics Cards -->
-            <div class="row mb-4" *ngIf="stats">
-               <div class="col-md-3">
-                  <div class="stat-card">
-                     <div class="stat-icon">
-                        <i class="fas fa-users"></i>
-                     </div>
-                     <div class="stat-content">
-                        <h3>{{ stats.totalAuthors }}</h3>
-                        <p>إجمالي المؤلفين</p>
-                     </div>
-                  </div>
-               </div>
-               <div class="col-md-9">
-                  <div class="stat-card">
-                     <div class="stat-icon">
-                        <i class="fas fa-chart-pie"></i>
-                     </div>
-                     <div class="stat-content">
-                        <h5>توزيع المؤلفين حسب النوع</h5>
-                        <div class="type-stats">
-                           <span *ngFor="let typeStat of stats.authorsByType" class="type-badge">
-                              {{ getAuthorTypeLabel(typeStat._id) }}: {{ typeStat.count }}
-                           </span>
-                        </div>
-                     </div>
-                  </div>
-               </div>
-            </div>
+  <div class="toolbar surface">
+    <div class="toolbar__search">
+      <label for="people-q" class="visually-hidden">ابحث في الأسماء</label>
+      <i class="fas fa-magnifying-glass" aria-hidden="true"></i>
+      <input id="people-q" type="search" class="form-control" placeholder="ابحث بالاسم…" autocomplete="off"
+             [(ngModel)]="search" (ngModelChange)="onSearch($event)">
+    </div>
+    <label for="people-size" class="small text-ink-600">في الصفحة</label>
+    <select id="people-size" class="form-select form-select-sm" [ngModel]="pageSize" (ngModelChange)="setPageSize($event)">
+      <option [ngValue]="20">20</option>
+      <option [ngValue]="50">50</option>
+      <option [ngValue]="100">100</option>
+    </select>
+  </div>
 
-            <!-- Search and Filters -->
-            <div class="row mb-4">
-               <div class="col-md-6">
-                  <div class="search-box">
-                     <i class="fas fa-search"></i>
-                     <input type="text" [(ngModel)]="searchTerm" (keyup.enter)="onSearch()"
-                        placeholder="البحث في المؤلفين...">
-                     <button class="btn btn-outline-primary" (click)="onSearch()">بحث</button>
-                  </div>
-               </div>
-               <div class="col-md-3">
-                  <select class="form-select" [(ngModel)]="selectedType" (change)="onTypeFilter()">
-                     <option value="">جميع الأنواع</option>
-                     <option *ngFor="let type of authorTypes" [value]="type.value">
-                        {{ type.label }}
-                     </option>
-                  </select>
-               </div>
-               <div class="col-md-3">
-                  <select class="form-select" [(ngModel)]="limit" (ngModelChange)="currentPage = 1; loadAuthors()">
-                     <option [ngValue]="10">10 لكل صفحة</option>
-                     <option [ngValue]="25">25 لكل صفحة</option>
-                     <option [ngValue]="50">50 لكل صفحة</option>
-                  </select>
-               </div>
-            </div>
+  <app-skeleton *ngIf="state === 'loading'" variant="rows" [count]="8" label="جارٍ تحميل الأسماء…"></app-skeleton>
+  <div *ngIf="state === 'error'" class="surface"><app-empty-state kind="error" title="تعذّر تحميل الأسماء" (retry)="load()"></app-empty-state></div>
 
-            <!-- Authors Table -->
-            <div class="table-container">
-               <table class="table table-hover">
-                  <thead>
-                     <tr>
-                        <th>الاسم</th>
-                        <th>النوع</th>
-                        <th>تاريخ الميلاد</th>
-                        <th>تاريخ الوفاة</th>
-                        <th>الإجراءات</th>
-                     </tr>
-                  </thead>
-                  <tbody>
-                     <tr *ngFor="let author of authors">
-                        <td>
-                           <div class="author-name">
-                              <i class="fas fa-user me-2"></i>
-                              {{ author.name }}
-                           </div>
-                        </td>
-                        <td>
-                           <span class="type-badge">{{ getAuthorTypeLabel(author.type) }}</span>
-                        </td>
-                        <td>
-                           <span *ngIf="author.dateOfBirth">{{ formatDate(author.dateOfBirth) }}</span>
-                           <span *ngIf="!author.dateOfBirth" class="text-muted">غير محدد</span>
-                        </td>
-                        <td>
-                           <span *ngIf="author.dateOfDeath">{{ formatDate(author.dateOfDeath) }}</span>
-                           <span *ngIf="!author.dateOfDeath" class="text-muted">غير محدد</span>
-                        </td>
-                        <td>
-                           <div class="action-buttons">
-                              <button class="btn btn-sm btn-outline-primary" (click)="openEditForm(author)">
-                                 <i class="fas fa-edit"></i>
-                              </button>
-                              <button class="btn btn-sm btn-outline-danger" (click)="deleteAuthor(author)">
-                                 <i class="fas fa-trash"></i>
-                              </button>
-                           </div>
-                        </td>
-                     </tr>
-                  </tbody>
-               </table>
+  <ng-container *ngIf="state === 'ok'">
+    <div *ngIf="!authors.length" class="surface">
+      <app-empty-state [kind]="search || type ? 'no-results' : 'empty'" [title]="search || type ? 'لا توجد أسماء مطابقة' : 'لا توجد أسماء بعد'">
+        <button type="button" class="btn btn-primary" (click)="openAdd()">إضافة اسم</button>
+      </app-empty-state>
+    </div>
 
-               <!-- Loading -->
-               <div *ngIf="loading" class="text-center py-4">
-                  <div class="spinner-border text-primary" role="status">
-                     <span class="visually-hidden">جاري التحميل...</span>
-                  </div>
-               </div>
+    <div *ngIf="authors.length" class="list-wrap surface" [class.is-refreshing]="refreshing" [attr.aria-busy]="refreshing">
+      <table class="table admin-table">
+        <caption class="visually-hidden">قائمة الأسماء، الصفحة {{ page }} من {{ totalPages }}</caption>
+        <thead>
+          <tr>
+            <th scope="col">الاسم</th>
+            <th scope="col">النوع</th>
+            <th scope="col">الميلاد</th>
+            <th scope="col">الوفاة</th>
+            <th scope="col" class="col-actions"><span class="visually-hidden">إجراءات</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let a of authors; trackBy: trackById">
+            <td class="cell-name">{{ a.name }}</td>
+            <td><span class="type-tag">{{ typeLabel(a.type) }}</span></td>
+            <td class="cell-muted tabular">{{ year(a.dateOfBirth) }}</td>
+            <td class="cell-muted tabular">{{ year(a.dateOfDeath) }}</td>
+            <td class="col-actions">
+              <div class="row-actions">
+                <a class="btn btn-sm btn-link" routerLink="/books" [queryParams]="booksLink(a)">كتبه</a>
+                <button type="button" class="btn btn-sm btn-icon btn-secondary" (click)="openEdit(a)"
+                        [attr.aria-label]="'تعديل ' + a.name" title="تعديل"><i class="fas fa-pen" aria-hidden="true"></i></button>
+                <button type="button" class="btn btn-sm btn-icon btn-outline-danger" (click)="remove(a)"
+                        [attr.aria-label]="'حذف ' + a.name" title="حذف"><i class="fas fa-trash-can" aria-hidden="true"></i></button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
-               <!-- Empty State -->
-               <div *ngIf="!loading && authors.length === 0" class="empty-state">
-                  <i class="fas fa-users"></i>
-                  <h4>لا توجد مؤلفين</h4>
-                  <p>لم يتم العثور على أي مؤلفين</p>
-               </div>
-            </div>
-
-            <!-- Pagination -->
-            <div class="pagination-container">
-               <app-pagination 
-                  [currentPage]="currentPage" 
-                  [totalPages]="totalPages"
-                  (pageChange)="onPageChange($event)">
-               </app-pagination>
-            </div>
-         </div>
-      </div>
-   </div>
-
-   <!-- Author Form Modal -->
-   <div class="modal" [class.show]="isEditing || authorForm.get('name')?.value"
-      [style.display]="(isEditing || authorForm.get('name')?.value) ? 'block' : 'none'">
-      <div class="modal-dialog">
-         <div class="modal-content">
-            <div class="modal-header">
-               <h5 class="modal-title">
-                  {{ isEditing ? 'تعديل المؤلف' : 'إضافة مؤلف جديد' }}
-               </h5>
-               <button type="button" class="btn-close" (click)="closeForm()"></button>
-            </div>
-            <div class="modal-body">
-               <form [formGroup]="authorForm" (ngSubmit)="onSubmit()">
-                  <div class="mb-3">
-                     <label for="name" class="form-label">اسم المؤلف *</label>
-                     <input type="text" class="form-control" id="name" formControlName="name"
-                        [class.is-invalid]="authorForm.get('name')?.invalid && authorForm.get('name')?.touched">
-                     <div class="invalid-feedback"
-                        *ngIf="authorForm.get('name')?.invalid && authorForm.get('name')?.touched">
-                        اسم المؤلف مطلوب ويجب أن يكون حرفين على الأقل
-                     </div>
-                  </div>
-
-                  <div class="mb-3">
-                     <label for="type" class="form-label">نوع المؤلف *</label>
-                     <select class="form-select" id="type" formControlName="type">
-                        <option *ngFor="let type of authorTypes" [value]="type.value">
-                           {{ type.label }}
-                        </option>
-                     </select>
-                  </div>
-
-                  <div class="row">
-                     <div class="col-md-6">
-                        <div class="mb-3">
-                           <label for="dateOfBirth" class="form-label">تاريخ الميلاد</label>
-                           <input type="date" class="form-control" id="dateOfBirth" formControlName="dateOfBirth">
-                        </div>
-                     </div>
-                     <div class="col-md-6">
-                        <div class="mb-3">
-                           <label for="dateOfDeath" class="form-label">تاريخ الوفاة</label>
-                           <input type="date" class="form-control" id="dateOfDeath" formControlName="dateOfDeath">
-                        </div>
-                     </div>
-                  </div>
-               </form>
-            </div>
-            <div class="modal-footer">
-               <button type="button" class="btn btn-secondary" (click)="closeForm()">إلغاء</button>
-               <button type="button" class="btn btn-primary" (click)="onSubmit()"
-                  [disabled]="authorForm.invalid || loading">
-                  <span class="spinner-border spinner-border-sm me-1" *ngIf="loading"></span>
-                  {{ isEditing ? 'تحديث' : 'إضافة' }}
-               </button>
-            </div>
-         </div>
-      </div>
-   </div>
+    <app-pagination [currentPage]="page" [totalPages]="totalPages" [totalItems]="total" [pageSize]="pageSize"
+                    label="صفحات الأسماء" (pageChange)="onPage($event)"></app-pagination>
+  </ng-container>
 </div>
+
+<dialog #formDialog class="form-dialog" aria-labelledby="person-form-title">
+  <form [formGroup]="form" (ngSubmit)="save()" novalidate>
+    <div class="form-dialog__head">
+      <h2 id="person-form-title" class="form-dialog__title">{{ editing ? 'تعديل الاسم' : 'إضافة اسم' }}</h2>
+      <button type="button" class="btn-close" (click)="closeForm()" aria-label="إغلاق"></button>
+    </div>
+    <div class="form-dialog__body">
+      <div>
+        <label for="person-name" class="form-label">الاسم<span class="req" aria-hidden="true"> *</span></label>
+        <input id="person-name" class="form-control" formControlName="name" autocomplete="off"
+               [class.is-invalid]="nameError" [attr.aria-invalid]="nameError ? true : null" aria-describedby="person-name-err">
+        <p *ngIf="nameError" id="person-name-err" class="field-error">{{ nameError }}</p>
+      </div>
+      <div>
+        <label for="person-type" class="form-label">النوع</label>
+        <select id="person-type" class="form-select" formControlName="type">
+          <option *ngFor="let t of types" [value]="t.value">{{ t.label }}</option>
+        </select>
+      </div>
+      <div class="form-dialog__row">
+        <div>
+          <label for="person-born" class="form-label">تاريخ الميلاد <span class="text-ink-600 fw-normal">(ميلادي، اختياري)</span></label>
+          <input id="person-born" type="date" class="form-control" formControlName="dateOfBirth" lang="en">
+        </div>
+        <div>
+          <label for="person-died" class="form-label">تاريخ الوفاة <span class="text-ink-600 fw-normal">(ميلادي، اختياري)</span></label>
+          <input id="person-died" type="date" class="form-control" formControlName="dateOfDeath" lang="en">
+        </div>
+      </div>
+    </div>
+    <div class="form-dialog__actions">
+      <button type="submit" class="btn btn-primary" [disabled]="saving">
+        <span *ngIf="saving" class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+        {{ editing ? 'حفظ التغييرات' : 'إضافة' }}
+      </button>
+      <button type="button" class="btn btn-secondary" (click)="closeForm()">إلغاء</button>
+    </div>
+  </form>
+</dialog>

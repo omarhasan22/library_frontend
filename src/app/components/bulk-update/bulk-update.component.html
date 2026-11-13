@@ -1,330 +1,170 @@
-<div class="main-container fade-in">
-  <div class="book-card">
-    <div class="book-header">
-      <h2 class="book-title text-center">تحديث جماعي للتصنيف الفرعي</h2>
-    </div>
+<div class="app-container page">
+  <app-page-header title="التحديث الجماعي" [crumbs]="[{ label: 'الإدارة' }, { label: 'التحديث الجماعي' }]">
+    <p subtitle class="text-ink-600">غيّر قسم أو موضوع مجموعة متتالية من الكتب على رفٍّ واحد دفعةً واحدة، مع إمكانية التراجع.</p>
+  </app-page-header>
 
-    <div class="book-content">
-      <div *ngIf="loading" class="loader-overlay">
-        <div class="spinner-border text-primary" role="status">
-          <span class="visually-hidden">Loading...</span>
-        </div>
-        <p>جاري المعالجة...</p>
-      </div>
+  <div class="bulk-grid">
+    <form class="bulk-form" novalidate (submit)="$event.preventDefault()">
 
-      <!-- Success Message -->
-      <div *ngIf="successMessage" class="alert alert-success" role="alert">
-        <div class="d-flex justify-content-between align-items-center">
-          <span>
-            <i class="fas fa-check-circle"></i> {{ successMessage }}
-          </span>
-          <button *ngIf="currentHistoryId" type="button" class="btn btn-sm btn-outline-light ms-3"
-            (click)="showUndoDialog()">
-            <i class="fas fa-undo me-1"></i> تراجع
+      <!-- Result of the last update -->
+      <div *ngIf="lastResult" class="result surface" role="status">
+        <div class="result__head">
+          <span class="result__icon" aria-hidden="true"><i class="fas fa-circle-check"></i></span>
+          <div class="result__text">
+            <strong>تم تحديث {{ lastResult.count | arCount:'book' }}</strong>
+            <span>أصبح {{ lastResult.type === 'subject' ? 'الموضوع' : 'القسم' }}: «{{ lastResult.value }}»</span>
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm" (click)="undo(lastResult.historyId)"
+                  [disabled]="undoingId === lastResult.historyId">
+            <i class="fas fa-rotate-left" aria-hidden="true"></i> تراجع
           </button>
         </div>
+        <details *ngIf="lastResult.books.length" class="result__books">
+          <summary>الكتب التي تغيّرت ({{ lastResult.books.length | num }})</summary>
+          <ul><li *ngFor="let b of lastResult.books"><a [routerLink]="['/books', b.bookId]">{{ b.bookTitle }}</a></li></ul>
+        </details>
       </div>
 
-      <!-- Edited Books List -->
-      <div *ngIf="editedBooksList.length > 0" class="edited-books-section">
-        <h4 class="section-title">
-          <i class="fas fa-list"></i> قائمة الكتب التي تم تحديثها
-        </h4>
-        <div class="table-responsive">
-          <table class="edited-books-table">
-            <thead>
-              <tr>
-                <th>عنوان الكتاب</th>
-                <th *ngIf="editedBooksList.length > 0 && editedBooksList[0].oldSubject !== undefined">التصنيف الفرعي
-                  القديم</th>
-                <th *ngIf="editedBooksList.length > 0 && editedBooksList[0].newSubject !== undefined">التصنيف الفرعي
-                  الجديد</th>
-                <th *ngIf="editedBooksList.length > 0 && editedBooksList[0].oldCategory !== undefined">التصنيف الرئيسي
-                  القديم</th>
-                <th *ngIf="editedBooksList.length > 0 && editedBooksList[0].newCategory !== undefined">التصنيف الرئيسي
-                  الجديد</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let book of editedBooksList">
-                <td>{{ book.bookTitle }}</td>
-                <td *ngIf="book.oldSubject !== undefined">{{ book.oldSubject }}</td>
-                <td *ngIf="book.newSubject !== undefined"><strong>{{ book.newSubject }}</strong></td>
-                <td *ngIf="book.oldCategory !== undefined">{{ book.oldCategory }}</td>
-                <td *ngIf="book.newCategory !== undefined"><strong>{{ book.newCategory }}</strong></td>
-              </tr>
-            </tbody>
-          </table>
+      <!-- 1. What -->
+      <section class="form-card surface" aria-labelledby="bu-1">
+        <h2 id="bu-1" class="form-card__title"><span class="form-card__num" aria-hidden="true">1</span> ماذا تريد أن تغيّر؟</h2>
+        <div class="choice" role="radiogroup" aria-labelledby="bu-1">
+          <label class="choice__item" [class.is-on]="updateType === 'subject'">
+            <input type="radio" name="updateType" value="subject" [checked]="updateType === 'subject'" (change)="setType('subject')">
+            <span class="choice__title">الموضوع</span>
+            <span class="choice__desc">مثل: فقه حنفي، السيرة النبوية</span>
+          </label>
+          <label class="choice__item" [class.is-on]="updateType === 'category'">
+            <input type="radio" name="updateType" value="category" [checked]="updateType === 'category'" (change)="setType('category')">
+            <span class="choice__title">القسم</span>
+            <span class="choice__desc">مثل: ركن الفقه الإسلامي</span>
+          </label>
         </div>
-      </div>
+      </section>
 
-      <!-- Error Message -->
-      <div *ngIf="errorMessage" class="alert alert-danger" role="alert">
-        <i class="fas fa-exclamation-circle"></i> {{ errorMessage }}
-      </div>
-
-      <form (ngSubmit)="showPreview()" #bulkUpdateForm="ngForm">
-        <!-- Update Type Selection -->
-        <div class="form-section">
-          <div class="form-section-title">
-            <i class="fas fa-cog"></i>
-            نوع التحديث
+      <!-- 2. Which books -->
+      <section class="form-card surface" aria-labelledby="bu-2">
+        <h2 id="bu-2" class="form-card__title"><span class="form-card__num" aria-hidden="true">2</span> أيّ الكتب؟</h2>
+        <div class="field-grid field-grid--3">
+          <div class="field">
+            <label for="bu-room" class="form-label">الغرفة</label>
+            <select id="bu-room" name="room" class="form-select" [ngModel]="roomNumber" (ngModelChange)="onRoomChange($event)">
+              <option value="">كل الغرف</option>
+              <option *ngFor="let r of rooms" [value]="r">غرفة {{ r }}</option>
+            </select>
           </div>
-          <div class="update-type-selector">
-            <label class="radio-option">
-              <input type="radio" name="updateType" value="subject" [(ngModel)]="updateType"
-                (change)="onUpdateTypeChange()" />
-              <span>تصنيف فرعي</span>
-            </label>
-            <label class="radio-option">
-              <input type="radio" name="updateType" value="category" [(ngModel)]="updateType"
-                (change)="onUpdateTypeChange()" />
-              <span>تصنيف رئيسي</span>
-            </label>
+          <div class="field">
+            <label for="bu-wall" class="form-label">الاستاند</label>
+            <select id="bu-wall" name="wall" class="form-select" [(ngModel)]="wallNumber" [disabled]="!roomNumber">
+              <option value="">{{ roomNumber ? 'كل الاستاندات' : 'اختر الغرفة أولاً' }}</option>
+              <option *ngFor="let w of walls" [value]="w">استاند {{ w }}</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="bu-shelf" class="form-label">الرف<span class="req" aria-hidden="true"> *</span></label>
+            <input id="bu-shelf" name="shelf" class="form-control" inputmode="numeric" [(ngModel)]="shelfNumber"
+                   [class.is-invalid]="submitted && errors['shelf']" [attr.aria-invalid]="submitted && errors['shelf'] ? true : null"
+                   aria-describedby="bu-shelf-err" required>
+            <p *ngIf="submitted && errors['shelf']" id="bu-shelf-err" class="field-error">{{ errors['shelf'] }}</p>
           </div>
         </div>
-
-        <!-- Room Number -->
-        <div class="form-section">
-          <div class="form-section-title">
-            <i class="fas fa-door-open"></i>
-            الغرفة
+        <fieldset class="range">
+          <legend class="form-label">أرقام الكتب على الرف<span class="req" aria-hidden="true"> *</span></legend>
+          <div class="range__inputs">
+            <label for="bu-from" class="visually-hidden">من رقم</label>
+            <input id="bu-from" name="from" class="form-control" inputmode="numeric" placeholder="من" [(ngModel)]="fromInput"
+                   [class.is-invalid]="submitted && errors['from']" [attr.aria-invalid]="submitted && errors['from'] ? true : null"
+                   aria-describedby="bu-range-err">
+            <span class="range__sep" aria-hidden="true">إلى</span>
+            <label for="bu-to" class="visually-hidden">إلى رقم</label>
+            <input id="bu-to" name="to" class="form-control" inputmode="numeric" placeholder="إلى" [(ngModel)]="toInput"
+                   [class.is-invalid]="submitted && errors['to']" [attr.aria-invalid]="submitted && errors['to'] ? true : null"
+                   aria-describedby="bu-range-err">
           </div>
-          <select class="form-control" [(ngModel)]="roomNumber" name="roomNumber" (change)="onRoomChange()">
-            <option value="">اختر الغرفة (اختياري)</option>
-            <option *ngFor="let room of availableRooms" [value]="room">{{ room }}</option>
-          </select>
-        </div>
+          <p *ngIf="submitted && (errors['from'] || errors['to'])" id="bu-range-err" class="field-error">{{ errors['from'] || errors['to'] }}</p>
+        </fieldset>
 
-        <!-- Wall Number -->
-        <div class="form-section" *ngIf="roomNumber">
-          <div class="form-section-title">
-            <i class="fas fa-border-all"></i>
-            الحائط
-          </div>
-          <select class="form-control" [(ngModel)]="wallNumber" name="wallNumber">
-            <option value="">اختر الحائط (اختياري)</option>
-            <option *ngFor="let wall of availableWalls" [value]="wall">{{ wall }}</option>
-          </select>
-        </div>
-
-        <!-- Shelf Number -->
-        <div class="form-section">
-          <div class="form-section-title">
-            <i class="fas fa-layer-group"></i>
-            رقم الرف *
-          </div>
-          <input type="text" class="form-control" placeholder="أدخل رقم الرف" [(ngModel)]="shelfNumber"
-            name="shelfNumber" required />
-        </div>
-
-        <!-- Book Number Range -->
-        <div class="form-section">
-          <div class="form-section-title">
-            <i class="fas fa-book"></i>
-            نطاق أرقام الكتب *
-          </div>
-          <div class="book-range-container">
-            <input type="number" lang="en" class="form-control range-input" placeholder="من" [(ngModel)]="bookNumberFrom"
-              name="bookNumberFrom" min="1" required />
-            <span class="range-separator">إلى</span>
-            <input type="number" lang="en" class="form-control range-input" placeholder="إلى" [(ngModel)]="bookNumberTo"
-              name="bookNumberTo" min="1" required />
-          </div>
-        </div>
-
-        <!-- Subject Selection (when updateType is 'subject') -->
-        <div class="form-section" *ngIf="updateType === 'subject'">
-          <div class="form-section-title">
-            <i class="fas fa-tag"></i>
-            التصنيف الفرعي الجديد *
-          </div>
-          <div class="search-dropdown-container">
-            <input type="text" class="form-control" placeholder="ابحث عن تصنيف فرعي أو أضف جديد"
-              [(ngModel)]="subjectSearchTerm" name="subjectSearch" (input)="onSubjectSearch(subjectSearchTerm)"
-              (focus)="showSubjectDropdown = true" />
-
-            <div class="dropdown-menu"
-              *ngIf="showSubjectDropdown && (filteredSubjects.length > 0 || subjectSearchTerm.length > 0)">
-              <div class="dropdown-item" *ngFor="let subject of filteredSubjects" (click)="selectSubject(subject)">
-                {{ subject.title }}
-              </div>
-              <div class="dropdown-item add-new" *ngIf="subjectSearchTerm.length > 0 && subjectSearchTerm.trim()"
-                (click)="addNewSubject()">
-                <i class="fas fa-plus"></i> إضافة "{{ subjectSearchTerm }}" كتصنيف فرعي جديد
-              </div>
-            </div>
-          </div>
-
-          <div class="selected-item" *ngIf="selectedSubject?.title">
-            <span>{{ selectedSubject.title }}</span>
-            <button type="button" class="btn-remove"
-              (click)="selectedSubject = null; subjectSearchTerm = ''">حذف</button>
-          </div>
-        </div>
-
-        <!-- Category Selection (when updateType is 'category') -->
-        <div class="form-section" *ngIf="updateType === 'category'">
-          <div class="form-section-title">
-            <i class="fas fa-folder"></i>
-            التصنيف الرئيسي الجديد *
-          </div>
-          <div class="search-dropdown-container">
-            <input type="text" class="form-control" placeholder="ابحث عن تصنيف رئيسي أو أضف جديد"
-              [(ngModel)]="categorySearchTerm" name="categorySearch" (input)="onCategorySearch(categorySearchTerm)"
-              (focus)="showCategoryDropdown = true" />
-
-            <div class="dropdown-menu"
-              *ngIf="showCategoryDropdown && (filteredCategories.length > 0 || categorySearchTerm.length > 0)">
-              <div class="dropdown-item" *ngFor="let category of filteredCategories" (click)="selectCategory(category)">
-                {{ category.title }}
-              </div>
-              <div class="dropdown-item add-new" *ngIf="categorySearchTerm.length > 0 && categorySearchTerm.trim()"
-                (click)="addNewCategory()">
-                <i class="fas fa-plus"></i> إضافة "{{ categorySearchTerm }}" كتصنيف رئيسي جديد
-              </div>
-            </div>
-          </div>
-
-          <div class="selected-item" *ngIf="selectedCategory?.title">
-            <span>{{ selectedCategory.title }}</span>
-            <button type="button" class="btn-remove"
-              (click)="selectedCategory = null; categorySearchTerm = ''">حذف</button>
-          </div>
-        </div>
-
-        <!-- Submit Button -->
-        <div class="form-actions">
-          <button type="submit" class="btn btn-primary btn-lg" [disabled]="loading">
-            <i class="fas fa-eye"></i> معاينة التحديث
+        <div class="preview-bar">
+          <button type="button" class="btn btn-secondary" (click)="runPreview()" [disabled]="previewing">
+            <span *ngIf="previewing" class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+            <i *ngIf="!previewing" class="fas fa-eye" aria-hidden="true"></i>
+            عرض الكتب المشمولة
           </button>
+          <span *ngIf="preview && !previewCurrent" class="text-ink-600 small">تغيّرت المعايير؛ اعرض الكتب من جديد.</span>
         </div>
-      </form>
 
-      <!-- History Section -->
-      <div *ngIf="historyList.length > 0" class="history-section">
-        <h4 class="section-title">
-          <i class="fas fa-history"></i> سجل التحديثات السابقة
-        </h4>
-        <div class="history-list">
-          <div *ngFor="let historyItem of historyList" class="history-item"
-            [class.undone]="historyItem.status === 'undone'">
-            <div class="history-header">
-              <div class="history-info">
-                <span class="history-date">
-                  <i class="fas fa-calendar"></i> {{ historyItem.createdAt | date:'short' }}
-                </span>
-                <span class="history-status" [class.active]="historyItem.status === 'active'"
-                  [class.undone-status]="historyItem.status === 'undone'">
-                  {{ historyItem.status === 'active' ? 'نشط' : 'تم التراجع' }}
-                </span>
-              </div>
-              <button *ngIf="historyItem.status === 'active'" type="button" class="btn btn-sm btn-warning"
-                (click)="undoHistoryItem(historyItem._id)">
-                <i class="fas fa-undo"></i> تراجع
-              </button>
-            </div>
-            <div class="history-details">
-              <div class="detail-item">
-                <strong>الرف:</strong> {{ historyItem.criteria.shelfNumber }}
-                <span *ngIf="historyItem.criteria.roomNumber"> | <strong>الغرفة:</strong> {{
-                  historyItem.criteria.roomNumber }}</span>
-                <span *ngIf="historyItem.criteria.wallNumber"> | <strong>الحائط:</strong> {{
-                  historyItem.criteria.wallNumber }}</span>
-              </div>
-              <div class="detail-item">
-                <strong>نطاق الكتب:</strong> من {{ historyItem.criteria.bookNumberFrom }} إلى {{
-                historyItem.criteria.bookNumberTo }}
-              </div>
-              <div class="detail-item" *ngIf="historyItem.updateType === 'subject'">
-                <strong>التصنيف الفرعي:</strong> {{ historyItem.oldSubject?.title || 'لا يوجد' }} → <strong>{{
-                  historyItem.newSubject?.title }}</strong>
-              </div>
-              <div class="detail-item" *ngIf="historyItem.updateType === 'category'">
-                <strong>التصنيف الرئيسي:</strong> {{ historyItem.oldCategory?.title || 'لا يوجد' }} → <strong>{{
-                  historyItem.newCategory?.title }}</strong>
-              </div>
-              <div class="detail-item">
-                <strong>عدد الكتب:</strong> {{ historyItem.affectedBooks.length }} كتاب
-              </div>
-            </div>
+        <div *ngIf="previewCurrent && preview" class="preview" aria-live="polite">
+          <p class="preview__count" [class.is-empty]="!preview.count">
+            <ng-container *ngIf="preview.count; else noBooks">
+              <i class="fas fa-book" aria-hidden="true"></i> سيشمل التحديث <strong>{{ preview.count | arCount:'book' }}</strong>
+              <span *ngIf="preview.count > preview.sample.length" class="text-ink-600"> (تظهر أول {{ preview.sample.length | num }})</span>
+            </ng-container>
+            <ng-template #noBooks><i class="fas fa-circle-info" aria-hidden="true"></i> لا توجد كتب بهذه المعايير. تحقّق من الرف والأرقام.</ng-template>
+          </p>
+          <div *ngIf="preview.sample.length" class="preview__table">
+            <table class="table table-sm mb-0">
+              <thead>
+                <tr><th scope="col">الكتاب</th><th scope="col">الموقع</th><th scope="col">{{ updateType === 'subject' ? 'الموضوع الحالي' : 'القسم الحالي' }}</th></tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let b of preview.sample">
+                  <td><a [routerLink]="['/books', b._id]" target="_blank" rel="noopener">{{ b.title }}</a></td>
+                  <td><app-location-badge [address]="b.address" variant="code"></app-location-badge></td>
+                  <td class="text-ink-600">{{ (updateType === 'subject' ? b.subject : b.category) || '—' }}</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
-      </div>
-    </div>
-  </div>
-</div>
+      </section>
 
-<!-- Confirmation Dialog -->
-<div class="modal-overlay" *ngIf="showConfirmationDialog" (click)="cancelUpdate()">
-  <div class="modal-dialog" (click)="$event.stopPropagation()">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3 class="modal-title">تأكيد التحديث الجماعي</h3>
-        <button type="button" class="close-btn" (click)="cancelUpdate()">
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
-      <div class="modal-body" *ngIf="previewData">
-        <div class="preview-section">
-          <div class="preview-item">
-            <strong>الغرفة:</strong> {{ previewData.roomNumber }}
-          </div>
-          <div class="preview-item">
-            <strong>الحائط:</strong> {{ previewData.wallNumber }}
-          </div>
-          <div class="preview-item">
-            <strong>الرف:</strong> {{ previewData.shelfNumber }}
-          </div>
-          <div class="preview-item">
-            <strong>نطاق الكتب:</strong> {{ previewData.bookRange }}
-          </div>
-          <div class="preview-item highlight">
-            <strong>التصنيف الفرعي الجديد:</strong> {{ previewData.subjectTitle }}
-          </div>
-        </div>
-        <div class="warning-message">
-          <i class="fas fa-exclamation-triangle"></i>
-          سيتم تحديث جميع الكتب المطابقة للمعايير المحددة. هل أنت متأكد؟
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" (click)="cancelUpdate()">إلغاء</button>
-        <button type="button" class="btn btn-primary" (click)="confirmUpdate()" [disabled]="loading">
-          <i class="fas fa-check"></i> تأكيد التحديث
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
+      <!-- 3. New value -->
+      <section class="form-card surface" aria-labelledby="bu-3">
+        <h2 id="bu-3" class="form-card__title"><span class="form-card__num" aria-hidden="true">3</span> القيمة الجديدة</h2>
+        <app-entity-picker *ngIf="updateType === 'subject'" name="newSubject" [(ngModel)]="selectedSubject" [options]="subjects"
+                           labelKey="title" label="الموضوع الجديد" newItemLabel="موضوع" [createFn]="createSubject"
+                           inputId="bu-subject" [required]="true"
+                           [errorText]="submitted && previewCurrent && !newValue ? 'اختر الموضوع الجديد.' : null"></app-entity-picker>
+        <app-entity-picker *ngIf="updateType === 'category'" name="newCategory" [(ngModel)]="selectedCategory" [options]="categories"
+                           labelKey="title" label="القسم الجديد" newItemLabel="قسم" [createFn]="createCategory"
+                           inputId="bu-category" [required]="true"
+                           [errorText]="submitted && previewCurrent && !newValue ? 'اختر القسم الجديد.' : null"></app-entity-picker>
+      </section>
 
-<!-- Undo Confirmation Dialog -->
-<div class="modal-overlay" *ngIf="showUndoConfirmation" (click)="cancelUndo()">
-  <div class="modal-dialog" (click)="$event.stopPropagation()">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3 class="modal-title">تأكيد التراجع</h3>
-        <button type="button" class="close-btn" (click)="cancelUndo()">
-          <i class="fas fa-times"></i>
+      <div class="apply-bar">
+        <button type="button" class="btn btn-primary btn-lg" (click)="apply()" [disabled]="!canApply">
+          <span *ngIf="applying" class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+          {{ previewCurrent && preview?.count ? 'تطبيق على ' + (preview?.count | arCount:'book') : 'تطبيق التحديث' }}
         </button>
+        <p class="apply-bar__hint" *ngIf="!canApply && !applying">
+          {{ !previewCurrent ? 'اعرض الكتب المشمولة أولاً للتأكد من النطاق.' : !preview?.count ? 'لا توجد كتب لتحديثها.' : 'اختر القيمة الجديدة.' }}
+        </p>
       </div>
-      <div class="modal-body">
-        <div class="warning-message">
-          <i class="fas fa-exclamation-triangle"></i>
-          هل أنت متأكد من التراجع عن التحديث؟ سيتم استعادة جميع الكتب إلى حالتها السابقة.
-        </div>
-        <div class="preview-section" *ngIf="undoData">
-          <div class="preview-item">
-            <strong>عدد الكتب:</strong> {{ undoData.books.length }}
+    </form>
+
+    <!-- History -->
+    <aside class="history surface" aria-labelledby="hist-title">
+      <h2 id="hist-title" class="history__title">آخر التحديثات</h2>
+      <app-skeleton *ngIf="historyState === 'loading'" variant="lines" [count]="4" label="جارٍ تحميل السجل…"></app-skeleton>
+      <app-empty-state *ngIf="historyState === 'error'" kind="error" [compact]="true" title="تعذّر تحميل السجل" (retry)="loadHistory()"></app-empty-state>
+      <app-empty-state *ngIf="historyState === 'ok' && !history.length" [compact]="true" icon="fa-clock-rotate-left"
+                       title="لا تحديثات بعد" message="ستظهر هنا التحديثات الجماعية مع إمكانية التراجع."></app-empty-state>
+      <ol *ngIf="historyState === 'ok' && history.length" class="history__list">
+        <li *ngFor="let h of history" class="hist" [class.is-undone]="h.status === 'undone'">
+          <div class="hist__top">
+            <span class="hist__type">{{ historyLabel(h).field }}</span>
+            <span class="hist__count">{{ (h.affectedBooks?.length || 0) | arCount:'book' }}</span>
           </div>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" (click)="cancelUndo()">إلغاء</button>
-        <button type="button" class="btn btn-warning" (click)="confirmUndo()" [disabled]="loading">
-          <i class="fas fa-undo"></i> تأكيد التراجع
-        </button>
-      </div>
-    </div>
+          <p class="hist__change"><span class="hist__from">{{ historyLabel(h).from }}</span> ← <strong>{{ historyLabel(h).to }}</strong></p>
+          <app-location-badge [address]="historyAddress(h)" variant="code"></app-location-badge>
+          <div class="hist__meta">
+            <span>{{ date(h.createdAt) }}<ng-container *ngIf="h.userId?.username"> · {{ h.userId.username }}</ng-container></span>
+            <button *ngIf="h.status === 'active'" type="button" class="btn btn-link btn-sm p-0" (click)="undo(h._id)"
+                    [disabled]="undoingId === h._id">تراجع</button>
+            <span *ngIf="h.status === 'undone'" class="hist__undone"><i class="fas fa-rotate-left" aria-hidden="true"></i> تم التراجع</span>
+          </div>
+        </li>
+      </ol>
+    </aside>
   </div>
 </div>

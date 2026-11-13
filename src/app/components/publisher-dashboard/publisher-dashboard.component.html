@@ -1,144 +1,90 @@
-<div class="publisher-dashboard-container">
-   <div class="container">
-      <div class="row">
-         <div class="col-12">
-            <div class="dashboard-header">
-               <h2><i class="fas fa-building me-2"></i>إدارة الناشرين</h2>
-               <button class="btn btn-primary" (click)="openAddForm()">
-                  <i class="fas fa-plus me-1"></i>إضافة ناشر
-               </button>
-            </div>
+<div class="app-container page">
+  <app-page-header title="الناشرون" [crumbs]="[{ label: 'الإدارة' }, { label: 'الناشرون' }]">
+    <p subtitle class="text-ink-600">
+      <ng-container *ngIf="stats">{{ stats.totalPublishers | arCount:'publisher' }} في الفهرس.</ng-container>&nbsp;
+    </p>
+    <button actions type="button" class="btn btn-primary" (click)="openAdd()">
+      <i class="fas fa-plus" aria-hidden="true"></i> إضافة ناشر
+    </button>
+  </app-page-header>
 
-            <!-- Message Display -->
-            <div *ngIf="message" class="alert" [class]="messageType === 'success' ? 'alert-success' : 'alert-danger'"
-               role="alert">
-               <i class="fas" [class]="messageType === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'"></i>
-               {{ message }}
-            </div>
+  <div class="toolbar surface">
+    <div class="toolbar__search">
+      <label for="pub-q" class="visually-hidden">ابحث في الناشرين</label>
+      <i class="fas fa-magnifying-glass" aria-hidden="true"></i>
+      <input id="pub-q" type="search" class="form-control" placeholder="ابحث باسم الناشر أو المدينة…" autocomplete="off"
+             [(ngModel)]="search" (ngModelChange)="onSearch($event)">
+    </div>
+    <label for="pub-size" class="small text-ink-600">في الصفحة</label>
+    <select id="pub-size" class="form-select form-select-sm" [ngModel]="pageSize" (ngModelChange)="setPageSize($event)">
+      <option [ngValue]="20">20</option>
+      <option [ngValue]="50">50</option>
+      <option [ngValue]="100">100</option>
+    </select>
+  </div>
 
-            <!-- Statistics Cards -->
-            <div class="row mb-4" *ngIf="stats">
-               <div class="col-md-4">
-                  <div class="stat-card">
-                     <div class="stat-icon">
-                        <i class="fas fa-building"></i>
-                     </div>
-                     <div class="stat-content">
-                        <h3>{{ stats.totalPublishers }}</h3>
-                        <p>إجمالي الناشرين</p>
-                     </div>
-                  </div>
-               </div>
-            </div>
+  <app-skeleton *ngIf="state === 'loading'" variant="rows" [count]="8" label="جارٍ تحميل الناشرين…"></app-skeleton>
+  <div *ngIf="state === 'error'" class="surface"><app-empty-state kind="error" title="تعذّر تحميل الناشرين" (retry)="load()"></app-empty-state></div>
 
-            <!-- Search and Filters -->
-            <div class="row mb-4">
-               <div class="col-md-6">
-                  <div class="search-box">
-                     <i class="fas fa-search"></i>
-                     <input type="text" [(ngModel)]="searchTerm" (keyup.enter)="onSearch()"
-                        placeholder="البحث في الناشرين...">
-                     <button class="btn btn-outline-primary" (click)="onSearch()">بحث</button>
-                  </div>
-               </div>
-               <div class="col-md-3">
-                  <select class="form-select" [(ngModel)]="limit" (ngModelChange)="currentPage = 1; loadPublishers()">
-                     <option [ngValue]="10">10 لكل صفحة</option>
-                     <option [ngValue]="25">25 لكل صفحة</option>
-                     <option [ngValue]="50">50 لكل صفحة</option>
-                  </select>
-               </div>
-            </div>
+  <ng-container *ngIf="state === 'ok'">
+    <div *ngIf="!publishers.length" class="surface">
+      <app-empty-state [kind]="search ? 'no-results' : 'empty'" [title]="search ? 'لا يوجد ناشر بهذا الاسم' : 'لا يوجد ناشرون بعد'">
+        <button type="button" class="btn btn-primary" (click)="openAdd()">إضافة ناشر</button>
+      </app-empty-state>
+    </div>
 
-            <!-- Publishers Table -->
-            <div class="table-container">
-               <table class="table table-hover">
-                  <thead>
-                     <tr>
-                        <th>اسم الناشر</th>
-                        <th>الإجراءات</th>
-                     </tr>
-                  </thead>
-                  <tbody>
-                     <tr *ngFor="let publisher of publishers">
-                        <td>
-                           <div class="publisher-name">
-                              <i class="fas fa-building me-2"></i>
-                              {{ publisher.title }}
-                           </div>
-                        </td>
-                        <td>
-                           <div class="action-buttons">
-                              <button class="btn btn-sm btn-outline-primary" (click)="openEditForm(publisher)">
-                                 <i class="fas fa-edit"></i>
-                              </button>
-                              <button class="btn btn-sm btn-outline-danger" (click)="deletePublisher(publisher)">
-                                 <i class="fas fa-trash"></i>
-                              </button>
-                           </div>
-                        </td>
-                     </tr>
-                  </tbody>
-               </table>
+    <div *ngIf="publishers.length" class="list-wrap surface" [class.is-refreshing]="refreshing" [attr.aria-busy]="refreshing">
+      <table class="table admin-table">
+        <caption class="visually-hidden">قائمة الناشرين، الصفحة {{ page }} من {{ totalPages }}</caption>
+        <thead>
+          <tr>
+            <th scope="col">الناشر</th>
+            <th scope="col" class="col-actions"><span class="visually-hidden">إجراءات</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let p of publishers; trackBy: trackById">
+            <td class="cell-name">{{ p.title }}</td>
+            <td class="col-actions">
+              <div class="row-actions">
+                <a class="btn btn-sm btn-link" routerLink="/books" [queryParams]="{ f: 'publishers:' + p.title }">كتبه</a>
+                <button type="button" class="btn btn-sm btn-icon btn-secondary" (click)="openEdit(p)"
+                        [attr.aria-label]="'تعديل ' + p.title" title="تعديل"><i class="fas fa-pen" aria-hidden="true"></i></button>
+                <button type="button" class="btn btn-sm btn-icon btn-outline-danger" (click)="remove(p)"
+                        [attr.aria-label]="'حذف ' + p.title" title="حذف"><i class="fas fa-trash-can" aria-hidden="true"></i></button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
-               <!-- Loading -->
-               <div *ngIf="loading" class="text-center py-4">
-                  <div class="spinner-border text-primary" role="status">
-                     <span class="visually-hidden">جاري التحميل...</span>
-                  </div>
-               </div>
-
-               <!-- Empty State -->
-               <div *ngIf="!loading && publishers.length === 0" class="empty-state">
-                  <i class="fas fa-building"></i>
-                  <h4>لا توجد ناشرين</h4>
-                  <p>لم يتم العثور على أي ناشرين</p>
-               </div>
-            </div>
-
-            <!-- Pagination -->
-            <div class="pagination-container">
-               <app-pagination [currentPage]="currentPage" [totalPages]="totalPages"
-                  (pageChange)="onPageChange($event)">
-               </app-pagination>
-            </div>
-         </div>
-      </div>
-   </div>
-
-   <!-- Publisher Form Modal -->
-   <div class="modal" [class.show]="isEditing || publisherForm.get('title')?.value"
-      [style.display]="(isEditing || publisherForm.get('title')?.value) ? 'block' : 'none'">
-      <div class="modal-dialog">
-         <div class="modal-content">
-            <div class="modal-header">
-               <h5 class="modal-title">
-                  {{ isEditing ? 'تعديل الناشر' : 'إضافة ناشر جديد' }}
-               </h5>
-               <button type="button" class="btn-close" (click)="closeForm()"></button>
-            </div>
-            <div class="modal-body">
-               <form [formGroup]="publisherForm" (ngSubmit)="onSubmit()">
-                  <div class="mb-3">
-                     <label for="title" class="form-label">اسم الناشر *</label>
-                     <input type="text" class="form-control" id="title" formControlName="title"
-                        [class.is-invalid]="publisherForm.get('title')?.invalid && publisherForm.get('title')?.touched">
-                     <div class="invalid-feedback"
-                        *ngIf="publisherForm.get('title')?.invalid && publisherForm.get('title')?.touched">
-                        اسم الناشر مطلوب ويجب أن يكون حرفين على الأقل
-                     </div>
-                  </div>
-               </form>
-            </div>
-            <div class="modal-footer">
-               <button type="button" class="btn btn-secondary" (click)="closeForm()">إلغاء</button>
-               <button type="button" class="btn btn-primary" (click)="onSubmit()"
-                  [disabled]="publisherForm.invalid || loading">
-                  <span class="spinner-border spinner-border-sm me-1" *ngIf="loading"></span>
-                  {{ isEditing ? 'تحديث' : 'إضافة' }}
-               </button>
-            </div>
-         </div>
-      </div>
-   </div>
+    <app-pagination [currentPage]="page" [totalPages]="totalPages" [totalItems]="total" [pageSize]="pageSize"
+                    label="صفحات الناشرين" (pageChange)="onPage($event)"></app-pagination>
+  </ng-container>
 </div>
+
+<dialog #formDialog class="form-dialog" aria-labelledby="publisher-form-title">
+  <form [formGroup]="form" (ngSubmit)="save()" novalidate>
+    <div class="form-dialog__head">
+      <h2 id="publisher-form-title" class="form-dialog__title">{{ editing ? 'تعديل الناشر' : 'إضافة ناشر' }}</h2>
+      <button type="button" class="btn-close" (click)="closeForm()" aria-label="إغلاق"></button>
+    </div>
+    <div class="form-dialog__body">
+      <div>
+        <label for="publisher-title" class="form-label">اسم الناشر<span class="req" aria-hidden="true"> *</span></label>
+        <input id="publisher-title" class="form-control" formControlName="title" autocomplete="off"
+               placeholder="مثل: دار القلم - دمشق"
+               [class.is-invalid]="titleError" [attr.aria-invalid]="titleError ? true : null" aria-describedby="publisher-title-err">
+        <p *ngIf="titleError" id="publisher-title-err" class="field-error">{{ titleError }}</p>
+      </div>
+    </div>
+    <div class="form-dialog__actions">
+      <button type="submit" class="btn btn-primary" [disabled]="saving">
+        <span *ngIf="saving" class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+        {{ editing ? 'حفظ التغييرات' : 'إضافة' }}
+      </button>
+      <button type="button" class="btn btn-secondary" (click)="closeForm()">إلغاء</button>
+    </div>
+  </form>
+</dialog>

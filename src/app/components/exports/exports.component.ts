@@ -1,200 +1,165 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
-import { BookService } from '../../services/book.service';
-import { AuthService } from '../../services/auth.service';
-import { Subscription } from 'rxjs';
+import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
+import { of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 
+import { BookService, LocationSummary } from '../../services/book.service';
 import { ToastService } from '../../shared/services/toast.service';
+import { TaxonomyService, EMPTY_TAXONOMY, Taxonomy } from '../../shared/services/taxonomy.service';
+import { ApiArgs, BookQuery, DEFAULT_QUERY, fieldLabel, hasFilters, parseBookQuery, toApiArgs } from '../../books/book-query';
+import { ListReturnService } from '../../books/list-return.service';
+
+type Scope = 'all' | 'search';
+
+/**
+ * /exports — Excel files: the full catalogue, or one room's shelf list (for labels and stock-taking).
+ * Each export can cover everything or the last search made on /books, and shows how many books it
+ * will contain before downloading.
+ */
 @Component({
   selector: 'app-exports',
   templateUrl: './exports.component.html',
   styleUrls: ['./exports.component.css']
 })
-export class ExportsComponent implements OnInit, OnDestroy {
-  loading: boolean = false;
-  selectedRoomNumber: string | null = null;
-  availableRooms: string[] = [];
-  
-  // Search and filters
-  simpleSearchTerm: string = '';
-  showAdvancedSearch: boolean = false;
-  searchFilters = [
-    { field: 'all', value: '' }
-  ];
-  
-  // Sorting
-  sortDirection: 'asc' | 'desc' = 'asc';
-  
-  // Auth
-  isAdmin: boolean = false;
-  private authSubscription?: Subscription;
+export class ExportsComponent implements OnInit {
+  scope: Scope = 'all';
+  lastSearch: BookQuery | null = null;
+  lastSearchCount: number | null = null;
+  totalBooks: number | null = null;
+  taxonomy: Taxonomy = EMPTY_TAXONOMY;
 
-  // Filter options (same as book-list)
-  filterOptions = [
-    { key: 'title', value: 'العنوان' },
-    { key: 'authors', value: 'المؤلف' },
-    { key: 'category', value: 'التصنيف' },
-    { key: 'subject', value: 'التصنيف الفرعي' },
-    { key: 'publishers', value: 'الدار' },
-    { key: 'roomNumber', value: 'الغرفة' },
-    { key: 'wallNumber', value: 'الاستاند' },
-    { key: 'shelfNumber', value: 'الرف' },
-    { key: 'bookNumber', value: 'الكتاب' },
-    { key: 'numberOfVolumes', value: 'عدد الأجزاء' },
-    { key: 'numberOfFolders', value: 'عدد المجلدات' },
-    { key: 'editionNumber', value: 'رقم الطبعة' },
-    { key: 'publicationYear', value: 'سنة الطباعة' },
-    { key: 'pageCount', value: 'عدد الصفحات' },
-    { key: 'notes', value: 'الملاحظات' }
-  ];
+  locations: LocationSummary | null = null;
+  roomsState: 'loading' | 'ok' | 'error' = 'loading';
+  rawRooms: string[] = [];
+  room: string | null = null;
+  roomCount: number | null = null;
+
+  busy: 'catalogue' | 'locations' | null = null;
 
   constructor(
     private bookService: BookService,
-    private authService: AuthService,
+    private taxonomyService: TaxonomyService,
+    private listReturn: ListReturnService,
+    private router: Router,
     private toast: ToastService
-  ) { }
+  ) {}
 
   ngOnInit(): void {
-    // Subscribe to user changes to check admin status
-    this.authSubscription = this.authService.currentUser$.subscribe((user: any) => {
-      this.isAdmin = user?.role == 'admin';
+    this.taxonomyService.load().pipe(catchError(() => of(EMPTY_TAXONOMY))).subscribe(t => (this.taxonomy = t));
+    this.bookService.getAllBooks('', '', 1, 1).pipe(catchError(() => of(null)))
+      .subscribe(r => (this.totalBooks = r ? r.totalBooks : null));
+
+    // The last search made on /books (if it narrowed anything) can be exported as is.
+    const url = this.listReturn.lastListUrl();
+    if (url) {
+      const query = parseBookQuery(this.router.parseUrl(url).queryParams).query;
+      if (hasFilters(query)) {
+        this.lastSearch = query;
+        this.bookService.getBooks(toApiArgs(query), 1, 1).pipe(catchError(() => of(null)))
+          .subscribe(r => (this.lastSearchCount = r ? r.filteredCount : null));
+      }
+    }
+    this.loadRooms();
+  }
+
+  loadRooms(): void {
+    this.roomsState = 'loading';
+    // Raw room values (the locations export matches the room exactly as stored).
+    this.bookService.getUniqueRoomNumbers().pipe(catchError(() => of(null as string[] | null))).subscribe(rooms => {
+      if (!rooms) { this.roomsState = 'error'; return; }
+      this.rawRooms = rooms.filter(Boolean).sort((a, b) => a.localeCompare(b, 'en', { numeric: true }));
+      this.roomsState = 'ok';
     });
-
-    // Load available room numbers
-    this.loadAvailableRooms();
+    this.bookService.getLocationSummary().pipe(catchError(() => of(null))).subscribe(s => (this.locations = s));
   }
 
-  ngOnDestroy(): void {
-    if (this.authSubscription) {
-      this.authSubscription.unsubscribe();
-    }
+  // ---------- scope ----------
+
+  get args(): ApiArgs {
+    return this.scope === 'search' && this.lastSearch ? toApiArgs(this.lastSearch) : toApiArgs(DEFAULT_QUERY);
   }
 
-  loadAvailableRooms(): void {
-    this.bookService.getUniqueRoomNumbers().subscribe(
-      (rooms: string[]) => {
-        this.availableRooms = rooms;
+  get searchSummary(): string {
+    const q = this.lastSearch;
+    if (!q) return '';
+    const parts: string[] = [];
+    if (q.q) parts.push(`«${q.q}»`);
+    if (q.category) parts.push(this.taxonomy.categories.find(c => c._id === q.category)?.title ?? 'قسم محدد');
+    if (q.subject) parts.push(this.taxonomy.subjects.find(s => s._id === q.subject)?.title ?? 'موضوع محدد');
+    if (q.room) parts.push(`الغرفة ${q.room}`);
+    if (q.wall) parts.push(`الاستاند ${q.wall}`);
+    if (q.shelf) parts.push(`الرف ${q.shelf}`);
+    q.rows.forEach(r => parts.push(`${fieldLabel(r.field)}: ${r.value}`));
+    return parts.join(' · ');
+  }
+
+  get catalogueCount(): number | null {
+    return this.scope === 'search' ? this.lastSearchCount : this.totalBooks;
+  }
+
+  onRoomChange(room: string | null): void {
+    this.room = room;
+    this.roomCount = null;
+    if (!room) return;
+    const args = this.args;
+    const filters = [{ field: 'roomExact', value: room }];
+    // Count = books in this room within the chosen scope.
+    const scoped = args.query === 'advanced' ? [...JSON.parse(args.searchTerm), ...filters]
+      : args.searchTerm ? [{ field: 'all', value: args.searchTerm }, ...filters] : filters;
+    this.bookService.getAllBooks('advanced', JSON.stringify(scoped), 1, 1).pipe(catchError(() => of(null)))
+      .subscribe(r => (this.roomCount = r ? r.filteredCount : null));
+  }
+
+  setScope(scope: Scope): void {
+    this.scope = scope;
+    if (this.room) this.onRoomChange(this.room);
+  }
+
+  roomBooks(room: string): number | null {
+    const latin = room.replace(/[٠-٩]/g, d => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d)));
+    return this.locations?.rooms.find(r => r.room === latin)?.count ?? null;
+  }
+
+  // ---------- downloads ----------
+
+  exportCatalogue(): void {
+    const a = this.args;
+    this.busy = 'catalogue';
+    this.bookService.exportBooksToExcel(a.query, a.searchTerm, a.sortDirection).subscribe({
+      next: blob => {
+        this.download(blob, `books_${this.stamp()}.xlsx`);
+        this.busy = null;
+        this.toast.success('تم تنزيل ملف الفهرس');
       },
-      (error) => {
-        console.error('Error loading room numbers', error);
-      }
-    );
+      error: () => { this.busy = null; this.toast.error('تعذّر تصدير الفهرس. حاول مرة أخرى.'); }
+    });
   }
 
-  toggleAdvancedSearch(): void {
-    this.showAdvancedSearch = !this.showAdvancedSearch;
-  }
-
-  addFilter(): void {
-    this.searchFilters.push({ field: 'title', value: '' });
-  }
-
-  removeFilter(index: number): void {
-    if (this.searchFilters.length > 1) {
-      this.searchFilters.splice(index, 1);
-    }
-  }
-
-  resetSearch(): void {
-    this.searchFilters = [{ field: 'all', value: '' }];
-    this.simpleSearchTerm = '';
-    this.selectedRoomNumber = null;
-  }
-
-  exportData(): void {
-    // Show loading state
-    this.loading = true;
-
-    // Extract current search filters
-    const filters = this.searchFilters
-      .map(f => ({ ...f, value: (f.value ?? '').toString().trim() }))
-      .filter(f => f.value !== '');
-
-    // Determine if this is advanced search
-    const isAdvanced = filters.length > 1 ||
-      (filters.length === 1 && filters[0].field !== 'all' && filters[0].value !== '');
-
-    const query = isAdvanced ? 'advanced' : '';
-    const searchTerm = isAdvanced ? JSON.stringify(filters) : this.simpleSearchTerm;
-
-    // Call export service
-    this.bookService.exportBooksToExcel(query, searchTerm, this.sortDirection).subscribe(
-      (blob: Blob) => {
-        // Create download link
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        const filename = `books_export_${new Date().toISOString().split('T')[0]}.xlsx`;
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-        this.loading = false;
+  exportLocations(): void {
+    if (!this.room) return;
+    const a = this.args;
+    const room = this.room;
+    this.busy = 'locations';
+    this.bookService.exportBookLocationsToExcel(room, a.query, a.searchTerm, a.sortDirection).subscribe({
+      next: blob => {
+        this.download(blob, `locations_room_${room}_${this.stamp()}.xlsx`);
+        this.busy = null;
+        this.toast.success(`تم تنزيل مواقع كتب الغرفة ${room}`);
       },
-      (error) => {
-        console.error('Error exporting books', error);
-        this.toast.error('حدث خطأ أثناء تصدير البيانات. يرجى المحاولة مرة أخرى.');
-        this.loading = false;
-      }
-    );
+      error: () => { this.busy = null; this.toast.error('تعذّر تصدير المواقع. حاول مرة أخرى.'); }
+    });
   }
 
-  exportLocationsData(): void {
-    // Show loading state
-    this.loading = true;
+  private download(blob: Blob, filename: string): void {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
 
-    // Extract current search filters
-    const filters = this.searchFilters
-      .map(f => ({ ...f, value: (f.value ?? '').toString().trim() }))
-      .filter(f => f.value !== '');
-
-    // Check if roomNumber is in filters
-    const roomFilter = filters.find(f => f.field === 'roomNumber');
-    let roomNumber: string | null = null;
-
-    if (roomFilter && roomFilter.value) {
-      // Use roomNumber from filters
-      roomNumber = roomFilter.value;
-    } else if (this.selectedRoomNumber) {
-      // Use roomNumber from selector
-      roomNumber = this.selectedRoomNumber;
-    } else {
-      // No room number specified
-      this.toast.error('يرجى اختيار رقم الغرفة من البحث المتقدم أو من القائمة المنسدلة');
-      this.loading = false;
-      return;
-    }
-
-    // Remove roomNumber from filters since we're passing it separately
-    const additionalFilters = filters.filter(f => f.field !== 'roomNumber');
-
-    // Determine if this is advanced search (with additional filters)
-    const isAdvanced = additionalFilters.length > 1 ||
-      (additionalFilters.length === 1 && additionalFilters[0].field !== 'all' && additionalFilters[0].value !== '');
-
-    const query = isAdvanced ? 'advanced' : '';
-    const searchTerm = isAdvanced ? JSON.stringify(additionalFilters) : this.simpleSearchTerm;
-
-    // Call export locations service
-    this.bookService.exportBookLocationsToExcel(roomNumber, query, searchTerm, this.sortDirection).subscribe(
-      (blob: Blob) => {
-        // Create download link
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        const filename = `books_locations_room_${roomNumber}_${new Date().toISOString().split('T')[0]}.xlsx`;
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-        this.loading = false;
-      },
-      (error) => {
-        console.error('Error exporting book locations', error);
-        this.toast.error('حدث خطأ أثناء تصدير المواقع. يرجى المحاولة مرة أخرى.');
-        this.loading = false;
-      }
-    );
+  private stamp(): string {
+    return new Date().toISOString().slice(0, 10);
   }
 }

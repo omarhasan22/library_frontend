@@ -1,156 +1,68 @@
-<div class="exports-container" dir="rtl">
-  <!-- Page Header -->
-  <div class="section-header">
-    <h2 class="section-title">تصدير البيانات</h2>
-    <p class="section-subtitle">قم بتصدير الكتب والمواقع بتنسيق Excel</p>
-  </div>
+<div class="app-container page">
+  <app-page-header title="التصدير" [crumbs]="[{ label: 'الإدارة' }, { label: 'التصدير' }]">
+    <p subtitle class="text-ink-600">نزّل الفهرس أو قوائم المواقع ملفاتِ Excel للطباعة والجرد.</p>
+  </app-page-header>
 
-  <!-- Search Section -->
-  <div class="search-section">
-    <div class="container-fluid">
-      <div class="search-card">
-        <div class="search-header">
-          <h5>
-            <i class="fas fa-search me-2"></i>
-            البحث والتصفية
-          </h5>
-          <button class="btn btn-sm btn-outline-secondary" (click)="toggleAdvancedSearch()">
-            {{ showAdvancedSearch ? 'إخفاء البحث المتقدم' : 'بحث متقدم' }}
-            <i class="fas fa-chevron-down ms-2" [class.rotate-180]="showAdvancedSearch"></i>
-          </button>
-        </div>
-
-        <!-- Simple Search -->
-        <div class="simple-search">
-          <div class="input-group">
-            <span class="input-group-text">
-              <i class="fas fa-search"></i>
-            </span>
-            <input type="text" class="form-control form-control-lg" placeholder="ابحث بالعنوان، المؤلف، الناشر..."
-              [(ngModel)]="simpleSearchTerm">
-            <button class="btn btn-secondary" (click)="resetSearch()">
-              <i class="fas fa-redo me-2"></i>
-              إعادة تعيين
-            </button>
-          </div>
-        </div>
-
-        <!-- Advanced Search (Collapsible) -->
-        <div class="advanced-search" *ngIf="showAdvancedSearch">
-          <div class="filter-groups">
-            <div *ngFor="let filter of searchFilters; let i = index" class="filter-row">
-              <select class="form-select" [(ngModel)]="filter.field">
-                <option value="all">جميع الحقول</option>
-                <option *ngFor="let opt of filterOptions" [value]="opt.key">{{ opt.value }}</option>
-              </select>
-              <input type="text" class="form-control" [(ngModel)]="filter.value" placeholder="أدخل قيمة البحث...">
-              <button class="btn btn-danger" (click)="removeFilter(i)" *ngIf="searchFilters.length > 1">
-                <i class="fas fa-times"></i>
-              </button>
-            </div>
-          </div>
-          <div class="filter-actions">
-            <button class="btn btn-success" (click)="addFilter()">
-              <i class="fas fa-plus me-2"></i>
-              إضافة شرط
-            </button>
-            <button class="btn btn-secondary" (click)="resetSearch()">
-              <i class="fas fa-redo me-2"></i>
-              إعادة تعيين
-            </button>
-          </div>
-        </div>
-      </div>
+  <!-- Scope -->
+  <section class="surface scope" aria-labelledby="scope-title">
+    <h2 id="scope-title" class="section-title">ما الكتب التي تريد تصديرها؟</h2>
+    <div class="choice" role="radiogroup" aria-labelledby="scope-title">
+      <label class="choice__item" [class.is-on]="scope === 'all'">
+        <input type="radio" name="scope" value="all" [checked]="scope === 'all'" (change)="setScope('all')">
+        <span class="choice__title">كل الفهرس</span>
+        <span class="choice__desc">{{ totalBooks !== null ? (totalBooks | arCount:'book') : '…' }}</span>
+      </label>
+      <label class="choice__item" [class.is-on]="scope === 'search'" [class.is-disabled]="!lastSearch">
+        <input type="radio" name="scope" value="search" [checked]="scope === 'search'" (change)="setScope('search')" [disabled]="!lastSearch">
+        <span class="choice__title">نتائج آخر بحث</span>
+        <span class="choice__desc" *ngIf="lastSearch">
+          {{ searchSummary }}<ng-container *ngIf="lastSearchCount !== null"> — {{ lastSearchCount | arCount:'book' }}</ng-container>
+        </span>
+        <span class="choice__desc" *ngIf="!lastSearch">
+          ابحث أو صفِّ في <a routerLink="/books">صفحة الكتب</a> ثم عد إلى هنا.
+        </span>
+      </label>
     </div>
-  </div>
+  </section>
 
-  <!-- Export Options Section -->
-  <div class="export-options-section">
-    <div class="container-fluid">
-      <div class="row">
-        <!-- Full Export Card -->
-        <div class="col-md-6 mb-4">
-          <div class="export-card">
-            <div class="export-card-header">
-              <i class="fas fa-file-excel text-success"></i>
-              <h4>تصدير كامل</h4>
-            </div>
-            <div class="export-card-body">
-              <p class="export-description">
-                قم بتصدير جميع بيانات الكتب مع التصفية المحددة بتنسيق Excel
-              </p>
-              <button class="btn btn-success btn-lg w-100" (click)="exportData()" [disabled]="loading">
-                <i class="fas fa-download me-2"></i>
-                <span *ngIf="!loading">تصدير الكتب</span>
-                <span *ngIf="loading">
-                  <i class="fas fa-spinner fa-spin me-2"></i>
-                  جاري التصدير...
-                </span>
-              </button>
-            </div>
-          </div>
-        </div>
+  <div class="export-grid">
+    <!-- Catalogue -->
+    <section class="export surface" aria-labelledby="exp-cat">
+      <span class="export__icon" aria-hidden="true"><i class="fas fa-file-excel"></i></span>
+      <h2 id="exp-cat" class="export__title">الفهرس الكامل</h2>
+      <p class="export__desc">كل بيانات الكتب: العنوان، المؤلفون والمحققون، الناشر، القسم والموضوع، والموقع.</p>
+      <p class="export__count" *ngIf="catalogueCount !== null">سيحتوي الملف على <strong>{{ catalogueCount | arCount:'book' }}</strong>.</p>
+      <button type="button" class="btn btn-primary" (click)="exportCatalogue()" [disabled]="busy !== null || catalogueCount === 0">
+        <span *ngIf="busy === 'catalogue'" class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+        <i *ngIf="busy !== 'catalogue'" class="fas fa-download" aria-hidden="true"></i>
+        {{ busy === 'catalogue' ? 'جارٍ تجهيز الملف…' : 'تنزيل الفهرس' }}
+      </button>
+    </section>
 
-        <!-- Locations Export Card -->
-        <div class="col-md-6 mb-4">
-          <div class="export-card">
-            <div class="export-card-header">
-              <i class="fas fa-map-marker-alt text-primary"></i>
-              <h4>تصدير المواقع</h4>
-            </div>
-            <div class="export-card-body">
-              <p class="export-description">
-                قم بتصدير مواقع الكتب لغرفة محددة. يمكنك اختيار الغرفة من البحث المتقدم أو من القائمة أدناه.
-              </p>
-              
-              <!-- Room Selector (Optional - can also use roomNumber in advanced search) -->
-              <div class="room-selector mb-3">
-                <label for="roomSelect" class="form-label">
-                  اختر رقم الغرفة (اختياري - يمكن اختياره من البحث المتقدم):
-                </label>
-                <select 
-                  id="roomSelect" 
-                  class="form-select form-select-lg" 
-                  [(ngModel)]="selectedRoomNumber"
-                  [disabled]="loading || availableRooms.length === 0">
-                  <option [value]="null">-- اختر الغرفة --</option>
-                  <option *ngFor="let room of availableRooms" [value]="room">{{ room }}</option>
-                </select>
-                <small class="text-muted" *ngIf="availableRooms.length === 0">
-                  جاري تحميل قائمة الغرف...
-                </small>
-                <small class="text-info d-block mt-1">
-                  <i class="fas fa-info-circle me-1"></i>
-                  يمكنك أيضاً اختيار الغرفة من البحث المتقدم أعلاه
-                </small>
-              </div>
+    <!-- Locations -->
+    <section class="export surface" aria-labelledby="exp-loc">
+      <span class="export__icon" aria-hidden="true"><i class="fas fa-location-dot"></i></span>
+      <h2 id="exp-loc" class="export__title">مواقع كتب غرفة</h2>
+      <p class="export__desc">قائمة بالكتب مرتّبة حسب الاستاند والرف، مع سطر لكل مجلد، لطباعة البطاقات والجرد.</p>
 
-              <button 
-                class="btn btn-primary btn-lg w-100" 
-                (click)="exportLocationsData()" 
-                [disabled]="loading">
-                <i class="fas fa-download me-2"></i>
-                <span *ngIf="!loading">تصدير المواقع</span>
-                <span *ngIf="loading">
-                  <i class="fas fa-spinner fa-spin me-2"></i>
-                  جاري التصدير...
-                </span>
-              </button>
-            </div>
-          </div>
-        </div>
+      <div class="export__field">
+        <label for="exp-room" class="form-label">الغرفة</label>
+        <select id="exp-room" class="form-select" [ngModel]="room" (ngModelChange)="onRoomChange($event)" [disabled]="roomsState !== 'ok'">
+          <option [ngValue]="null">{{ roomsState === 'loading' ? 'جارٍ تحميل الغرف…' : 'اختر الغرفة' }}</option>
+          <option *ngFor="let r of rawRooms" [ngValue]="r">
+            الغرفة {{ r }}<ng-container *ngIf="roomBooks(r) !== null && scope === 'all'"> ({{ roomBooks(r) | num }})</ng-container>
+          </option>
+        </select>
+        <p *ngIf="roomsState === 'error'" class="field-error">
+          تعذّر تحميل الغرف. <button type="button" class="btn btn-link btn-sm p-0 align-baseline" (click)="loadRooms()">إعادة المحاولة</button>
+        </p>
       </div>
-    </div>
-  </div>
-
-  <!-- Info Section -->
-  <div class="info-section">
-    <div class="container-fluid">
-      <div class="alert alert-info" role="alert">
-        <i class="fas fa-info-circle me-2"></i>
-        <strong>ملاحظة:</strong> يمكنك استخدام البحث والتصفية لتحديد الكتب التي تريد تصديرها. 
-        التصفية المطبقة ستؤثر على البيانات المُصدّرة.
-      </div>
-    </div>
+      <p class="export__count" *ngIf="room && roomCount !== null">سيحتوي الملف على <strong>{{ roomCount | arCount:'book' }}</strong>.</p>
+      <button type="button" class="btn btn-primary" (click)="exportLocations()" [disabled]="!room || busy !== null || roomCount === 0">
+        <span *ngIf="busy === 'locations'" class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+        <i *ngIf="busy !== 'locations'" class="fas fa-download" aria-hidden="true"></i>
+        {{ busy === 'locations' ? 'جارٍ تجهيز الملف…' : 'تنزيل المواقع' }}
+      </button>
+    </section>
   </div>
 </div>

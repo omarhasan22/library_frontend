@@ -1,508 +1,266 @@
-import { Component, HostListener, OnInit } from '@angular/core';
-import { BookService } from '../../services/book.service';
-import { SubjectCategory } from '../../models/subject.model';
-import { Category } from '../../models/category.model';
+import { Component, OnInit } from '@angular/core';
+import { Observable, of } from 'rxjs';
+import { catchError, tap } from 'rxjs/operators';
 
+import { BookService } from '../../services/book.service';
+import { ToastService } from '../../shared/services/toast.service';
+import { ConfirmService } from '../../shared/services/confirm.service';
+import { TaxonomyService } from '../../shared/services/taxonomy.service';
+import { arCount, parseArabicInt, toLatinDigits } from '../../shared/utils/arabic';
+
+type UpdateType = 'subject' | 'category';
+const MAX_RANGE = 5000;
+const DATE_FMT = new Intl.DateTimeFormat('ar-u-nu-latn', { dateStyle: 'medium', timeStyle: 'short' });
+
+interface Preview {
+  key: string;
+  count: number;
+  sample: { _id: string; title: string; address: any; category?: string; subject?: string }[];
+}
+
+/**
+ * /bulk-update — change the section or subject of a run of books on one shelf.
+ * Flow: what to change → which books (with a real preview of the matching books) → new value →
+ * confirm → result with undo. Recent updates can be undone from the history list too.
+ */
 @Component({
   selector: 'app-bulk-update',
   templateUrl: './bulk-update.component.html',
   styleUrls: ['./bulk-update.component.css']
 })
 export class BulkUpdateComponent implements OnInit {
-  // Update type selection
-  updateType: 'subject' | 'category' = 'subject';
+  updateType: UpdateType = 'subject';
 
-  // Form data
-  roomNumber: string = '';
-  wallNumber: string = '';
-  shelfNumber: string = '';
-  bookNumberFrom: number | null = null;
-  bookNumberTo: number | null = null;
-  selectedSubject: SubjectCategory | null = null;
-  selectedCategory: Category | null = null;
+  // criteria
+  roomNumber = '';
+  wallNumber = '';
+  shelfNumber = '';
+  fromInput = '';
+  toInput = '';
 
-  // Dropdowns data
-  availableRooms: string[] = [];
-  availableWalls: string[] = [];
-  subjects: SubjectCategory[] = [];
-  filteredSubjects: SubjectCategory[] = [];
-  categories: Category[] = [];
-  filteredCategories: Category[] = [];
+  // new value
+  selectedSubject: any = null;
+  selectedCategory: any = null;
 
-  // Search and dropdown state
-  subjectSearchTerm: string = '';
-  showSubjectDropdown: boolean = false;
-  categorySearchTerm: string = '';
-  showCategoryDropdown: boolean = false;
+  rooms: string[] = [];
+  walls: string[] = [];
+  subjects: any[] = [];
+  categories: any[] = [];
 
-  // Confirmation dialog
-  showConfirmationDialog: boolean = false;
-  previewData: {
-    roomNumber: string;
-    wallNumber: string;
-    shelfNumber: string;
-    bookRange: string;
-    subjectTitle: string;
-    estimatedCount?: number;
-  } | null = null;
+  submitted = false;
+  previewing = false;
+  preview: Preview | null = null;
+  applying = false;
+  lastResult: { historyId: string; count: number; type: UpdateType; value: string; books: any[] } | null = null;
 
-  // Loading and messages
-  loading: boolean = false;
-  successMessage: string = '';
-  errorMessage: string = '';
+  history: any[] = [];
+  historyState: 'loading' | 'ok' | 'error' = 'loading';
+  undoingId: string | null = null;
 
-  // Undo functionality
-  undoData: {
-    updateId: string;
-    books: Array<{ bookId: string; previousSubjectId: string | null }>;
-    timestamp: Date;
-  } | null = null;
-  showUndoConfirmation: boolean = false;
-  currentHistoryId: string | null = null;
+  readonly createSubject = (title: string) =>
+    this.bookService.createSubject({ title }).pipe(tap(s => { this.subjects = [...this.subjects, s]; this.taxonomy.invalidate(); }));
+  readonly createCategory = (title: string) =>
+    this.bookService.createCategory({ title }).pipe(tap(c => { this.categories = [...this.categories, c]; this.taxonomy.invalidate(); }));
 
-  // History and edited books
-  historyList: any[] = [];
-  editedBooksList: Array<{
-    bookId: string;
-    bookTitle: string;
-    oldSubject?: string | null;
-    newSubject?: string;
-    oldCategory?: string | null;
-    newCategory?: string;
-  }> = [];
-
-  constructor(private bookService: BookService) { }
+  constructor(
+    private bookService: BookService,
+    private taxonomy: TaxonomyService,
+    private toast: ToastService,
+    private dialog: ConfirmService
+  ) {}
 
   ngOnInit(): void {
-    this.loadInitialData();
+    // Rooms are matched exactly as stored here, so "11" and "١١" stay separate options.
+    this.bookService.getUniqueRoomNumbers().pipe(catchError(() => of([] as string[])))
+      .subscribe(rooms => (this.rooms = (rooms || []).filter(Boolean)));
+    this.bookService.getSubjects().pipe(catchError(() => of([] as any[])))
+      .subscribe(s => (this.subjects = Array.isArray(s) ? s : ((s as any)?.subjects ?? [])));
+    this.bookService.getCategories().pipe(catchError(() => of([] as any[])))
+      .subscribe(c => (this.categories = c || []));
     this.loadHistory();
   }
 
-  // Close dropdowns when clicking outside. (HostListener is removed with the component;
-  // document.addEventListener leaked a listener, and the component, on every visit.)
-  @HostListener('document:click', ['$event'])
-  onDocumentClick(event: MouseEvent): void {
-    const target = event.target as HTMLElement | null;
-    if (!target?.closest('.search-dropdown-container')) {
-      this.closeAllDropdowns();
+  // ---------- criteria ----------
+
+  get from(): number { return parseArabicInt(this.fromInput); }
+  get to(): number { return parseArabicInt(this.toInput); }
+
+  get errors(): Record<string, string> {
+    const e: Record<string, string> = {};
+    if (!this.shelfNumber.trim()) e['shelf'] = 'حدّد رقم الرف.';
+    if (!this.fromInput.trim()) e['from'] = 'أدخل أول رقم.';
+    else if (Number.isNaN(this.from) || this.from < 0) e['from'] = 'أدخل رقماً صحيحاً.';
+    if (!this.toInput.trim()) e['to'] = 'أدخل آخر رقم.';
+    else if (Number.isNaN(this.to) || this.to < 0) e['to'] = 'أدخل رقماً صحيحاً.';
+    if (!e['from'] && !e['to']) {
+      if (this.from > this.to) e['to'] = 'آخر رقم يجب ألا يقل عن أول رقم.';
+      else if (this.to - this.from + 1 > MAX_RANGE) e['to'] = `النطاق أكبر من ${MAX_RANGE} كتاب.`;
     }
+    return e;
   }
 
-  onUpdateTypeChange(): void {
-    // Reset selections when switching update type
-    this.selectedSubject = null;
-    this.selectedCategory = null;
-    this.subjectSearchTerm = '';
-    this.categorySearchTerm = '';
-    this.closeAllDropdowns();
-  }
+  get criteriaValid(): boolean { return Object.keys(this.errors).length === 0; }
 
-  loadInitialData(): void {
-    this.loading = true;
-    this.bookService.getUniqueRoomNumbers().subscribe({
-      next: (rooms) => {
-        this.availableRooms = rooms;
-        this.loading = false;
-      },
-      error: (err) => {
-        console.error('Error loading rooms:', err);
-        this.errorMessage = 'حدث خطأ في تحميل البيانات';
-        this.loading = false;
-      }
-    });
-
-    this.bookService.getSubjects().subscribe({
-      next: (subjects) => {
-        this.subjects = subjects;
-        this.filteredSubjects = [...subjects];
-      },
-      error: (err) => {
-        console.error('Error loading subjects:', err);
-      }
-    });
-
-    this.bookService.getCategories().subscribe({
-      next: (categories) => {
-        this.categories = categories;
-        this.filteredCategories = [...categories];
-      },
-      error: (err) => {
-        console.error('Error loading categories:', err);
-      }
-    });
-  }
-
-  onRoomChange(): void {
-    this.wallNumber = '';
-    this.availableWalls = [];
-    
-    if (this.roomNumber) {
-      this.loading = true;
-      this.bookService.getUniqueWallNumbers(this.roomNumber).subscribe({
-        next: (walls) => {
-          this.availableWalls = walls;
-          this.loading = false;
-        },
-        error: (err) => {
-          console.error('Error loading walls:', err);
-          this.errorMessage = 'حدث خطأ في تحميل الحوائط';
-          this.loading = false;
-        }
-      });
-    }
-  }
-
-  onSubjectSearch(term: string): void {
-    this.subjectSearchTerm = term;
-    
-    if (!term || term.trim() === '') {
-      // Show all subjects when search is empty
-      this.filteredSubjects = [...this.subjects];
-      this.showSubjectDropdown = true;
-      return;
-    }
-    
-    const normalizedSearchTerm = this.normalizeArabicText(term);
-
-    this.filteredSubjects = this.subjects.filter(subject => {
-      if (!subject.title) return false;
-      const normalizedSubjectTitle = subject.normalizedTitle || this.normalizeArabicText(subject.title);
-      return normalizedSubjectTitle.includes(normalizedSearchTerm);
-    });
-    this.showSubjectDropdown = true;
-  }
-
-  selectSubject(subject: SubjectCategory): void {
-    this.selectedSubject = { _id: subject._id, title: subject.title };
-    this.subjectSearchTerm = '';
-    this.showSubjectDropdown = false;
-    // Reset filtered subjects to show all
-    this.filteredSubjects = [...this.subjects];
-  }
-
-  addNewSubject(): void {
-    if (this.subjectSearchTerm.trim()) {
-      this.loading = true;
-      this.bookService.createSubject({ title: this.subjectSearchTerm.trim() }).subscribe({
-        next: (newSubject) => {
-          this.subjects.push(newSubject);
-          // Update filtered subjects to include the new one
-          this.filteredSubjects = [...this.subjects];
-          this.selectedSubject = { _id: newSubject._id, title: newSubject.title };
-          this.subjectSearchTerm = '';
-          this.showSubjectDropdown = false;
-          this.loading = false;
-        },
-        error: (err) => {
-          console.error('Error creating subject:', err);
-          this.errorMessage = 'حدث خطأ في إضافة التصنيف الفرعي';
-          this.loading = false;
-        }
-      });
-    }
-  }
-
-  onCategorySearch(term: string): void {
-    this.categorySearchTerm = term;
-    
-    if (!term || term.trim() === '') {
-      // Show all categories when search is empty
-      this.filteredCategories = [...this.categories];
-      this.showCategoryDropdown = true;
-      return;
-    }
-    
-    const normalizedSearchTerm = this.normalizeArabicText(term);
-
-    this.filteredCategories = this.categories.filter(category => {
-      if (!category.title) return false;
-      const normalizedCategoryTitle = category.normalizedTitle || this.normalizeArabicText(category.title);
-      return normalizedCategoryTitle.includes(normalizedSearchTerm);
-    });
-    this.showCategoryDropdown = true;
-  }
-
-  selectCategory(category: Category): void {
-    this.selectedCategory = { _id: category._id, title: category.title };
-    this.categorySearchTerm = '';
-    this.showCategoryDropdown = false;
-    // Reset filtered categories to show all
-    this.filteredCategories = [...this.categories];
-  }
-
-  addNewCategory(): void {
-    if (this.categorySearchTerm.trim()) {
-      this.loading = true;
-      this.bookService.createCategory({ title: this.categorySearchTerm.trim() }).subscribe({
-        next: (newCategory) => {
-          this.categories.push(newCategory);
-          // Update filtered categories to include the new one
-          this.filteredCategories = [...this.categories];
-          this.selectedCategory = { _id: newCategory._id, title: newCategory.title };
-          this.categorySearchTerm = '';
-          this.showCategoryDropdown = false;
-          this.loading = false;
-        },
-        error: (err) => {
-          console.error('Error creating category:', err);
-          this.errorMessage = 'حدث خطأ في إضافة التصنيف الرئيسي';
-          this.loading = false;
-        }
-      });
-    }
-  }
-
-  closeAllDropdowns(): void {
-    this.showSubjectDropdown = false;
-    this.showCategoryDropdown = false;
-  }
-
-  normalizeArabicText(text: string): string {
-    if (!text) return '';
-    return text
-      .replace(/[\u064B-\u0652\u0670\u0640]/g, '')
-      .replace(/[\u0622\u0623\u0625\u0627]/g, 'ا')
-      .replace(/\u0649/g, 'ي')
-      .replace(/\u0629/g, 'ه')
-      .replace(/[\u0654\u0655]/g, '')
-      .replace(/\u0624/g, 'و')
-      .replace(/\u0626/g, 'ي')
-      .replace(/\u0621/g, '')
-      .replace(/\s+/g, ' ')
-      .trim()
-      .toLowerCase();
-  }
-
-  validateForm(): boolean {
-    if (!this.shelfNumber) {
-      this.errorMessage = 'الرجاء إدخال رقم الرف';
-      return false;
-    }
-    if (this.bookNumberFrom === null || this.bookNumberTo === null) {
-      this.errorMessage = 'الرجاء إدخال نطاق أرقام الكتب';
-      return false;
-    }
-    if (this.bookNumberFrom > this.bookNumberTo) {
-      this.errorMessage = 'رقم البداية يجب أن يكون أقل من أو يساوي رقم النهاية';
-      return false;
-    }
-    if (this.updateType === 'subject') {
-      if (!this.selectedSubject || !this.selectedSubject._id) {
-        this.errorMessage = 'الرجاء اختيار التصنيف الفرعي';
-        return false;
-      }
-    } else if (this.updateType === 'category') {
-      if (!this.selectedCategory || !this.selectedCategory._id) {
-        this.errorMessage = 'الرجاء اختيار التصنيف الرئيسي';
-        return false;
-      }
-    }
-    return true;
-  }
-
-  showPreview(): void {
-    this.errorMessage = '';
-    this.successMessage = '';
-
-    if (!this.validateForm()) {
-      return;
-    }
-
-    // Prepare preview data
-    const title = this.updateType === 'subject' 
-      ? this.selectedSubject!.title 
-      : this.selectedCategory!.title;
-    
-    this.previewData = {
-      roomNumber: this.roomNumber || 'غير محدد',
-      wallNumber: this.wallNumber || 'غير محدد',
-      shelfNumber: this.shelfNumber,
-      bookRange: `من ${this.bookNumberFrom} إلى ${this.bookNumberTo}`,
-      subjectTitle: title
-    };
-
-    this.showConfirmationDialog = true;
-  }
-
-  cancelUpdate(): void {
-    this.showConfirmationDialog = false;
-    this.previewData = null;
-  }
-
-  confirmUpdate(): void {
-    if (!this.validateForm()) {
-      return;
-    }
-
-    if (this.updateType === 'subject' && !this.selectedSubject) {
-      return;
-    }
-    if (this.updateType === 'category' && !this.selectedCategory) {
-      return;
-    }
-
-    this.loading = true;
-    this.errorMessage = '';
-    this.successMessage = '';
-
-    const criteria = {
+  private criteria() {
+    return {
       roomNumber: this.roomNumber || undefined,
       wallNumber: this.wallNumber || undefined,
-      shelfNumber: this.shelfNumber,
-      bookNumberFrom: this.bookNumberFrom!,
-      bookNumberTo: this.bookNumberTo!
+      shelfNumber: toLatinDigits(this.shelfNumber).trim(),
+      bookNumberFrom: this.from,
+      bookNumberTo: this.to
     };
-
-    let updateObservable;
-    if (this.updateType === 'subject') {
-      updateObservable = this.bookService.bulkUpdateSubjects({
-        ...criteria,
-        subjectId: this.selectedSubject!._id!
-      });
-    } else {
-      updateObservable = this.bookService.bulkUpdateCategories({
-        ...criteria,
-        categoryId: this.selectedCategory!._id!
-      });
-    }
-
-    updateObservable.subscribe({
-      next: (result) => {
-        this.loading = false;
-        this.showConfirmationDialog = false;
-        this.successMessage = `تم تحديث ${result.modifiedCount} كتاب بنجاح!`;
-        
-        // Store history ID and undo data
-        if (result.historyId) {
-          this.currentHistoryId = result.historyId;
-          // Fetch full history record to get affected books list
-          this.loadHistoryById(result.historyId);
-        }
-        
-        if (result.undoData) {
-          this.undoData = result.undoData;
-        }
-        
-        // Reset form, and show the new entry in the history list
-        this.resetForm();
-        this.loadHistory();
-      },
-      error: (err) => {
-        this.loading = false;
-        this.showConfirmationDialog = false;
-        const errorMsg = String(err.error?.error || 'حدث خطأ في تحديث الكتب');
-        
-        // Check if error message indicates automatic rollback
-        if (errorMsg.includes('rollback')) {
-          this.errorMessage = `${errorMsg} - تم استعادة الحالة السابقة تلقائياً`;
-        } else {
-          this.errorMessage = errorMsg;
-        }
-        
-        // Clear undo data on error (since rollback was automatic)
-        this.undoData = null;
-        console.error('Error updating books:', err);
-      }
-    });
   }
 
-  resetForm(): void {
-    this.roomNumber = '';
+  private criteriaKey(): string {
+    return JSON.stringify(this.criteria());
+  }
+
+  /** The preview belongs to the criteria it was made for. */
+  get previewCurrent(): boolean {
+    return !!this.preview && this.preview.key === this.criteriaKey();
+  }
+
+  onRoomChange(room: string): void {
+    this.roomNumber = room;
     this.wallNumber = '';
-    this.shelfNumber = '';
-    this.bookNumberFrom = null;
-    this.bookNumberTo = null;
-    this.selectedSubject = null;
-    this.selectedCategory = null;
-    this.subjectSearchTerm = '';
-    this.categorySearchTerm = '';
-    this.availableWalls = [];
+    this.walls = [];
+    if (!room) return;
+    this.bookService.getUniqueWallNumbers(room).pipe(catchError(() => of([] as string[])))
+      .subscribe(walls => (this.walls = (walls || []).filter(Boolean)));
   }
 
-  // Undo only needs the history record id (the server works out subject vs category), so it also
-  // works for entries picked from the history list after a reload, not just the latest update.
-  showUndoDialog(): void {
-    if (!this.currentHistoryId) {
-      this.errorMessage = 'لا توجد بيانات للتراجع';
-      return;
-    }
-    this.showUndoConfirmation = true;
+  setType(type: UpdateType): void {
+    this.updateType = type;
   }
 
-  cancelUndo(): void {
-    this.showUndoConfirmation = false;
+  get criteriaText(): string {
+    const parts = [];
+    if (this.roomNumber) parts.push(`الغرفة ${this.roomNumber}`);
+    if (this.wallNumber) parts.push(`الاستاند ${this.wallNumber}`);
+    parts.push(`الرف ${toLatinDigits(this.shelfNumber).trim()}`);
+    parts.push(`الكتب ${this.from}–${this.to}`);
+    return parts.join('، ');
   }
 
-  confirmUndo(): void {
-    if (!this.currentHistoryId) {
-      this.errorMessage = 'لا توجد بيانات للتراجع';
-      this.showUndoConfirmation = false;
-      return;
-    }
+  // ---------- preview & apply ----------
 
-    this.loading = true;
-    this.errorMessage = '';
-    this.successMessage = '';
-
-    this.bookService.undoBulkUpdateSubjects(this.currentHistoryId).subscribe({
-      next: (result) => {
-        this.loading = false;
-        this.showUndoConfirmation = false;
-        this.successMessage = `تم التراجع بنجاح! تم استعادة ${result.restoredCount} كتاب إلى حالتها السابقة.`;
-        this.undoData = null;
-        this.currentHistoryId = null;
-        this.editedBooksList = [];
-        // Reload history to reflect the undo
-        this.loadHistory();
+  runPreview(): void {
+    this.submitted = true;
+    if (!this.criteriaValid) return;
+    this.previewing = true;
+    const key = this.criteriaKey();
+    this.bookService.previewBulkUpdate(this.criteria()).subscribe({
+      next: res => {
+        this.previewing = false;
+        this.preview = { key, count: res.count, sample: res.sample || [] };
       },
-      error: (err) => {
-        this.loading = false;
-        this.showUndoConfirmation = false;
-        this.errorMessage = err.error?.error || 'حدث خطأ في التراجع';
-        console.error('Error undoing update:', err);
+      error: err => {
+        this.previewing = false;
+        this.preview = null;
+        this.toast.apiError(err, 'تعذّرت معاينة الكتب. حاول مرة أخرى.');
       }
     });
   }
+
+  get newValue(): any {
+    return this.updateType === 'subject' ? this.selectedSubject : this.selectedCategory;
+  }
+
+  get canApply(): boolean {
+    return this.previewCurrent && (this.preview?.count ?? 0) > 0 && !!this.newValue?._id && !this.applying;
+  }
+
+  async apply(): Promise<void> {
+    this.submitted = true;
+    if (!this.canApply || !this.preview) return;
+    const field = this.updateType === 'subject' ? 'الموضوع' : 'القسم';
+    const value = this.newValue.title;
+    const ok = await this.dialog.ask({
+      title: `تغيير ${field} لـ ${arCount(this.preview.count, 'book')}؟`,
+      message: `سيصبح ${field} «${value}» لكل الكتب في: ${this.criteriaText}. يمكنك التراجع بعد التنفيذ.`,
+      confirmText: 'تطبيق التغيير'
+    });
+    if (!ok) return;
+
+    this.applying = true;
+    const criteria = this.criteria();
+    const request: Observable<any> = this.updateType === 'subject'
+      ? this.bookService.bulkUpdateSubjects({ ...criteria, subjectId: this.newValue._id })
+      : this.bookService.bulkUpdateCategories({ ...criteria, categoryId: this.newValue._id });
+
+    request.subscribe({
+      next: (result: any) => {
+        this.applying = false;
+        const count = result.modifiedCount ?? 0;
+        this.lastResult = { historyId: result.historyId, count, type: this.updateType, value, books: [] };
+        if (result.historyId) {
+          this.bookService.getHistoryById(result.historyId).pipe(catchError(() => of(null)))
+            .subscribe(h => { if (h && this.lastResult) this.lastResult.books = h.affectedBooks || []; });
+        }
+        this.toast.success(`تم تحديث ${arCount(count, 'book')}`, result.historyId
+          ? { actionLabel: 'تراجع', action: () => this.undo(result.historyId) } : {});
+        this.preview = null;
+        this.submitted = false;
+        this.fromInput = '';
+        this.toInput = '';
+        this.taxonomy.invalidate(); // book counts per section/subject changed
+        this.loadHistory();
+      },
+      error: err => {
+        this.applying = false;
+        const message = String(err?.error?.error || '');
+        this.toast.error(message.includes('rollback')
+          ? 'تعذّر التحديث، واستُعيدت الحالة السابقة تلقائياً.'
+          : 'تعذّر تنفيذ التحديث. لم يتغيّر شيء، حاول مرة أخرى.');
+      }
+    });
+  }
+
+  // ---------- history & undo ----------
 
   loadHistory(): void {
+    this.historyState = 'loading';
     this.bookService.getBulkUpdateHistory(1, 10).subscribe({
-      next: (result) => {
-        this.historyList = result.history;
+      next: res => { this.history = res.history || []; this.historyState = 'ok'; },
+      error: () => (this.historyState = 'error')
+    });
+  }
+
+  async undo(historyId: string): Promise<void> {
+    const ok = await this.dialog.ask({
+      title: 'التراجع عن هذا التحديث؟',
+      message: 'ستعود الكتب المشمولة إلى القسم أو الموضوع الذي كانت عليه قبل التحديث.',
+      confirmText: 'تراجع'
+    });
+    if (!ok) return;
+    this.undoingId = historyId;
+    this.bookService.undoBulkUpdateSubjects(historyId).subscribe({
+      next: res => {
+        this.undoingId = null;
+        this.toast.success(`تم التراجع واستعادة ${arCount(res.restoredCount, 'book')}`);
+        if (this.lastResult?.historyId === historyId) this.lastResult = null;
+        this.taxonomy.invalidate();
+        this.loadHistory();
       },
-      error: (err) => {
-        console.error('Error loading history:', err);
+      error: err => {
+        this.undoingId = null;
+        this.toast.apiError(err, 'تعذّر التراجع عن التحديث.');
       }
     });
   }
 
-  loadHistoryById(historyId: string): void {
-    this.bookService.getHistoryById(historyId).subscribe({
-      next: (history) => {
-        // Build edited books list for display based on update type
-        if (history.updateType === 'subject') {
-          this.editedBooksList = history.affectedBooks.map(book => ({
-            bookId: book.bookId,
-            bookTitle: book.bookTitle,
-            oldSubject: history.oldSubject?.title || 'لا يوجد',
-            newSubject: history.newSubject?.title || ''
-          }));
-        } else if (history.updateType === 'category') {
-          this.editedBooksList = history.affectedBooks.map(book => ({
-            bookId: book.bookId,
-            bookTitle: book.bookTitle,
-            oldCategory: history.oldCategory?.title || 'لا يوجد',
-            newCategory: history.newCategory?.title || ''
-          }));
-        }
-      },
-      error: (err) => {
-        console.error('Error loading history by ID:', err);
-      }
-    });
+  historyLabel(h: any): { field: string; from: string; to: string } {
+    return h.updateType === 'category'
+      ? { field: 'القسم', from: h.oldCategory?.title || '—', to: h.newCategory?.title || '—' }
+      : { field: 'الموضوع', from: h.oldSubject?.title || '—', to: h.newSubject?.title || '—' };
   }
 
-  undoHistoryItem(historyId: string): void {
-    this.currentHistoryId = historyId;
-    this.showUndoDialog();
+  historyAddress(h: any): any {
+    const c = h.criteria || {};
+    return { roomNumber: c.roomNumber, wallNumber: c.wallNumber, shelfNumber: c.shelfNumber, bookNumber: `${c.bookNumberFrom}–${c.bookNumberTo}` };
+  }
+
+  date(value: any): string {
+    try { return DATE_FMT.format(new Date(value)); } catch { return ''; }
   }
 }
