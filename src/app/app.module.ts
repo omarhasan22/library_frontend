@@ -19,12 +19,15 @@ import { CategoriesComponent } from './components/categories/categories.componen
 import { AdminBorrowsComponent } from './components/admin-borrows/admin-borrows.component';
 import { UserBorrowsComponent } from './components/user-borrows/user-borrows.component';
 import { UserProfileComponent } from './components/user-profile/user-profile.component';
-import { PaginationComponent } from './components/pagination/pagination.component';
 import { ExportsComponent } from './components/exports/exports.component';
 import { AuthorDashboardComponent } from './components/author-dashboard/author-dashboard.component';
 import { PublisherDashboardComponent } from './components/publisher-dashboard/publisher-dashboard.component';
 import { BulkUpdateComponent } from './components/bulk-update/bulk-update.component';
 import { CommonModule } from '@angular/common';
+import { TitleStrategy } from '@angular/router';
+import { SharedModule } from './shared/shared.module';
+import { NotFoundComponent } from './pages/not-found/not-found.component';
+import { AppTitleStrategy } from './app-title.strategy';
 import { DisplayStageComponent } from './components/display/display-stage.component';
 import { DisplayEmblemComponent } from './components/display/display-emblem.component';
 import { DisplaySlideComponent } from './components/display/display-slide/display-slide.component';
@@ -46,7 +49,6 @@ import { DisplayAdminComponent } from './components/display/display-admin/displa
         AdminBorrowsComponent,
         UserBorrowsComponent,
         UserProfileComponent,
-        PaginationComponent,
         ExportsComponent,
         AuthorDashboardComponent,
         PublisherDashboardComponent,
@@ -55,13 +57,16 @@ import { DisplayAdminComponent } from './components/display/display-admin/displa
         DisplayEmblemComponent,
         DisplaySlideComponent,
         DisplayScreenComponent,
-        DisplayAdminComponent
+        DisplayAdminComponent,
+        NotFoundComponent
     ],
     bootstrap: [AppComponent], imports: [BrowserModule,
         AppRoutingModule,
         FormsModule,
         CommonModule,
-        ReactiveFormsModule], providers: [
+        ReactiveFormsModule,
+        SharedModule], providers: [
+            { provide: TitleStrategy, useClass: AppTitleStrategy },
             {
                 provide: HTTP_INTERCEPTORS,
                 useClass: AuthInterceptor,

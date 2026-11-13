@@ -3,6 +3,7 @@ import { BookService } from '../../services/book.service';
 import { AuthService } from '../../services/auth.service';
 import { Subscription } from 'rxjs';
 
+import { ToastService } from '../../shared/services/toast.service';
 @Component({
   selector: 'app-exports',
   templateUrl: './exports.component.html',
@@ -48,7 +49,8 @@ export class ExportsComponent implements OnInit, OnDestroy {
 
   constructor(
     private bookService: BookService,
-    private authService: AuthService
+    private authService: AuthService,
+    private toast: ToastService
   ) { }
 
   ngOnInit(): void {
@@ -131,7 +133,7 @@ export class ExportsComponent implements OnInit, OnDestroy {
       },
       (error) => {
         console.error('Error exporting books', error);
-        alert('حدث خطأ أثناء تصدير البيانات. يرجى المحاولة مرة أخرى.');
+        this.toast.error('حدث خطأ أثناء تصدير البيانات. يرجى المحاولة مرة أخرى.');
         this.loading = false;
       }
     );
@@ -158,7 +160,7 @@ export class ExportsComponent implements OnInit, OnDestroy {
       roomNumber = this.selectedRoomNumber;
     } else {
       // No room number specified
-      alert('يرجى اختيار رقم الغرفة من البحث المتقدم أو من القائمة المنسدلة');
+      this.toast.error('يرجى اختيار رقم الغرفة من البحث المتقدم أو من القائمة المنسدلة');
       this.loading = false;
       return;
     }
@@ -190,7 +192,7 @@ export class ExportsComponent implements OnInit, OnDestroy {
       },
       (error) => {
         console.error('Error exporting book locations', error);
-        alert('حدث خطأ أثناء تصدير المواقع. يرجى المحاولة مرة أخرى.');
+        this.toast.error('حدث خطأ أثناء تصدير المواقع. يرجى المحاولة مرة أخرى.');
         this.loading = false;
       }
     );

@@ -2,7 +2,7 @@
 .categories-container {
   min-height: 100vh;
   background: #f8f9fa;
-  padding-top: 80px; /* Account for fixed navbar */
+  padding-top: 0; /* header is sticky now: no offset needed */
 }
 
 /* Page Header */

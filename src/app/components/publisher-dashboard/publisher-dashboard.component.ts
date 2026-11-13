@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { PublisherService, Publisher, PublisherResponse, PublisherStats } from '../../services/publisher.service';
 import { AuthService } from '../../services/auth.service';
 
+import { ConfirmService } from '../../shared/services/confirm.service';
 @Component({
    selector: 'app-publisher-dashboard',
    templateUrl: './publisher-dashboard.component.html',
@@ -37,8 +38,9 @@ export class PublisherDashboardComponent implements OnInit {
       private publisherService: PublisherService,
       private fb: FormBuilder,
       private authService: AuthService,
-      private router: Router
-   ) {
+      private router: Router,
+      private dialog: ConfirmService
+    ) {
       this.publisherForm = this.fb.group({
          title: ['', [Validators.required, Validators.minLength(2)]]
       });
@@ -156,8 +158,8 @@ export class PublisherDashboardComponent implements OnInit {
       });
    }
 
-   deletePublisher(publisher: Publisher): void {
-      if (confirm(`هل أنت متأكد من حذف الناشر "${publisher.title}"؟`)) {
+   async deletePublisher(publisher: Publisher): Promise<void> {
+      if ((await this.dialog.ask({ title: `حذف الناشر «${publisher.title}»؟`, message: 'لا يمكن التراجع عن الحذف.', confirmText: 'حذف', tone: 'danger' }))) {
          this.loading = true;
          this.publisherService.deletePublisher(publisher._id!).subscribe({
             next: () => {

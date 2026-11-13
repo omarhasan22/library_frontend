@@ -3,7 +3,7 @@
   margin: 0 auto;
   padding: 2rem;
   font-family: 'Cairo', sans-serif;
-  margin-top: 80px; /* Add top margin to avoid navbar overlap */
+  margin-top: 0; /* header is sticky now: no offset needed */
 }
 
 .header {

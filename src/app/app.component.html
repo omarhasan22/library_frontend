@@ -1,44 +1,23 @@
-<!-- <div class="container-fluid">
-  <div class="row min-vh-100">
-    <div class="col-12 col-md-3 col-lg-2 bg-light p-3 collapse show" id="sidebarMenu">
-      <app-navbar></app-navbar>
-    </div>
-
-    <div class="col-12 col-md-9 col-lg-10 p-4">
-      <router-outlet></router-outlet>
-    </div>
-  </div>
-</div> -->
-
-    <!-- <body id="page-top">
-<app-navbar></app-navbar>
-        <header class="masthead">
-            <div class="container">
-                <div class="masthead-subheading">أهلا وسهلا</div>
-                <div class="masthead-heading text-uppercase">It's Nice To Meet You</div>
-                <a class="btn btn-primary btn-xl text-uppercase" href="#services">Tell Me More</a>
-            </div>
-        </header>
-        <section class="page-section" id="services">
-            <div class="container">
-                <app-categories></app-categories>
-            </div>
-          </section>
-        <section class="page-section bg-light" id="portfolio">
-<div class="container">
-  <app-add-book></app-add-book>
-</div>
-        </section>
-     
-
-      <router-outlet></router-outlet>
- 
-    </body> -->
-
-<!-- The display screen (/display) runs full screen, without the site navigation. -->
+<!-- The display screen (/display) runs full screen, without the site header and footer. -->
 <app-navbar *ngIf="!isDisplayRoute"></app-navbar>
 
-<router-outlet></router-outlet>
+<main id="main" tabindex="-1" class="app-main" [class.app-main--bare]="isDisplayRoute">
+  <router-outlet></router-outlet>
+</main>
 
-<footer></footer>
+<footer *ngIf="!isDisplayRoute" class="app-footer">
+  <div class="app-container app-footer__inner">
+    <div class="app-footer__brand">
+      <strong>وقف مركز المصطفى</strong>
+      <span>لخدمة القرآن الكريم وعلوم الشريعة</span>
+    </div>
+    <nav class="app-footer__links" aria-label="روابط التذييل">
+      <a routerLink="/books">الكتب</a>
+      <a routerLink="/categories">أقسام المكتبة</a>
+    </nav>
+    <p class="app-footer__copy">© {{ year }} مكتبة مركز المصطفى</p>
+  </div>
+</footer>
 
+<app-toast-host></app-toast-host>
+<app-confirm-host></app-confirm-host>

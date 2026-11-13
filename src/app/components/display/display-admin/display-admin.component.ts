@@ -10,6 +10,7 @@ import {
   slideFromTemplate, slideStatus
 } from '../../../models/display.model';
 
+import { ConfirmService } from '../../../shared/services/confirm.service';
 interface Editor {
   /** null while creating a new slide. */
   id: string | null;
@@ -63,7 +64,9 @@ export class DisplayAdminComponent implements OnInit, OnDestroy {
   private bookSearch$ = new Subject<string>();
   private bookSub?: Subscription;
 
-  constructor(private display: DisplayService, private bookService: BookService) { }
+  constructor(private display: DisplayService, private bookService: BookService,
+    private dialog: ConfirmService
+  ) { }
 
   ngOnInit(): void {
     this.load();
@@ -188,8 +191,8 @@ export class DisplayAdminComponent implements OnInit, OnDestroy {
     });
   }
 
-  remove(slide: DisplaySlide): void {
-    if (!confirm(`حذف الشريحة «${this.slideLabel(slide)}» نهائياً؟`)) return;
+  async remove(slide: DisplaySlide): Promise<void> {
+    if (!(await this.dialog.ask({ title: `حذف الشريحة «${this.slideLabel(slide)}» نهائياً؟`, message: 'لن تظهر بعد الآن على شاشة العرض.', confirmText: 'حذف', tone: 'danger' }))) return;
     const id = slide._id!;
     this.busy.add(id);
     this.display.deleteSlide(id).subscribe({

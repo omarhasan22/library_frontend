@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { AuthorService, Author, AuthorResponse, AuthorStats } from '../../services/author.service';
 import { AuthService } from '../../services/auth.service';
 
+import { ConfirmService } from '../../shared/services/confirm.service';
 @Component({
    selector: 'app-author-dashboard',
    templateUrl: './author-dashboard.component.html',
@@ -48,8 +49,9 @@ export class AuthorDashboardComponent implements OnInit {
       private authorService: AuthorService,
       private fb: FormBuilder,
       private authService: AuthService,
-      private router: Router
-   ) {
+      private router: Router,
+      private dialog: ConfirmService
+    ) {
       this.authorForm = this.fb.group({
          name: ['', [Validators.required, Validators.minLength(2)]],
          dateOfBirth: [''],
@@ -179,8 +181,8 @@ export class AuthorDashboardComponent implements OnInit {
       });
    }
 
-   deleteAuthor(author: Author): void {
-      if (confirm(`هل أنت متأكد من حذف المؤلف "${author.name}"؟`)) {
+   async deleteAuthor(author: Author): Promise<void> {
+      if ((await this.dialog.ask({ title: `حذف المؤلف «${author.name}»؟`, message: 'لا يمكن التراجع عن الحذف.', confirmText: 'حذف', tone: 'danger' }))) {
          this.loading = true;
          this.authorService.deleteAuthor(author._id!).subscribe({
             next: () => {

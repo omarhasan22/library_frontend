@@ -4,6 +4,8 @@ import { Borrow } from '../../models/borrow.model';
 import { AuthService } from '../../services/auth.service';
 import { Router } from '@angular/router';
 
+import { ToastService } from '../../shared/services/toast.service';
+import { ConfirmService } from '../../shared/services/confirm.service';
 @Component({
   selector: 'app-admin-borrows',
   templateUrl: './admin-borrows.component.html',
@@ -34,7 +36,9 @@ export class AdminBorrowsComponent implements OnInit {
   constructor(
     private borrowService: BorrowService,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private toast: ToastService,
+    private dialog: ConfirmService
   ) { }
 
   ngOnInit(): void {
@@ -91,48 +95,48 @@ export class AdminBorrowsComponent implements OnInit {
     }
   }
 
-  returnBook(borrowId: string): void {
-    if (confirm('هل أنت متأكد من إرجاع هذا الكتاب؟')) {
+  async returnBook(borrowId: string): Promise<void> {
+    if ((await this.dialog.ask({ title: 'تأكيد إرجاع الكتاب؟', confirmText: 'إرجاع' }))) {
       this.borrowService.returnBook(borrowId)
         .subscribe(
           () => {
-            alert('تم إرجاع الكتاب بنجاح');
+            this.toast.success('تم إرجاع الكتاب بنجاح');
             this.loadBorrows();
             this.loadStatistics();
           },
           (error) => {
             console.error('Error returning book:', error);
-            alert('حدث خطأ في إرجاع الكتاب');
+            this.toast.error('حدث خطأ في إرجاع الكتاب');
           }
         );
     }
   }
 
-  sendDueDateReminders(): void {
-    if (confirm('هل تريد إرسال تذكيرات موعد الإرجاع لجميع المستعيرين؟')) {
+  async sendDueDateReminders(): Promise<void> {
+    if ((await this.dialog.ask({ title: 'إرسال تذكيرات موعد الإرجاع؟', message: 'سيصل تذكير بالبريد إلى جميع المستعيرين الحاليين.', confirmText: 'إرسال' }))) {
       this.borrowService.sendDueDateReminders()
         .subscribe(
           (response) => {
-            alert(`تم إرسال ${response.results.filter((r: any) => r.success).length} تذكير بنجاح`);
+            this.toast.success(`تم إرسال ${response.results.filter((r: any) => r.success).length} تذكير بنجاح`);
           },
           (error) => {
             console.error('Error sending reminders:', error);
-            alert('حدث خطأ في إرسال التذكيرات');
+            this.toast.error('حدث خطأ في إرسال التذكيرات');
           }
         );
     }
   }
 
-  sendOverdueNotifications(): void {
-    if (confirm('هل تريد إرسال تنبيهات التأخير لجميع المتأخرين؟')) {
+  async sendOverdueNotifications(): Promise<void> {
+    if ((await this.dialog.ask({ title: 'إرسال تنبيهات التأخير؟', message: 'سيصل تنبيه بالبريد إلى جميع المتأخرين في الإرجاع.', confirmText: 'إرسال' }))) {
       this.borrowService.sendOverdueNotifications()
         .subscribe(
           (response) => {
-            alert(`تم إرسال ${response.results.filter((r: any) => r.success).length} تنبيه بنجاح`);
+            this.toast.success(`تم إرسال ${response.results.filter((r: any) => r.success).length} تنبيه بنجاح`);
           },
           (error) => {
             console.error('Error sending notifications:', error);
-            alert('حدث خطأ في إرسال التنبيهات');
+            this.toast.error('حدث خطأ في إرسال التنبيهات');
           }
         );
     }

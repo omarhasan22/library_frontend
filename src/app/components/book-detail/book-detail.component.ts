@@ -9,6 +9,8 @@ import { Publisher } from 'src/app/models/publisher.model';
 import { AuthService } from 'src/app/services/auth.service';
 import { Subscription } from 'rxjs';
 
+import { ToastService } from '../../shared/services/toast.service';
+import { ConfirmService } from '../../shared/services/confirm.service';
 @Component({
   selector: 'app-book-detail',
   templateUrl: './book-detail.component.html',
@@ -89,7 +91,8 @@ export class BookDetailComponent implements OnInit, OnDestroy {
     private bookService: BookService,
     private borrowService: BorrowService,
     private authService: AuthService,
-
+    private toast: ToastService,
+    private dialog: ConfirmService
   ) { }
 
   ngOnInit(): void {
@@ -614,11 +617,11 @@ export class BookDetailComponent implements OnInit, OnDestroy {
         this.subjectSearchTerm = '';
 
         this.closeAllDropdowns();
-        alert('تم تحديث الكتاب بنجاح!');
+        this.toast.success('تم تحديث الكتاب بنجاح!');
       },
       (err) => {
         console.error('Error updating book:', err);
-        alert('حدث خطأ في تحديث الكتاب');
+        this.toast.error('حدث خطأ في تحديث الكتاب');
       }
     );
   }
@@ -674,16 +677,16 @@ export class BookDetailComponent implements OnInit, OnDestroy {
     this.router.navigate(['/books/edit', this.book._id]);
   }
 
-  deleteBook(): void {
-    if (!confirm('هل أنت متأكد من حذف هذا الكتاب؟')) return;
+  async deleteBook(): Promise<void> {
+    if (!(await this.dialog.ask({ title: 'حذف هذا الكتاب؟', message: 'سيُحذف الكتاب من الفهرس نهائياً، ولا يمكن التراجع عن ذلك.', confirmText: 'حذف الكتاب', tone: 'danger' }))) return;
 
     this.bookService.deleteBook(this.book._id!).subscribe(
       () => {
-        alert('تم حذف الكتاب');
+        this.toast.success('تم حذف الكتاب');
         this.router.navigate(['/']);
       },
       (err) => {
-        alert('فشل حذف الكتاب');
+        this.toast.error('فشل حذف الكتاب');
         console.error(err);
       }
     );
@@ -733,7 +736,7 @@ export class BookDetailComponent implements OnInit, OnDestroy {
 
   openBorrowForm(): void {
     if (!this.isLoggedIn) {
-      alert('يرجى تسجيل الدخول أولاً');
+      this.toast.error('يرجى تسجيل الدخول أولاً');
       this.router.navigate(['/login']);
       return;
     }
@@ -775,7 +778,7 @@ export class BookDetailComponent implements OnInit, OnDestroy {
 
   submitBorrowRequest(): void {
     if (!this.borrowStartDate || !this.borrowEndDate) {
-      alert('يرجى تحديد تاريخ البداية والنهاية');
+      this.toast.error('يرجى تحديد تاريخ البداية والنهاية');
       return;
     }
 
@@ -783,7 +786,7 @@ export class BookDetailComponent implements OnInit, OnDestroy {
     const endDate = new Date(this.borrowEndDate);
 
     if (endDate <= startDate) {
-      alert('تاريخ الإرجاع يجب أن يكون بعد تاريخ الاستعارة');
+      this.toast.error('تاريخ الإرجاع يجب أن يكون بعد تاريخ الاستعارة');
       return;
     }
 
@@ -798,19 +801,19 @@ export class BookDetailComponent implements OnInit, OnDestroy {
         this.borrowLoading = false;
         this.isBookBorrowed = true;
         this.closeBorrowForm();
-        alert('تم استعارة الكتاب بنجاح!');
+        this.toast.success('تم استعارة الكتاب بنجاح!');
       },
       (error) => {
         this.borrowLoading = false;
         console.error('Error borrowing book:', error);
-        alert(error.error?.error || 'حدث خطأ في استعارة الكتاب');
+        this.toast.apiError(error, 'حدث خطأ في استعارة الكتاب');
       }
     );
   }
 
-  returnBook(): void {
+  async returnBook(): Promise<void> {
     if (!this.currentUserBorrow) {
-      alert('لا يمكن العثور على معلومات الاستعارة');
+      this.toast.error('لا يمكن العثور على معلومات الاستعارة');
       return;
     }
 
@@ -820,7 +823,7 @@ export class BookDetailComponent implements OnInit, OnDestroy {
 
     const confirmMessage = `هل أنت متأكد من إرجاع هذا الكتاب؟\n\nالكتاب: ${this.book.title}\nالحالة: ${statusText}`;
 
-    if (confirm(confirmMessage)) {
+    if ((await this.dialog.ask({ title: 'تأكيد إرجاع الكتاب؟', message: confirmMessage, confirmText: 'إرجاع' }))) {
       this.borrowLoading = true;
 
       this.borrowService.returnBook(this.currentUserBorrow._id).subscribe(
@@ -828,12 +831,12 @@ export class BookDetailComponent implements OnInit, OnDestroy {
           this.borrowLoading = false;
           this.isBookBorrowed = false;
           this.currentUserBorrow = null;
-          alert('تم إرجاع الكتاب بنجاح!');
+          this.toast.success('تم إرجاع الكتاب بنجاح!');
         },
         (error) => {
           this.borrowLoading = false;
           console.error('Error returning book:', error);
-          alert(error.error?.error || 'حدث خطأ في إرجاع الكتاب');
+          this.toast.apiError(error, 'حدث خطأ في إرجاع الكتاب');
         }
       );
     }

@@ -5,6 +5,7 @@ import { Book } from '../../models/book.model';
 import { Category } from '../../models/category.model';
 import { SubjectCategory } from '../../models/subject.model';
 import { Publisher } from 'src/app/models/publisher.model';
+import { ToastService } from '../../shared/services/toast.service';
 import { forkJoin } from 'rxjs'; // Import forkJoin for parallel API calls
 
 @Component({
@@ -105,7 +106,8 @@ export class AddBookComponent implements OnInit {
   constructor(
     private bookService: BookService,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private toast: ToastService
   ) { }
 
   ngOnInit(): void {
@@ -160,7 +162,7 @@ export class AddBookComponent implements OnInit {
       },
       error: (err) => {
         console.error('Error loading book for edit:', err);
-        alert('فشل في تحميل بيانات الكتاب');
+        this.toast.error('فشل في تحميل بيانات الكتاب');
         this.loading = false;
         this.router.navigate(['/books']);
       }
@@ -451,7 +453,7 @@ export class AddBookComponent implements OnInit {
         },
         (error) => {
           console.error('Error adding new author:', error);
-          alert('Failed to add new author.');
+          this.toast.error('تعذّرت إضافة المؤلف.');
         }
       );
     }
@@ -470,7 +472,7 @@ export class AddBookComponent implements OnInit {
         },
         (error) => {
           console.error('Error adding new commentator:', error);
-          alert('Failed to add new commentator.');
+          this.toast.error('تعذّرت إضافة الشارح.');
         }
       );
     }
@@ -489,7 +491,7 @@ export class AddBookComponent implements OnInit {
         },
         (error) => {
           console.error('Error adding new editor:', error);
-          alert('Failed to add new editor.');
+          this.toast.error('تعذّرت إضافة المحقق.');
         }
       );
     }
@@ -507,7 +509,7 @@ export class AddBookComponent implements OnInit {
         },
         (error) => {
           console.error('Error adding new caretaker:', error);
-          alert('Failed to add new caretaker.');
+          this.toast.error('تعذّرت إضافة المعتني.');
         }
       );
     }
@@ -526,7 +528,7 @@ export class AddBookComponent implements OnInit {
         },
         (error) => {
           console.error('Error adding new publisher:', error);
-          alert('Failed to add new publisher.');
+          this.toast.error('تعذّرت إضافة الناشر.');
         }
       );
     }
@@ -544,7 +546,7 @@ export class AddBookComponent implements OnInit {
         },
         (error) => {
           console.error('Error adding new category:', error);
-          alert('Failed to add new category.');
+          this.toast.error('تعذّرت إضافة القسم.');
         }
       );
     }
@@ -562,7 +564,7 @@ export class AddBookComponent implements OnInit {
         },
         (error) => {
           console.error('Error adding new subject:', error);
-          alert('Failed to add new subject.');
+          this.toast.error('تعذّرت إضافة الموضوع.');
         }
       );
     }
@@ -581,7 +583,7 @@ export class AddBookComponent implements OnInit {
         },
         (error) => {
           console.error('Error adding new muhashi:', error);
-          alert('Failed to add new muhashi.');
+          this.toast.error('تعذّرت إضافة المحشي.');
         }
       );
     }
@@ -690,11 +692,11 @@ export class AddBookComponent implements OnInit {
 
     // The database requires a title and a category; say so instead of a generic failure.
     if (!String(payload.title ?? '').trim()) {
-      alert('يرجى إدخال عنوان الكتاب');
+      this.toast.error('يرجى إدخال عنوان الكتاب');
       return;
     }
     if (!payload.category) {
-      alert('يرجى اختيار التصنيف');
+      this.toast.error('يرجى اختيار التصنيف');
       return;
     }
 
@@ -704,13 +706,13 @@ export class AddBookComponent implements OnInit {
       // Update existing book
       this.bookService.updateBook(this.bookId, payload).subscribe({
         next: (updatedBook) => {
-          alert('تم تحديث الكتاب بنجاح!');
+          this.toast.success('تم تحديث الكتاب بنجاح!');
           this.loading = false;
           this.router.navigate(['/books', this.bookId], { replaceUrl: true });
         },
         error: (err) => {
           console.error('Error updating book:', err);
-          alert(err?.error?.error || 'فشل في تحديث الكتاب. يرجى التحقق من المدخلات والمحاولة مرة أخرى.');
+          this.toast.apiError(err, 'فشل في تحديث الكتاب. يرجى التحقق من المدخلات والمحاولة مرة أخرى.');
           this.loading = false;
         }
       });
@@ -718,7 +720,7 @@ export class AddBookComponent implements OnInit {
       // Create new book
       this.bookService.createBook(payload).subscribe({
         next: (createdBook) => {
-          alert('تم إضافة الكتاب بنجاح!');
+          this.toast.success('تم إضافة الكتاب بنجاح!');
           this.loading = false;
           window.scrollTo({ top: 0, behavior: 'smooth' });
 
@@ -768,7 +770,7 @@ export class AddBookComponent implements OnInit {
         },
         error: (err) => {
           console.error('Error adding book:', err);
-          alert(err?.error?.error || 'فشل في إضافة الكتاب. يرجى التحقق من المدخلات والمحاولة مرة أخرى.');
+          this.toast.apiError(err, 'فشل في إضافة الكتاب. يرجى التحقق من المدخلات والمحاولة مرة أخرى.');
           this.loading = false;
         }
       });

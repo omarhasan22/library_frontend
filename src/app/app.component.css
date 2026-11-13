@@ -1,13 +1,31 @@
-
-.layout {
+:host {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
 }
 
-.content-area {
-  flex: 1;
-  padding: 1rem;
-    overflow-y: auto;
-
+.app-main {
+  flex: 1 0 auto;
+  outline: none; /* focused programmatically on navigation; not an interactive target */
 }
+
+.app-footer {
+  margin-top: auto;
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-600);
+  font-size: var(--fs-sm);
+}
+.app-footer__inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 24px;
+  padding-block: 20px;
+}
+.app-footer__brand { display: flex; flex-direction: column; }
+.app-footer__brand strong { color: var(--ink-900); font-size: var(--fs-md); }
+.app-footer__links { display: flex; gap: 16px; }
+.app-footer__links a { color: var(--ink-700); }
+.app-footer__copy { margin: 0; }

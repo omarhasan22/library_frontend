@@ -1,6 +1,6 @@
 .exports-container {
   min-height: 100vh;
-  padding-top: 80px; /* Account for fixed navbar */
+  padding-top: 0; /* header is sticky now: no offset needed */
   padding-bottom: 2rem;
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
 }

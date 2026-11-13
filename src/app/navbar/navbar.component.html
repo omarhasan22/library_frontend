@@ -1,118 +1,105 @@
-<!-- Modern Navigation Bar -->
-<nav class="navbar navbar-expand-lg navbar-modern" [class.scrolled]="isScrolled">
-  <div class="container">
-    <a class="navbar-brand d-flex align-items-center" routerLink="/">
-      <!-- <i class="fas fa-book-open text-primary me-2"></i> -->
-      <img style="width: 90px;" src="assets/img/logos/logo-360.png" width="90" alt="..." />
-      <!-- <div class="navbar-brand"><img src="assets/img/logos/dark-logo.png" alt="..." /></div> -->
+<a class="skip-link" href="#main" (click)="skipToMain($event)">تخطَّ إلى المحتوى</a>
+
+<header class="app-header" [class.is-scrolled]="isScrolled">
+  <div class="app-container app-header__bar">
+    <a class="brand" routerLink="/" aria-label="مركز المصطفى، الصفحة الرئيسية">
+      <img src="assets/img/logos/logo-360.png" alt="" width="122" height="40">
     </a>
 
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
-      aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-      <span class="navbar-toggler-icon"></span>
-    </button>
+    <!-- Desktop navigation -->
+    <nav class="primary-nav" aria-label="القائمة الرئيسية">
+      <a class="nav-item" routerLink="/" routerLinkActive="is-active" [routerLinkActiveOptions]="{ exact: true }"
+         ariaCurrentWhenActive="page">الرئيسية</a>
+      <a class="nav-item" routerLink="/books" routerLinkActive="is-active" ariaCurrentWhenActive="page">الكتب</a>
+      <a class="nav-item" routerLink="/categories" routerLinkActive="is-active" ariaCurrentWhenActive="page">الأقسام</a>
 
-    <div class="collapse navbar-collapse" id="navbarNav">
-      <ul class="navbar-nav ms-auto">
-        <li class="nav-item">
-          <a class="nav-link" routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
-            <i class="fas fa-home me-1"></i>
-            الرئيسية
+      <div class="menu" *ngIf="isAdmin" data-menu="admin">
+        <button #adminBtn type="button" class="nav-item menu__trigger" [class.is-active]="isAdminRoute"
+                [attr.aria-expanded]="openMenu === 'admin'" aria-controls="admin-menu" (click)="toggle('admin')">
+          الإدارة <i class="fas fa-chevron-down menu__chev" aria-hidden="true"></i>
+        </button>
+        <div id="admin-menu" class="menu__panel" [hidden]="openMenu !== 'admin'">
+          <a *ngFor="let link of adminLinks" class="menu__link" [routerLink]="link.path" routerLinkActive="is-active"
+             ariaCurrentWhenActive="page">
+            <i class="fas" [ngClass]="link.icon" aria-hidden="true"></i>
+            <span>{{ link.label }}</span>
           </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" routerLink="/books" routerLinkActive="active">
-            <i class="fas fa-book me-1"></i>
-            جميع الكتب
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" routerLink="/categories" routerLinkActive="active">
-            <i class="fas fa-th-large me-1"></i>
-            التصنيفات
-          </a>
-        </li>
-        <li class="nav-item" *ngIf="isAdmin">
-          <a class="nav-link" routerLink="/authors" routerLinkActive="active">
-            <i class="fas fa-users me-1"></i>
-            المؤلفين
-          </a>
-        </li>
-        <li class="nav-item" *ngIf="isAdmin">
-          <a class="nav-link" routerLink="/publishers" routerLinkActive="active">
-            <i class="fas fa-building me-1"></i>
-            الناشرين
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" routerLink="/exports" routerLinkActive="active">
-            <i class="fas fa-download me-1"></i>
-            التصدير
-          </a>
-        </li>
-        <!-- <li class="nav-item" *ngIf="isLoggedIn">
-          <a class="nav-link" routerLink="/my-borrows" routerLinkActive="active">
-            <i class="fas fa-book-reader me-1"></i>
-            استعاراتي
-          </a>
-        </li>
-        <li class="nav-item" *ngIf="isLoggedIn ">
-          <a class="nav-link" routerLink="/admin/borrows" routerLinkActive="active">
-            <i class="fas fa-book-open me-1"></i>
-            إدارة الاستعارات
-          </a>
-        </li> -->
-        <li class="nav-item" *ngIf="isAdmin">
-          <a class="nav-link" routerLink="/add-book" routerLinkActive="active">
-            <i class="fas fa-plus-circle me-1"></i>
-            إضافة كتاب
-          </a>
-        </li>
-        <li class="nav-item" *ngIf="isAdmin">
-          <a class="nav-link" routerLink="/bulk-update" routerLinkActive="active">
-            <i class="fas fa-edit me-1"></i>
-            تحديث جماعي
-          </a>
-        </li>
-        <li class="nav-item" *ngIf="isAdmin">
-          <a class="nav-link" routerLink="/admin/display" routerLinkActive="active">
-            <i class="fas fa-tv me-1"></i>
-            شاشة العرض
-          </a>
-        </li>
-        <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
-            <i class="fas fa-user-circle me-1"></i>
-            الحساب
-          </a>
-          <ul class="dropdown-menu dropdown-menu-end">
-            <li *ngIf="!isLoggedIn">
-              <a class="dropdown-item" routerLink="/login">
-                <i class="fas fa-sign-in-alt me-2"></i>
-                تسجيل الدخول
-              </a>
-            </li>
-            <li *ngIf="!isLoggedIn">
-              <a class="dropdown-item" routerLink="/register">
-                <i class="fas fa-user-plus me-2"></i>
-                إنشاء حساب
-              </a>
-            </li>
-            <li *ngIf="isLoggedIn">
-              <a class="dropdown-item" routerLink="/profile">
-                <i class="fas fa-user-edit me-2"></i>
-                الملف الشخصي
-              </a>
-            </li>
-            <li *ngIf="isLoggedIn">
-              <a class="dropdown-item" href="#" (click)="$event.preventDefault(); logout()">
-                <i class="fas fa-sign-out-alt me-2"></i>
-                تسجيل الخروج
-              </a>
-            </li>
-          </ul>
-        </li>
-      </ul>
+        </div>
+      </div>
+    </nav>
+
+    <form *ngIf="showSearch" class="header-search" role="search" (submit)="search($event)">
+      <label for="header-q" class="visually-hidden">ابحث في الكتب</label>
+      <i class="fas fa-magnifying-glass header-search__icon" aria-hidden="true"></i>
+      <input id="header-q" name="q" type="search" class="form-control form-control-sm" placeholder="ابحث عن كتاب…"
+             [(ngModel)]="query" autocomplete="off">
+    </form>
+
+    <div class="header-end">
+      <ng-container *ngIf="isLoggedIn; else loginLink">
+        <div class="menu" data-menu="account">
+          <button #accountBtn type="button" class="account-btn" [attr.aria-expanded]="openMenu === 'account'"
+                  aria-controls="account-menu" (click)="toggle('account')">
+            <span class="avatar" aria-hidden="true">{{ initial }}</span>
+            <span class="account-btn__name">{{ currentUser?.username }}</span>
+            <span class="visually-hidden">: قائمة الحساب</span>
+            <i class="fas fa-chevron-down menu__chev" aria-hidden="true"></i>
+          </button>
+          <div id="account-menu" class="menu__panel menu__panel--end" [hidden]="openMenu !== 'account'">
+            <div class="menu__who">
+              <strong>{{ currentUser?.username }}</strong>
+              <span>{{ isAdmin ? 'مشرف' : 'مستخدم' }}</span>
+            </div>
+            <a class="menu__link" routerLink="/profile" routerLinkActive="is-active">
+              <i class="fas fa-user-gear" aria-hidden="true"></i><span>الملف الشخصي</span>
+            </a>
+            <a *ngIf="borrowingEnabled" class="menu__link" routerLink="/my-borrows" routerLinkActive="is-active">
+              <i class="fas fa-book-open-reader" aria-hidden="true"></i><span>استعاراتي</span>
+            </a>
+            <button type="button" class="menu__link" (click)="logout()">
+              <i class="fas fa-right-from-bracket" aria-hidden="true"></i><span>تسجيل الخروج</span>
+            </button>
+          </div>
+        </div>
+      </ng-container>
+      <ng-template #loginLink>
+        <a class="btn btn-sm btn-outline-primary login-link" routerLink="/login">
+          <i class="fas fa-right-to-bracket" aria-hidden="true"></i> تسجيل الدخول
+        </a>
+      </ng-template>
+
+      <button #mobileBtn type="button" class="btn btn-icon btn-secondary mobile-toggle"
+              [attr.aria-expanded]="mobileOpen" aria-controls="mobile-nav"
+              [attr.aria-label]="mobileOpen ? 'إغلاق القائمة' : 'فتح القائمة'" (click)="toggleMobile()">
+        <i class="fas" [class.fa-bars]="!mobileOpen" [class.fa-xmark]="mobileOpen" aria-hidden="true"></i>
+      </button>
     </div>
   </div>
-</nav>
+
+  <!-- Mobile navigation -->
+  <div id="mobile-nav" class="mobile-nav" [hidden]="!mobileOpen">
+    <div class="app-container">
+      <form class="mobile-nav__search" role="search" (submit)="search($event)">
+        <label for="mobile-q" class="visually-hidden">ابحث في الكتب</label>
+        <input id="mobile-q" name="mq" type="search" class="form-control" placeholder="ابحث عن كتاب، مؤلف، ناشر…"
+               [(ngModel)]="query" autocomplete="off">
+        <button type="submit" class="btn btn-primary btn-icon" aria-label="بحث">
+          <i class="fas fa-magnifying-glass" aria-hidden="true"></i>
+        </button>
+      </form>
+      <nav aria-label="القائمة الرئيسية">
+        <a class="mobile-nav__link" routerLink="/" routerLinkActive="is-active" [routerLinkActiveOptions]="{ exact: true }"
+           ariaCurrentWhenActive="page"><i class="fas fa-house" aria-hidden="true"></i>الرئيسية</a>
+        <a class="mobile-nav__link" routerLink="/books" routerLinkActive="is-active" ariaCurrentWhenActive="page">
+          <i class="fas fa-book" aria-hidden="true"></i>الكتب</a>
+        <a class="mobile-nav__link" routerLink="/categories" routerLinkActive="is-active" ariaCurrentWhenActive="page">
+          <i class="fas fa-layer-group" aria-hidden="true"></i>الأقسام</a>
+        <ng-container *ngIf="isAdmin">
+          <p class="mobile-nav__group">الإدارة</p>
+          <a *ngFor="let link of adminLinks" class="mobile-nav__link" [routerLink]="link.path" routerLinkActive="is-active"
+             ariaCurrentWhenActive="page"><i class="fas" [ngClass]="link.icon" aria-hidden="true"></i>{{ link.label }}</a>
+        </ng-container>
+      </nav>
+    </div>
+  </div>
+</header>

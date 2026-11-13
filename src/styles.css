@@ -7,3 +7,8 @@
 body.display-mode {
   overflow: hidden;
 }
+
+/* Custom elements default to inline; the app shell is a block so the sticky header spans the page. */
+app-root {
+  display: block;
+}

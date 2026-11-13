@@ -1,5 +1,5 @@
 .author-dashboard-container {
-  margin-top: 80px;
+  margin-top: 0; /* header is sticky now: no offset needed */
   padding: 20px 0;
   min-height: calc(100vh - 80px);
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -389,7 +389,7 @@
 /* Responsive Design */
 @media (max-width: 768px) {
   .author-dashboard-container {
-    margin-top: 70px;
+    margin-top: 0; /* header is sticky now: no offset needed */
     padding: 15px 0;
   }
   

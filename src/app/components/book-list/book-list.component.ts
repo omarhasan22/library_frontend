@@ -6,6 +6,8 @@ import { AuthService } from '../../services/auth.service';
 import { Subject, Subscription } from 'rxjs';
 import { debounceTime } from 'rxjs/operators';
 
+import { ToastService } from '../../shared/services/toast.service';
+import { ConfirmService } from '../../shared/services/confirm.service';
 @Component({
   selector: 'app-book-list',
   templateUrl: './book-list.component.html',
@@ -99,7 +101,9 @@ export class BookListComponent implements OnInit, OnDestroy, AfterViewInit {
     private bookService: BookService,
     private authService: AuthService,
     private router: Router,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private toast: ToastService,
+    private dialog: ConfirmService
   ) { }
 
   ngOnInit(): void {
@@ -346,7 +350,7 @@ export class BookListComponent implements OnInit, OnDestroy, AfterViewInit {
           this.loading = false;
           this.isLoadingBooks = false;
           this.lastLoadKey = ''; // allow retrying the same request
-          alert('حدث خطأ في تحميل الكتب. يرجى المحاولة مرة أخرى.');
+          this.toast.error('حدث خطأ في تحميل الكتب. يرجى المحاولة مرة أخرى.');
         }
       );
   }
@@ -565,8 +569,8 @@ export class BookListComponent implements OnInit, OnDestroy, AfterViewInit {
     window.open(url, '_blank');
   }
 
-  deleteBook(id: string): void {
-    if (confirm('هل أنت متأكد من حذف هذا الكتاب؟')) {
+  async deleteBook(id: string): Promise<void> {
+    if ((await this.dialog.ask({ title: 'حذف هذا الكتاب؟', message: 'سيُحذف الكتاب من الفهرس نهائياً، ولا يمكن التراجع عن ذلك.', confirmText: 'حذف الكتاب', tone: 'danger' }))) {
       this.bookService.deleteBook(id).subscribe(
         () => {
           // Remove the book from the local array instead of reloading
@@ -588,7 +592,7 @@ export class BookListComponent implements OnInit, OnDestroy, AfterViewInit {
         },
         (error) => {
           console.error('Error deleting book', error);
-          alert('فشل حذف الكتاب. يرجى المحاولة مرة أخرى.');
+          this.toast.error('فشل حذف الكتاب. يرجى المحاولة مرة أخرى.');
         }
       );
     }
@@ -638,7 +642,7 @@ export class BookListComponent implements OnInit, OnDestroy, AfterViewInit {
       },
       (error) => {
         console.error('Error exporting books', error);
-        alert('حدث خطأ أثناء تصدير البيانات. يرجى المحاولة مرة أخرى.');
+        this.toast.error('حدث خطأ أثناء تصدير البيانات. يرجى المحاولة مرة أخرى.');
         this.loading = false;
       }
     );
@@ -647,7 +651,7 @@ export class BookListComponent implements OnInit, OnDestroy, AfterViewInit {
   exportLocationsData(): void {
     // Validate room number is selected
     if (!this.selectedRoomNumber) {
-      alert('يرجى اختيار رقم الغرفة أولاً');
+      this.toast.error('يرجى اختيار رقم الغرفة أولاً');
       return;
     }
 
@@ -683,7 +687,7 @@ export class BookListComponent implements OnInit, OnDestroy, AfterViewInit {
       },
       (error) => {
         console.error('Error exporting book locations', error);
-        alert('حدث خطأ أثناء تصدير المواقع. يرجى المحاولة مرة أخرى.');
+        this.toast.error('حدث خطأ أثناء تصدير المواقع. يرجى المحاولة مرة أخرى.');
         this.loading = false;
       }
     );

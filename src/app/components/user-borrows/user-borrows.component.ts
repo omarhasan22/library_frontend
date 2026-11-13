@@ -5,6 +5,8 @@ import { Borrow } from '../../models/borrow.model';
 import { AuthService } from '../../services/auth.service';
 import { Router } from '@angular/router';
 
+import { ToastService } from '../../shared/services/toast.service';
+import { ConfirmService } from '../../shared/services/confirm.service';
 @Component({
    selector: 'app-user-borrows',
    templateUrl: './user-borrows.component.html',
@@ -27,8 +29,10 @@ export class UserBorrowsComponent implements OnInit, OnDestroy {
    constructor(
       private borrowService: BorrowService,
       private authService: AuthService,
-      private router: Router
-   ) { }
+      private router: Router,
+      private toast: ToastService,
+      private dialog: ConfirmService
+    ) { }
 
    ngOnInit(): void {
       // The route's authGuard guarantees a session; load once, and just track the user for display.
@@ -164,7 +168,7 @@ export class UserBorrowsComponent implements OnInit, OnDestroy {
       return Math.round((endTime - startTime) / (1000 * 60 * 60 * 24));
    }
 
-   returnBook(borrow: Borrow): void {
+   async returnBook(borrow: Borrow): Promise<void> {
       const bookTitle = this.getBookTitle(borrow);
       const isOverdue = this.isOverdue(borrow.endDate);
       const daysInfo = isOverdue
@@ -173,16 +177,16 @@ export class UserBorrowsComponent implements OnInit, OnDestroy {
 
       const confirmMessage = `هل أنت متأكد من إرجاع هذا الكتاب؟\n\nالكتاب: ${bookTitle}\nالحالة: ${daysInfo}`;
 
-      if (confirm(confirmMessage)) {
+      if ((await this.dialog.ask({ title: 'تأكيد إرجاع الكتاب؟', message: confirmMessage, confirmText: 'إرجاع' }))) {
          this.borrowService.returnBook(borrow._id!)
             .subscribe(
                () => {
-                  alert('تم إرجاع الكتاب بنجاح!');
+                  this.toast.success('تم إرجاع الكتاب بنجاح!');
                   this.loadMyBorrows(); // Reload the list
                },
                (error) => {
                   console.error('Error returning book:', error);
-                  alert(error.error?.error || 'حدث خطأ في إرجاع الكتاب');
+                  this.toast.apiError(error, 'حدث خطأ في إرجاع الكتاب');
                }
             );
       }
