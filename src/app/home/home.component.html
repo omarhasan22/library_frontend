@@ -1,157 +1,184 @@
-<!-- Navigation is rendered once by AppComponent -->
+<!-- 1. Hero: search first -->
+<section class="hero" aria-labelledby="hero-title">
+  <div class="hero__pattern" aria-hidden="true"></div>
+  <div class="app-container hero__inner">
+    <p class="hero__eyebrow">وقف مركز المصطفى · لخدمة القرآن الكريم وعلوم الشريعة</p>
+    <h1 id="hero-title" class="hero__title">مكتبة مركز المصطفى</h1>
+    <p class="hero__lead">
+      ابحث في
+      <ng-container *ngIf="stats.state === 'ok'; else booksWord">{{ stats.data.totalBooks | arCount:'book' }}</ng-container>
+      <ng-template #booksWord>كتب المكتبة</ng-template>،
+      واعرف موقع كل كتاب على الرفوف.
+    </p>
 
-<!-- Hero Section -->
-<section class="hero-section">
-    <div class="hero-overlay"></div>
-    <div class="container">
-        <div class="hero-content">
-            <h1 class="hero-title animate-fade-in">
-                <i class="fas fa-book-open mb-3"></i><br>
-                مكتبة دار المصطفى
-            </h1>
-            <!-- <p class="hero-subtitle animate-fade-in-delay">
-                اكتشف آلاف الكتب والمراجع في مكان واحد
-            </p> -->
-            <div class="hero-stats animate-fade-in-delay-2">
-                <div class="stat-item">
-                    <span class="stat-number">{{ totalBooks }}</span>
-                    <span class="stat-label">كتابًا</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-number">{{ totalCategories }}</span>
-                    <span class="stat-label">تصنيفًا </span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-number">{{ totalAuthors }}</span>
-                    <span class="stat-label">مؤلِّفًا </span>
-                </div>
-            </div>
-            <div class="hero-actions animate-fade-in-delay-3">
-                <button class="btn btn-primary btn-lg" routerLink="/books">
-                    <i class="fas fa-search me-2"></i>
-                    تصفح المكتبة
-                </button>
-                <button class="btn btn-outline-light btn-lg" *ngIf="isAdmin" routerLink="/add-book">
-                    <i class="fas fa-plus-circle me-2"></i>
-                    إضافة كتاب جديد
-                </button>
-            </div>
-        </div>
+    <form class="hero-search" role="search" (submit)="search($event)">
+      <label for="home-q" class="visually-hidden">ابحث في كتب المكتبة</label>
+      <i class="fas fa-magnifying-glass hero-search__icon" aria-hidden="true"></i>
+      <input id="home-q" name="q" type="search" class="hero-search__input" [(ngModel)]="query" autocomplete="off"
+             placeholder="عنوان كتاب، اسم مؤلف، محقق، أو ناشر…">
+      <button type="submit" class="btn btn-light hero-search__btn">بحث</button>
+    </form>
+
+    <div class="hero__suggest" *ngIf="suggestions.length">
+      <span class="hero__suggest-label">تصفّح:</span>
+      <a *ngFor="let c of suggestions" class="hero-chip" routerLink="/books" [queryParams]="{ category: c._id }">
+        {{ splitTitle(c.title).name }}
+      </a>
+      <a class="hero-chip hero-chip--ghost" routerLink="/categories">كل الأقسام <i class="fas fa-angle-left" aria-hidden="true"></i></a>
     </div>
-    <div class="hero-wave">
-        <svg viewBox="0 0 1440 320" preserveAspectRatio="none">
-            <path fill="#ffffff" fill-opacity="1"
-                d="M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,122.7C672,117,768,139,864,154.7C960,171,1056,181,1152,165.3C1248,149,1344,107,1392,85.3L1440,64L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z">
-            </path>
-        </svg>
-    </div>
+
+    <dl class="hero-stats">
+      <div class="hero-stats__item">
+        <dt>كتاب</dt>
+        <dd>{{ stats.state === 'ok' ? (stats.data.totalBooks | num) : '—' }}</dd>
+      </div>
+      <div class="hero-stats__item">
+        <dt>قسم</dt>
+        <dd>{{ categoryCount !== null ? (categoryCount | num) : '—' }}</dd>
+      </div>
+      <div class="hero-stats__item">
+        <dt>مؤلف ومحقق</dt>
+        <dd>{{ stats.state === 'ok' ? (stats.data.totalAuthors | num) : '—' }}</dd>
+      </div>
+    </dl>
+  </div>
 </section>
 
-<!-- Quick Search Section -->
-<section class="quick-search-section">
-    <div class="container">
-        <div class="search-box-container">
-            <div class="search-box">
-                <i class="fas fa-search search-icon"></i>
-                <input type="text" class="form-control search-input" placeholder="ابحث عن كتاب، مؤلف، أو ناشر..."
-                    [(ngModel)]="quickSearchTerm" (keyup.enter)="quickSearch()">
-                <button class="btn btn-primary search-btn" (click)="quickSearch()">
-                    بحث
-                </button>
-            </div>
-        </div>
-    </div>
+<!-- Admin quick actions -->
+<section *ngIf="isAdmin" class="app-container admin-strip" aria-label="أدوات الإدارة">
+  <a *ngFor="let a of adminActions" class="admin-action surface" [routerLink]="a.path">
+    <span class="admin-action__icon" aria-hidden="true"><i class="fas" [ngClass]="a.icon"></i></span>
+    <span class="admin-action__text">
+      <strong>{{ a.label }}</strong>
+      <span>{{ a.hint }}</span>
+    </span>
+  </a>
 </section>
 
-<!-- Categories Section -->
-<!-- <section class="categories-section">
-    <div class="container">
-        <div class="section-header">
-            <h2 class="section-title">أقسام المكتبة</h2>
-            <p class="section-subtitle">اختر القسم المناسب لتصفح الكتب</p>
+<div class="app-container home-sections">
+
+  <!-- 2. Library map -->
+  <section class="home-section" aria-labelledby="map-title">
+    <header class="home-section__head">
+      <div>
+        <h2 id="map-title" class="home-section__title">مخطط المكتبة</h2>
+        <p class="home-section__sub">كل كتاب له موقع: غرفة، ثم استاند، ثم رف، ثم رقم. اختر غرفة أو استانداً لرؤية كتبه.</p>
+      </div>
+    </header>
+
+    <app-skeleton *ngIf="rooms.state === 'loading'" variant="cards" [count]="6" label="جارٍ تحميل مخطط المكتبة…"></app-skeleton>
+    <app-empty-state *ngIf="rooms.state === 'error'" kind="error" [compact]="true" title="تعذّر تحميل مخطط المكتبة"
+                     (retry)="loadRooms()"></app-empty-state>
+
+    <ul *ngIf="rooms.state === 'ok'" class="room-grid">
+      <li *ngFor="let r of rooms.data.tiles; trackBy: trackByRoom" class="room surface">
+        <a class="room__main" routerLink="/books" [queryParams]="{ room: r.room }"
+           [attr.aria-label]="'الغرفة ' + r.room + '، ' + (r.count | arCount:'book')">
+          <span class="room__label">الغرفة</span>
+          <span class="room__number">{{ r.room }}</span>
+          <span class="room__count">{{ r.count | arCount:'book' }}</span>
+          <span class="room__bar" aria-hidden="true"><span [style.width.%]="r.share"></span></span>
+        </a>
+        <div class="room__walls" *ngIf="r.walls.length">
+          <span class="visually-hidden">استاندات الغرفة {{ r.room }}:</span>
+          <a *ngFor="let w of r.walls" class="wall-chip" routerLink="/books" [queryParams]="{ room: r.room, wall: w.wall }"
+             [attr.aria-label]="'الغرفة ' + r.room + '، الاستاند ' + w.wall + '، ' + (w.count | arCount:'book')"
+             [title]="w.count | arCount:'book'">{{ w.wall }}</a>
         </div>
+      </li>
+    </ul>
+    <p *ngIf="rooms.state === 'ok' && rooms.data.unassigned" class="home-note">
+      <i class="fas fa-circle-info" aria-hidden="true"></i>
+      {{ rooms.data.unassigned | arCount:'book' }} دون موقع مسجَّل بعد.
+    </p>
+  </section>
 
-        <div class="categories-grid">
-            <div class="category-card-item" *ngFor="let category of categories; let i = index">
-                <div class="category-card-header" (click)="toggleCategoryExpand(category._id)"
-                    [class.expanded]="expandedCategory === category._id">
-                    <div class="category-card-content">
-                        <div class="category-number">{{ category.bookCount || 0 }}</div>
-                        <div class="category-title">{{ i + 1 }}. {{ category.title }}</div>
-                    </div>
-                    <i class="fas fa-chevron-down expand-icon" [class.rotated]="expandedCategory === category._id"></i>
-                </div>
+  <!-- 3. Sections -->
+  <section class="home-section" aria-labelledby="cats-title">
+    <header class="home-section__head">
+      <div>
+        <h2 id="cats-title" class="home-section__title">أقسام المكتبة</h2>
+        <p class="home-section__sub">الكتب مرتّبة في أقسام، ولكل قسم مواضيعه.</p>
+      </div>
+      <a class="btn btn-secondary btn-sm" routerLink="/categories">كل الأقسام والمواضيع <i class="fas fa-angle-left" aria-hidden="true"></i></a>
+    </header>
 
-                <div class="subjects-panel" [class.show]="expandedCategory === category._id">
-                    <div class="subjects-content" *ngIf="categorySubjects[category._id]">
-                        <div class="subject-pill" *ngFor="let subject of categorySubjects[category._id]"
-                            (click)="navigateToCategorySubject(category._id, subject._id)">
-                            {{ subject.title }}
-                            <span class="subject-count">({{ subject.bookCount || 0 }})</span>
-                        </div>
-                    </div>
-                    <button class="btn-view-category" (click)="navigateToCategory(category)">
-                        عرض جميع كتب القسم
-                        <i class="fas fa-arrow-left ms-2"></i>
-                    </button>
-                </div>
+    <app-skeleton *ngIf="categories.state === 'loading'" variant="cards" [count]="6" label="جارٍ تحميل الأقسام…"></app-skeleton>
+    <app-empty-state *ngIf="categories.state === 'error'" kind="error" [compact]="true" title="تعذّر تحميل الأقسام"
+                     (retry)="loadCategories()"></app-empty-state>
+
+    <ul *ngIf="categories.state === 'ok'" class="cat-grid">
+      <li *ngFor="let c of categories.data; trackBy: trackById">
+        <a class="cat-tile surface" routerLink="/books" [queryParams]="{ category: c._id }">
+          <span class="cat-tile__eyebrow" *ngIf="splitTitle(c.title).eyebrow">{{ splitTitle(c.title).eyebrow }}</span>
+          <span class="cat-tile__name">{{ splitTitle(c.title).name }}</span>
+          <span class="cat-tile__counts">
+            <ng-container *ngIf="c.booksCount !== undefined">{{ c.booksCount | arCount:'book' }} · </ng-container>{{ c.subjects.length | arCount:'subject' }}
+          </span>
+          <span class="cat-tile__subjects" *ngIf="topSubjects(c)">{{ topSubjects(c) }}</span>
+        </a>
+      </li>
+    </ul>
+  </section>
+
+  <div class="home-split">
+    <!-- 4. Recent additions -->
+    <section class="home-section" aria-labelledby="recent-title">
+      <header class="home-section__head">
+        <h2 id="recent-title" class="home-section__title">أُضيف حديثاً</h2>
+        <a class="btn btn-link btn-sm" routerLink="/books" [queryParams]="{ sort: 'recent', dir: 'desc' }">
+          عرض الكل <i class="fas fa-angle-left" aria-hidden="true"></i>
+        </a>
+      </header>
+
+      <div class="surface">
+        <app-skeleton *ngIf="recent.state === 'loading'" variant="rows" [count]="6" label="جارٍ تحميل أحدث الكتب…"></app-skeleton>
+        <app-empty-state *ngIf="recent.state === 'error'" kind="error" [compact]="true" title="تعذّر تحميل أحدث الكتب"
+                         (retry)="loadRecent()"></app-empty-state>
+        <app-empty-state *ngIf="recent.state === 'ok' && !recent.data.length" [compact]="true" title="لم تُضف كتب بعد"></app-empty-state>
+        <ol *ngIf="recent.state === 'ok' && recent.data.length" class="recent-list">
+          <li *ngFor="let b of recent.data; trackBy: trackById" class="recent-item">
+            <div class="recent-item__text">
+              <a class="recent-item__title" [routerLink]="['/books', b._id]" (click)="rememberBook(b._id)">{{ b.title }}</a>
+              <span class="recent-item__meta">
+                {{ names(b.authors) || 'مؤلف غير محدد' }}<ng-container *ngIf="b.category?.title"> · {{ b.category?.title }}</ng-container>
+              </span>
             </div>
+            <app-location-badge [address]="b.address" variant="code"></app-location-badge>
+          </li>
+        </ol>
+      </div>
+    </section>
 
-            <div class="category-card-item view-all">
-                <div class="category-card-header" routerLink="/categories">
-                    <div class="category-card-content">
-                        <i class="fas fa-th-large category-icon-large"></i>
-                        <div class="category-title">جميع الأقسام</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section> -->
-<app-categories></app-categories>
-
-<!-- Recent Books Section (Optional) -->
-<section class="recent-books-section" *ngIf="recentBooks.length > 0">
-    <div class="container">
-        <div class="section-header">
-            <h2 class="section-title">أحدث الكتب المضافة</h2>
-            <a routerLink="/books" class="view-all-link">
-                عرض الكل
-                <i class="fas fa-arrow-left ms-2"></i>
-            </a>
-        </div>
-
-        <div class="row g-4" style="margin: 0 4vw 0 4vw">
-            <div class="col-lg-3 col-md-4 col-sm-6 mb-4 px-2" *ngFor="let book of recentBooks">
-                <div class="book-card h-100" (click)="viewBook(book._id)">
-                    <div class="book-cover">
-                        <img [src]="book.imageUrl || 'assets/img/book-placeholder.svg'" [alt]="book.title">
-                        <div class="book-overlay">
-                            <button class="btn btn-light btn-sm">عرض التفاصيل</button>
-                        </div>
-                    </div>
-                    <div class="book-info">
-                        <h5 class="book-title">{{ book.title }}</h5>
-                        <p class="book-author">{{ getAuthorsNames(book.authors) }}</p>
-                        <span class="book-category badge bg-primary">{{ book.category?.title }}</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- Footer -->
-<footer class="footer">
-    <div class="container">
-        <div class="row">
-            <div class="col-md-6">
-                <h5> مكتبة دار المصطفى</h5>
-                <p>نظام متكامل لإدارة المكتبات والكتب</p>
-            </div>
-            <!-- <div class="col-md-6 text-end">
-                <p class="mb-0">© 2024 جميع الحقوق محفوظة</p>
-            </div> -->
-        </div>
-    </div>
-</footer>
+    <!-- 5. How to find a book -->
+    <section class="home-section" aria-labelledby="howto-title">
+      <header class="home-section__head">
+        <h2 id="howto-title" class="home-section__title">كيف تجد كتاباً؟</h2>
+      </header>
+      <ol class="steps surface">
+        <li class="step">
+          <span class="step__num" aria-hidden="true">1</span>
+          <div>
+            <h3 class="step__title">ابحث عنه</h3>
+            <p class="step__text">اكتب جزءاً من العنوان أو اسم المؤلف أو المحقق. لا يلزم ضبط الهمزات أو التشكيل.</p>
+          </div>
+        </li>
+        <li class="step">
+          <span class="step__num" aria-hidden="true">2</span>
+          <div>
+            <h3 class="step__title">اقرأ موقعه</h3>
+            <p class="step__text">يظهر بجانب كل كتاب رمز موقعه بالترتيب: الغرفة · الاستاند · الرف · رقم الكتاب.</p>
+            <app-location-badge [address]="{ roomNumber: '3', wallNumber: 'د', shelfNumber: '1', bookNumber: '12' }" variant="code"></app-location-badge>
+          </div>
+        </li>
+        <li class="step">
+          <span class="step__num" aria-hidden="true">3</span>
+          <div>
+            <h3 class="step__title">توجّه إلى الرف</h3>
+            <p class="step__text">ادخل الغرفة، ثم الاستاند المكتوب عليه الحرف، ثم الرف، وستجد الكتاب برقمه.</p>
+          </div>
+        </li>
+      </ol>
+    </section>
+  </div>
+</div>

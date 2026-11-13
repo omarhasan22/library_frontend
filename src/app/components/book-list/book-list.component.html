@@ -1,275 +1,265 @@
-<!-- Navigation is rendered once by AppComponent -->
+<div class="app-container page">
+  <app-page-header title="الكتب">
+    <p subtitle class="results-summary" aria-live="polite">
+      <ng-container *ngIf="result; else countPending">
+        <ng-container *ngIf="filtered; else wholeCatalogue">
+          <strong>{{ result.filteredCount | arCount:'result' }}</strong>
+          <span class="text-ink-600"> من أصل {{ result.totalBooks | num }} في الفهرس</span>
+        </ng-container>
+        <ng-template #wholeCatalogue>
+          <strong>{{ result.totalBooks | arCount:'book' }}</strong>
+          <span class="text-ink-600"> في فهرس المكتبة</span>
+        </ng-template>
+      </ng-container>
+      <ng-template #countPending>&nbsp;</ng-template>
+    </p>
+    <ng-container actions *ngIf="isAdmin">
+      <button type="button" class="btn btn-secondary" (click)="exportResults()"
+        [disabled]="exporting || !result?.filteredCount">
+        <span *ngIf="exporting" class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+        <i *ngIf="!exporting" class="fas fa-file-excel" aria-hidden="true"></i>
+        {{ exporting ? 'جارٍ التصدير…' : 'تصدير النتائج' }}
+      </button>
+      <a class="btn btn-primary" routerLink="/add-book">
+        <i class="fas fa-plus" aria-hidden="true"></i> إضافة كتاب
+      </a>
+    </ng-container>
+  </app-page-header>
 
-<!-- Full Screen Book List -->
-<div class="books-container">
-  <!-- Page Header -->
-  <!-- <div class="page-header">
-    <div class="container-fluid">
-      <div class="row align-items-center">
-        <div class="col-md-6">
-          <h1 class="page-title">
-            <i class="fas fa-book me-2"></i>
-            قائمة الكتب
-          </h1>
-          <nav aria-label="breadcrumb">
-            <ol class="breadcrumb">
-              <li class="breadcrumb-item"><a routerLink="/">الرئيسية</a></li>
-              <li class="breadcrumb-item active">الكتب</li>
-            </ol>
-          </nav>
-        </div>
-        <div class="col-md-6 text-end">
-          <button class="btn btn-primary" *ngIf="isAdmin" routerLink="/add-book">
-            <i class="fas fa-plus-circle me-2"></i>
-            إضافة كتاب جديد
-          </button>
-        </div>
+  <!-- Search and filters -->
+  <section class="filters surface" aria-label="البحث والتصفية">
+    <form class="search" role="search" (submit)="submitSearch($event)">
+      <label for="books-q" class="visually-hidden">ابحث في الكتب</label>
+      <i class="fas fa-magnifying-glass search__icon" aria-hidden="true"></i>
+      <input #qEl id="books-q" name="q" type="search" class="form-control form-control-lg search__input"
+        placeholder="ابحث بالعنوان أو المؤلف أو الناشر أو أي حقل…" autocomplete="off" [(ngModel)]="qInput"
+        (ngModelChange)="onType($event)">
+      <button *ngIf="qInput" type="button" class="search__clear" (click)="clearSearch(qEl)" aria-label="مسح البحث">
+        <i class="fas fa-xmark" aria-hidden="true"></i>
+      </button>
+    </form>
+
+    <div class="filter-grid">
+      <div class="filter">
+        <label for="filter-category" class="filter__label">القسم</label>
+        <select id="filter-category" class="form-select" [ngModel]="query.category"
+          (ngModelChange)="setCategory($event)">
+          <option value="">كل الأقسام</option>
+          <option *ngFor="let c of taxonomy.categories" [value]="c._id">
+            {{ c.title }}<ng-container *ngIf="c.booksCount !== undefined"> ({{ c.booksCount | num }})</ng-container>
+          </option>
+        </select>
       </div>
+      <div class="filter">
+        <label for="filter-subject" class="filter__label">الموضوع</label>
+        <select id="filter-subject" class="form-select" [ngModel]="query.subject" (ngModelChange)="setSubject($event)">
+          <option value="">{{ query.category ? 'كل مواضيع القسم' : 'كل المواضيع' }}</option>
+          <option *ngFor="let s of subjectsForCategory" [value]="s._id">
+            {{ s.title }}<ng-container *ngIf="query.category && s.booksCount !== undefined"> ({{ s.booksCount | num
+              }})</ng-container>
+          </option>
+        </select>
+      </div>
+      <fieldset class="filter filter--location">
+        <legend class="filter__label">الموقع</legend>
+        <div class="location-fields">
+          <label for="filter-room" class="visually-hidden">الغرفة</label>
+          <select id="filter-room" class="form-select" [ngModel]="query.room" (ngModelChange)="setRoom($event)">
+            <option value="">الغرفة</option>
+            <option *ngFor="let r of rooms" [value]="r">غرفة {{ r }}</option>
+          </select>
+          <label for="filter-wall" class="visually-hidden">الاستاند</label>
+          <select id="filter-wall" class="form-select" [ngModel]="query.wall" (ngModelChange)="setWall($event)"
+            [disabled]="!query.room" [title]="query.room ? '' : 'اختر الغرفة أولاً'">
+            <option value="">الاستاند</option>
+            <option *ngFor="let w of walls" [value]="w">استاند {{ w }}</option>
+          </select>
+          <label for="filter-shelf" class="visually-hidden">رقم الرف</label>
+          <input id="filter-shelf" name="shelf" class="form-control" placeholder="الرف" inputmode="numeric"
+            [(ngModel)]="shelfInput" (keyup.enter)="applyShelf()" (blur)="applyShelf()">
+        </div>
+      </fieldset>
     </div>
-  </div> -->
 
-  <!-- Statistics Bar -->
-  <div class="stats-bar">
-    <div class="container-fluid">
-      <div class="stats-wrapper">
-        <div class="stat-card">
-          <i class="fas fa-book"></i>
-          <div class="stat-info">
-            <span class="stat-value">{{ totalBooks }}</span>
-            <span class="stat-label">إجمالي الكتب</span>
-          </div>
-        </div>
-        <div class="stat-card">
-          <i class="fas fa-user-edit"></i>
-          <div class="stat-info">
-            <span class="stat-value">{{ uniqueAuthors }}</span>
-            <span class="stat-label">عدد المؤلفين</span>
-          </div>
-        </div>
-        <div class="stat-card">
-          <i class="fas fa-building"></i>
-          <div class="stat-info">
-            <span class="stat-value">{{ uniquePublishers }}</span>
-            <span class="stat-label">دور النشر</span>
-          </div>
-        </div>
-        <div class="stat-card">
-          <i class="fas fa-filter"></i>
-          <div class="stat-info">
-            <span class="stat-value">{{ filteredCount }}</span>
-            <span class="stat-label">النتائج الحالية</span>
+    <div class="filters__advanced-toggle">
+      <button type="button" class="btn btn-link btn-sm px-0" (click)="toggleAdvanced()"
+        [attr.aria-expanded]="advancedOpen" aria-controls="advanced-panel">
+        <i class="fas fa-sliders" aria-hidden="true"></i>
+        بحث متقدم
+        <span *ngIf="query.rows.length" class="badge rounded-pill text-bg-primary">{{ query.rows.length }}</span>
+        <i class="fas fa-chevron-down toggle-chev" aria-hidden="true"></i>
+      </button>
+    </div>
+
+    <form id="advanced-panel" class="advanced" *ngIf="advancedOpen" (submit)="applyRows($event)">
+      <p class="advanced__hint">أضف شروطاً على حقول محددة؛ تظهر الكتب التي تطابق جميع الشروط.</p>
+      <div *ngFor="let row of draftRows; let i = index" class="advanced__row">
+        <label [for]="'adv-field-' + i" class="visually-hidden">الحقل {{ i + 1 }}</label>
+        <select [id]="'adv-field-' + i" class="form-select" [(ngModel)]="row.field" [name]="'field' + i">
+          <option *ngFor="let f of advancedFields" [value]="f.key">{{ f.label }}</option>
+        </select>
+        <label [for]="'adv-value-' + i" class="visually-hidden">القيمة {{ i + 1 }}</label>
+        <input [id]="'adv-value-' + i" class="form-control" [(ngModel)]="row.value" [name]="'value' + i"
+          placeholder="يحتوي على…">
+        <button type="button" class="btn btn-secondary btn-icon" (click)="removeRow(i)"
+          [attr.aria-label]="'حذف الشرط ' + (i + 1)">
+          <i class="fas fa-trash-can" aria-hidden="true"></i>
+        </button>
+      </div>
+      <div class="advanced__actions">
+        <button type="button" class="btn btn-secondary btn-sm" (click)="addRow()">
+          <i class="fas fa-plus" aria-hidden="true"></i> إضافة شرط
+        </button>
+        <button type="submit" class="btn btn-primary btn-sm">تطبيق الشروط</button>
+      </div>
+    </form>
+  </section>
+
+  <!-- Active filters + view controls -->
+  <div class="toolbar" id="results">
+    <div class="toolbar__chips" *ngIf="chips.length">
+      <span class="visually-hidden">عوامل التصفية الحالية:</span>
+      <span *ngFor="let chip of chips; trackBy: trackByLabel" class="chip">
+        {{ chip.label }}
+        <button type="button" class="chip-remove" (click)="removeChip(chip)" [attr.aria-label]="'إزالة ' + chip.label">
+          <i class="fas fa-xmark" aria-hidden="true"></i>
+        </button>
+      </span>
+      <button type="button" class="btn btn-link btn-sm" (click)="clearAll()">مسح الكل</button>
+    </div>
+
+    <div class="toolbar__controls">
+      <label for="books-sort" class="toolbar__label">الترتيب</label>
+      <select id="books-sort" class="form-select form-select-sm toolbar__sort" [ngModel]="sortValue"
+        (ngModelChange)="setSort($event)">
+        <option value="loc-asc">حسب الموقع (من الأول)</option>
+        <option value="loc-desc">حسب الموقع (من الآخر)</option>
+        <option value="recent">الأحدث إضافةً</option>
+      </select>
+
+      <div class="segmented d-none d-md-inline-flex" role="group" aria-label="طريقة العرض">
+        <button type="button" [class.is-on]="query.view === 'table'" [attr.aria-pressed]="query.view === 'table'"
+          (click)="setView('table')"><i class="fas fa-list" aria-hidden="true"></i> قائمة</button>
+        <button type="button" [class.is-on]="query.view === 'grid'" [attr.aria-pressed]="query.view === 'grid'"
+          (click)="setView('grid')"><i class="fas fa-grip" aria-hidden="true"></i> بطاقات</button>
+      </div>
+
+      <div class="columns-menu d-none d-md-block" *ngIf="query.view === 'table'">
+        <button type="button" class="btn btn-secondary btn-sm" [attr.aria-expanded]="columnsOpen"
+          aria-controls="columns-panel" (click)="columnsOpen = !columnsOpen; $event.stopPropagation()">
+          <i class="fas fa-table-columns" aria-hidden="true"></i> الأعمدة
+        </button>
+        <div id="columns-panel" class="columns-menu__panel" [hidden]="!columnsOpen">
+          <p class="columns-menu__title">أعمدة إضافية</p>
+          <div class="form-check" *ngFor="let col of optionalColumns">
+            <input class="form-check-input" type="checkbox" [id]="'col-' + col.key"
+              [checked]="visibleExtra.has(col.key)" (change)="toggleColumn(col.key, $any($event.target).checked)">
+            <label class="form-check-label" [for]="'col-' + col.key">{{ col.label }}</label>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Advanced Search Section -->
-  <div class="search-section">
-    <div class="container-fluid">
-      <div class="search-card">
-        <div class="search-header">
-          <h5>
-            <i class="fas fa-search me-2"></i>
-            البحث والتصفية
-          </h5>
-          <button class="btn btn-sm btn-outline-secondary" (click)="toggleAdvancedSearch()">
-            {{ showAdvancedSearch ? 'إخفاء البحث المتقدم' : 'بحث متقدم' }}
-            <i class="fas fa-chevron-down ms-2" [class.rotate-180]="showAdvancedSearch"></i>
-          </button>
-        </div>
+  <!-- Results -->
+  <section class="results" [class.is-refreshing]="loading && books.length" [attr.aria-busy]="loading">
+    <app-skeleton *ngIf="loading && !books.length && !failed" variant="rows" [count]="8"
+      label="جارٍ تحميل الكتب…"></app-skeleton>
 
-        <!-- Simple Search -->
-        <div class="simple-search">
-          <div class="input-group">
-            <span class="input-group-text">
-              <i class="fas fa-search"></i>
-            </span>
-            <input type="text" class="form-control form-control-lg" placeholder="ابحث بالعنوان، المؤلف، الناشر..."
-              [(ngModel)]="simpleSearchTerm" (keyup.enter)="performSimpleSearch()">
-            <button class="btn btn-primary" (click)="performSimpleSearch()">
-              بحث
-            </button>
-          </div>
-        </div>
+    <app-empty-state *ngIf="failed" kind="error" title="تعذّر تحميل الكتب" (retry)="retry()"></app-empty-state>
 
-        <!-- Advanced Search (Collapsible) -->
-        <div class="advanced-search" *ngIf="showAdvancedSearch">
-          <div class="filter-groups">
-            <div *ngFor="let filter of searchFilters; let i = index" class="filter-row">
-              <select class="form-select" [(ngModel)]="filter.field">
-                <option value="all">جميع الحقول</option>
-                <option *ngFor="let cat of categories" [value]="cat.key">{{ cat.value }}</option>
-              </select>
-              <input type="text" class="form-control" [(ngModel)]="filter.value" placeholder="أدخل قيمة البحث...">
-              <button class="btn btn-danger" (click)="removeFilter(i)" *ngIf="searchFilters.length > 1">
-                <i class="fas fa-times"></i>
-              </button>
+    <app-empty-state *ngIf="!loading && !failed && !books.length" kind="no-results"
+      [title]="filtered ? 'لا توجد كتب مطابقة' : 'لا توجد كتب بعد'"
+      [message]="filtered ? 'جرّب كلمات أقل أو أزل بعض عوامل التصفية.' : ''">
+      <button *ngIf="filtered" type="button" class="btn btn-primary" (click)="clearAll()">مسح البحث والتصفية</button>
+      <a *ngIf="!filtered && isAdmin" class="btn btn-primary" routerLink="/add-book">إضافة أول كتاب</a>
+    </app-empty-state>
+
+    <ng-container *ngIf="!failed && books.length">
+      <!-- List (table on desktop, stacked cards on phones) -->
+      <ng-container *ngIf="query.view === 'table'">
+        <div class="table-wrap surface d-none d-md-block">
+          <table class="table book-table align-middle mb-0">
+            <caption class="visually-hidden">نتائج البحث في الكتب، الصفحة {{ query.page }} من {{ totalPages }}</caption>
+            <thead>
+              <tr>
+                <th scope="col">العنوان والمؤلف</th>
+                <th scope="col">القسم والموضوع</th>
+                <th scope="col">الناشر</th>
+                <th scope="col" *ngFor="let col of extraColumns">{{ col.label }}</th>
+                <th scope="col" class="col-location">
+                  الموقع
+                  <span class="th-hint">غرفة · استاند · رف · رقم</span>
+                </th>
+                <th scope="col" *ngIf="isAdmin" class="col-actions"><span class="visually-hidden">إجراءات</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let book of books; trackBy: trackById" [id]="'book-' + book._id"
+                [class.is-highlight]="book._id === highlightId">
+                <td class="col-title">
+                  <a class="book-link" [routerLink]="['/books', book._id]" (click)="rememberBook(book._id)">{{
+                    book.title }}</a>
+                  <span class="book-sub">{{ names(book.authors) }}</span>
+                </td>
+                <td class="col-cat">
+                  <span class="cat">{{ book.category?.title || '—' }}</span>
+                  <span class="book-sub" *ngIf="book.subject?.title">{{ book.subject?.title }}</span>
+                </td>
+                <td class="col-pub">{{ names(book.publishers) }}</td>
+                <td *ngFor="let col of extraColumns" class="col-extra">{{ extraValue(book, col.key) }}</td>
+                <td class="col-location"><app-location-badge [address]="book.address"
+                    variant="code"></app-location-badge></td>
+                <td *ngIf="isAdmin" class="col-actions">
+                  <div class="row-actions">
+                    <a class="btn btn-sm btn-icon btn-secondary" [routerLink]="['/edit-book', book._id]"
+                      [attr.aria-label]="'تعديل ' + book.title" title="تعديل"><i class="fas fa-pen"
+                        aria-hidden="true"></i></a>
+                    <button type="button" class="btn btn-sm btn-icon btn-outline-danger" (click)="deleteBook(book)"
+                      [attr.aria-label]="'حذف ' + book.title" title="حذف"><i class="fas fa-trash-can"
+                        aria-hidden="true"></i></button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </ng-container>
+
+      <!-- Cards: the grid view on desktop, and the list on phones -->
+      <ul class="book-cards" [class.d-md-none]="query.view === 'table'"
+        [class.book-cards--grid]="query.view === 'grid'">
+        <li *ngFor="let book of books; trackBy: trackById" class="book-card surface"
+          [id]="query.view === 'grid' ? 'book-' + book._id : null" [class.is-highlight]="book._id === highlightId">
+          <span class="book-card__cat" *ngIf="book.category?.title">{{ book.category?.title }}</span>
+          <h2 class="book-card__title">
+            <a class="book-link stretched" [routerLink]="['/books', book._id]" (click)="rememberBook(book._id)">{{
+              book.title }}</a>
+          </h2>
+          <p class="book-card__meta">{{ names(book.authors) }}</p>
+          <p class="book-card__meta book-card__meta--muted" *ngIf="book.publishers?.length">{{ names(book.publishers) }}
+          </p>
+          <div class="book-card__foot">
+            <app-location-badge [address]="book.address" variant="code"></app-location-badge>
+            <div *ngIf="isAdmin" class="row-actions book-card__actions">
+              <a class="btn btn-sm btn-icon btn-secondary" [routerLink]="['/edit-book', book._id]"
+                [attr.aria-label]="'تعديل ' + book.title" title="تعديل"><i class="fas fa-pen"
+                  aria-hidden="true"></i></a>
+              <button type="button" class="btn btn-sm btn-icon btn-outline-danger" (click)="deleteBook(book)"
+                [attr.aria-label]="'حذف ' + book.title" title="حذف"><i class="fas fa-trash-can"
+                  aria-hidden="true"></i></button>
             </div>
           </div>
-          <div class="filter-actions">
-            <button class="btn btn-success" (click)="addFilter()">
-              <i class="fas fa-plus me-2"></i>
-              إضافة شرط
-            </button>
-            <button class="btn btn-primary" (click)="performAdvancedSearch()">
-              <i class="fas fa-search me-2"></i>
-              بحث متقدم
-            </button>
-            <button class="btn btn-secondary" (click)="resetSearch()">
-              <i class="fas fa-redo me-2"></i>
-              إعادة تعيين
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+        </li>
+      </ul>
 
-  <!-- View Toggle and Actions -->
-  <div class="table-actions">
-    <div class="container-fluid">
-      <div class="d-flex justify-content-between align-items-center">
-        <div class="view-toggle">
-          <button class="btn btn-sm" [class.active]="viewMode === 'table'" (click)="viewMode = 'table'">
-            <i class="fas fa-table"></i>
-            عرض جدول
-          </button>
-          <button class="btn btn-sm" [class.active]="viewMode === 'grid'" (click)="viewMode = 'grid'">
-            <i class="fas fa-th-large"></i>
-            عرض بطاقات
-          </button>
-        </div>
-        <div class="quick-actions">
-          <button class="btn btn-sm btn-outline-primary" (click)="scrollToTop()">
-            <i class="fas fa-arrow-up"></i>
-            الأعلى
-          </button>
-          <button class="btn btn-sm btn-outline-primary" (click)="scrollToBottom()">
-            <i class="fas fa-arrow-down"></i>
-            الأسفل
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Books Table View -->
-  <div class="table-container" *ngIf="viewMode === 'table' && !loading">
-    <div class="container-fluid">
-      <div class="table-responsive" style="scrollbar-width:none">
-        <table class="table table-hover modern-table">
-          <thead>
-            <tr>
-              <th>الرقم</th>
-              <th *ngFor="let col of visibleColumns" [class.sortable]="col.sortable" (click)="sort(col.key)">
-                {{ col.value }}
-                <i class="fas fa-sort ms-1" *ngIf="col.sortable"></i>
-              </th>
-              <th>الإجراءات</th>
-            </tr>
-          </thead>
-          <tbody *ngIf="!loading">
-            <tr *ngFor="let book of books; let i = index; trackBy: trackById" [id]="'book-' + book._id" class="book-row">
-              <td>{{ itemsPerPage * (currentPage - 1) + i + 1 }}</td>
-              <td *ngFor="let col of visibleColumns">
-                <span>{{ renderValue(book, col.key) }}</span>
-              </td>
-              <td>
-                <div class="action-buttons">
-                  <button class="btn btn-sm btn-primary" 
-                          (click)="viewBook(book._id)" 
-                          (contextmenu)="viewBookInNewWindow(book._id, $event)"
-                          title="عرض (انقر بزر الماوس الأيمن لفتح في نافذة جديدة)">
-                    <i class="fas fa-eye"></i>
-                  </button>
-                  <button class="btn btn-sm btn-warning" 
-                          *ngIf="isAdmin" 
-                          (click)="editBook(book._id)" 
-                          (contextmenu)="editBookInNewWindow(book._id, $event)"
-                          title="تعديل (انقر بزر الماوس الأيمن لفتح في نافذة جديدة)">
-                    <i class="fas fa-edit"></i>
-                  </button>
-                  <button class="btn btn-sm btn-danger" *ngIf="isAdmin" (click)="deleteBook(book._id)" title="حذف">
-                    <i class="fas fa-trash"></i>
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Pagination -->
-      <div class="pagination-wrapper">
-        <app-pagination [currentPage]="currentPage" [totalPages]="totalPages" (pageChange)="onPageChange($event)">
-        </app-pagination>
-      </div>
-    </div>
-  </div>
-
-  <!-- Books Grid View -->
-  <div class="grid-container" *ngIf="viewMode === 'grid' && !loading">
-    <div class="container-fluid">
-      <div class="row g-4">
-        <div class="col-xl-3 col-lg-4 col-md-6" *ngFor="let book of books; trackBy: trackById">
-          <div class="book-grid-card">
-            <div class="book-cover">
-              <img [src]="book.imageUrl || 'assets/img/book-placeholder.svg'" [alt]="book.title">
-              <div class="book-overlay">
-                <div class="overlay-actions">
-                  <button class="btn btn-light btn-sm" 
-                          (click)="viewBook(book._id)"
-                          (contextmenu)="viewBookInNewWindow(book._id, $event)">
-                    <i class="fas fa-eye me-1"></i>
-                    عرض
-                  </button>
-                  <button class="btn btn-warning btn-sm" 
-                          *ngIf="isAdmin" 
-                          (click)="editBook(book._id)"
-                          (contextmenu)="editBookInNewWindow(book._id, $event)">
-                    <i class="fas fa-edit me-1"></i>
-                    تعديل
-                  </button>
-                </div>
-              </div>
-            </div>
-            <div class="book-details">
-              <h5 class="book-title">{{ book.title }}</h5>
-              <p class="book-meta">
-                <i class="fas fa-user me-1"></i>
-                {{ getNames(book.authors) }}
-              </p>
-              <p class="book-meta">
-                <i class="fas fa-building me-1"></i>
-                {{ getTitles(book.publishers) }}
-              </p>
-              <div class="book-badges">
-                <span class="badge bg-primary">{{ book.category?.title || 'غير مصنف' }}</span>
-                <span class="badge bg-secondary">{{ book.publicationYear }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Loading State -->
-  <div class="loading-state" *ngIf="loading">
-    <div class="spinner-border text-primary" role="status">
-      <span class="visually-hidden">جاري التحميل...</span>
-    </div>
-    <p>جاري تحميل الكتب...</p>
-  </div>
-
-  <!-- Empty State -->
-  <div class="empty-state" *ngIf="!loading && books.length === 0">
-    <i class="fas fa-inbox fa-4x text-muted mb-3"></i>
-    <h4>لا توجد نتائج</h4>
-    <p class="text-muted">لم يتم العثور على كتب مطابقة لبحثك</p>
-    <button class="btn btn-primary" (click)="resetSearch()">
-      إعادة تعيين البحث
-    </button>
-  </div>
+      <app-pagination [currentPage]="query.page" [totalPages]="totalPages" [totalItems]="result?.filteredCount"
+        [pageSize]="pageSize" label="صفحات نتائج الكتب" (pageChange)="onPageChange($event)"></app-pagination>
+    </ng-container>
+  </section>
 </div>
+
+<button *ngIf="showBackToTop" type="button" class="back-to-top btn btn-primary btn-icon" (click)="scrollToTop()"
+  aria-label="العودة إلى أعلى الصفحة والبحث">
+  <i class="fas fa-arrow-up" aria-hidden="true"></i>
+</button>

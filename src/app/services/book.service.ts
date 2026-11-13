@@ -2,7 +2,21 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { Book } from '../models/book.model';
+import { ApiArgs } from '../books/book-query';
 import { environment } from '../../environments/environment';
+
+export interface LocationSummary {
+  rooms: { room: string; count: number; walls: { wall: string; count: number }[] }[];
+  unassigned: number;
+}
+
+export interface BookPage {
+  books: Book[];
+  totalBooks: number;
+  filteredCount: number;
+  uniqueAuthors: number;
+  uniquePublishers: number;
+}
 
 @Injectable({
   providedIn: 'root'
@@ -37,12 +51,18 @@ export class BookService {
     params = params.set('page', page.toString());
     params = params.set('limit', limit.toString());
 
-    if (sortField) {
-      params = params.set('sortField', sortField);
-      params = params.set('sortDirection', sortDirection);
+    // The API sorts by shelf location (direction only) or by recency; sortField is not used by it.
+    params = params.set('sortDirection', sortDirection);
+    if (sortField === 'recent') {
+      params = params.set('sort', 'recent');
     }
 
     return this.http.get<any>(`${this.apiUrl}/books`, { params });
+  }
+
+  /** The book list: state from book-query.ts (toApiArgs) plus paging. */
+  getBooks(args: ApiArgs, page: number, limit: number): Observable<BookPage> {
+    return this.getAllBooks(args.query, args.searchTerm, page, limit, args.sort, args.sortDirection);
   }
 
   // Search books with simple query
@@ -128,18 +148,9 @@ export class BookService {
   //   return bookData;
   // }
 
-  // Get recent books
+  // Newest additions first (GET /books?sort=recent)
   getRecentBooks(limit: number = 8): Observable<Book[]> {
-    // Get books sorted by creation date (you might need to add this to backend)
-    return this.getAllBooks('', '', 1, limit, '_id', 'desc').pipe(
-      map(response => response.books)
-    );
-  }
-
-  // Get books by category
-  getBooksByCategory(categoryId: string): Observable<Book[]> {
-    const filters = [{ field: 'category', value: categoryId }];
-    return this.advancedSearch(filters).pipe(
+    return this.getAllBooks('', '', 1, limit, 'recent', 'desc').pipe(
       map(response => response.books)
     );
   }
@@ -171,20 +182,6 @@ export class BookService {
 
   createCategory(category: any): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/categories`, category);
-  }
-
-  // Get categories with book count
-  getCategoriesWithCount(): Observable<any[]> {
-    return this.getCategories().pipe(
-      map(categories => {
-        // For each category, we'd need to get count from backend
-        // This is a simplified version - you might want to add a specific endpoint
-        return categories.map(cat => ({
-          ...cat,
-          bookCount: 0 // You'll need to implement this in backend
-        }));
-      })
-    );
   }
 
   // ============== SUBJECT ROUTES ==============
@@ -244,6 +241,18 @@ export class BookService {
   // Get unique room numbers
   getUniqueRoomNumbers(): Observable<string[]> {
     return this.http.get<string[]>(`${this.apiUrl}/books/rooms`);
+  }
+
+  // What a bulk update would change: { count, sample: first 20 books } (read-only)
+  previewBulkUpdate(criteria: {
+    roomNumber?: string; wallNumber?: string; shelfNumber: string; bookNumberFrom: number; bookNumberTo: number;
+  }): Observable<{ count: number; sample: { _id: string; title: string; address: any; category?: string; subject?: string }[] }> {
+    return this.http.post<any>(`${this.apiUrl}/books/bulk-update-preview`, criteria);
+  }
+
+  // Books per room and stand, for the home page library map (GET /books/locations)
+  getLocationSummary(): Observable<LocationSummary> {
+    return this.http.get<LocationSummary>(`${this.apiUrl}/books/locations`);
   }
 
   // Get unique wall numbers for a room

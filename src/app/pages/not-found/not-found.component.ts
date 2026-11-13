@@ -41,6 +41,6 @@ export class NotFoundComponent {
   search(event: Event): void {
     event.preventDefault();
     const q = this.q.trim();
-    this.router.navigate(['/books'], q ? { queryParams: { search: q } } : {});
+    this.router.navigate(['/books'], q ? { queryParams: { q } } : {});
   }
 }

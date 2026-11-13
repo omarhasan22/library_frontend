@@ -1,173 +1,96 @@
 import { Component, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
-import { BookService } from '../../services/book.service';
+import { of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+import { TaxCategory, TaxonomyService } from '../../shared/services/taxonomy.service';
+import { normalizeArabic } from '../../shared/utils/arabic';
 
-interface Category {
-  _id: string;
-  title: string;
-  subjectsCount?: number;
-  subjects?: Subject[];
+interface CategoryView extends TaxCategory {
+  /** Subjects to show (all, or the ones matching the search). */
+  shownSubjects: TaxCategory['subjects'];
+  /** The category matched by its own title (vs. only through a subject). */
+  titleMatch: boolean;
 }
 
-interface Subject {
-  _id: string;
-  title: string;
-  categoryId?: string;
-  bookCount?: number;
-}
-
+/**
+ * /categories — every section (القسم) with its subjects (المواضيع) and book counts.
+ * Search filters sections and subjects instantly (Arabic-normalized: hamza/taa marbuta/diacritics).
+ */
 @Component({
   selector: 'app-categories',
   templateUrl: './categories.component.html',
   styleUrls: ['./categories.component.css']
 })
 export class CategoriesComponent implements OnInit {
-  categories: Category[] = [];
-  filteredCategories: Category[] = [];
-  categorySubjects: { [categoryId: string]: Subject[] } = {};
-  expandedCategories: { [categoryId: string]: boolean } = {};
-  loadingSubjects: { [categoryId: string]: boolean } = {};
-  searchTerm: string = '';
-  loading: boolean = false;
+  state: 'loading' | 'ok' | 'error' = 'loading';
+  hasCounts = false;
+  search = '';
+  open = new Set<string>();
+  private all: TaxCategory[] = [];
+  view: CategoryView[] = [];
 
-  constructor(
-    private bookService: BookService,
-    private router: Router
-  ) { }
+  constructor(private taxonomyService: TaxonomyService) {}
 
   ngOnInit(): void {
-    this.loadCategories();
+    this.load();
   }
 
-  loadCategories(): void {
-    this.loading = true;
-
-    // Load categories and get book counts
-    this.bookService.getCategories().subscribe(
-      async (categories) => {
-        // For each category, get the book count
-        // for (const category of categories) {
-        //   // Get books count for this category
-        //   const filters = [{ field: 'category', value: category._id }];
-        //   this.bookService.advancedSearch(filters, 1, 1).subscribe(
-        //     (response) => {
-        //       category.bookCount = response.filteredCount || 0;
-        //     }
-        //   );
-        // }
-
-        this.categories = categories;
-        this.filteredCategories = categories;
-        this.loading = false;
-      },
-      (error) => {
-        console.error('Error loading categories:', error);
-        this.loading = false;
-      }
-    );
+  load(): void {
+    this.state = 'loading';
+    this.taxonomyService.load().pipe(catchError(() => of(null))).subscribe(tax => {
+      if (!tax) { this.state = 'error'; return; }
+      this.hasCounts = tax.hasCounts;
+      this.all = [...tax.categories].sort((a, b) => (b.booksCount ?? 0) - (a.booksCount ?? 0) || a.title.localeCompare(b.title, 'ar'));
+      this.state = 'ok';
+      this.applySearch();
+    });
   }
 
-  toggleCategory(categoryId: string): void {
-
-    this.expandedCategories[categoryId] = !this.expandedCategories[categoryId];
-
-    // Load subjects if expanding and not already loaded
-    if (this.expandedCategories[categoryId] && !this.categorySubjects[categoryId]) {
-      this.loadSubjectsForCategory(categoryId);
-    }
-  }
-
-  loadSubjectsForCategory(categoryId: string): void {
-    this.loadingSubjects[categoryId] = true;
-
-    // Find the category to get its subjects
-    const category = this.categories.find(cat => cat._id === categoryId);
-
-    if (category && category.subjects) {
-      // Use subjects directly from category object
-      const categorySubjects = category.subjects || [];
-
-      // Get book count for each subject
-      // categorySubjects.forEach(subject => {
-      //   const filters = [
-      //     { field: 'category', value: categoryId },
-      //     { field: 'subject', value: subject._id }
-      //   ];
-
-      //   this.bookService.advancedSearch(filters, 1, 1).subscribe(
-      //     (response) => {
-      //       subject.bookCount = response.filteredCount || 0;
-      //     },
-      //     (error) => {
-      //       subject.bookCount = 0;
-      //     }
-      //   );
-      // });
-
-      this.categorySubjects[categoryId] = categorySubjects;
-      this.loadingSubjects[categoryId] = false;
-    } else {
-      // If no subjects in category, set empty array
-      this.categorySubjects[categoryId] = [];
-      this.loadingSubjects[categoryId] = false;
-    }
-  }
-  filterCategories(): void {
-    if (!this.searchTerm.trim()) {
-      this.filteredCategories = this.categories;
+  applySearch(): void {
+    const q = normalizeArabic(this.search);
+    if (!q) {
+      this.view = this.all.map(c => ({ ...c, shownSubjects: c.subjects, titleMatch: false }));
       return;
     }
-
-
-    const normalizedSearch = this.normalizeArabicText(this.searchTerm);
-
-    this.filteredCategories = this.categories.filter(category => {
-      const normalizedTitle = this.normalizeArabicText(category.title);
-      return normalizedTitle.includes(normalizedSearch);
-    });
+    this.view = this.all
+      .map(c => {
+        const titleMatch = normalizeArabic(c.title).includes(q);
+        const subjects = c.subjects.filter(s => normalizeArabic(s.title).includes(q));
+        return { ...c, shownSubjects: titleMatch ? c.subjects : subjects, titleMatch };
+      })
+      .filter(c => c.titleMatch || c.shownSubjects.length > 0);
+    // While searching, open the sections whose subjects matched, so the matches are visible.
+    this.open = new Set(this.view.filter(c => !c.titleMatch).map(c => c._id));
   }
 
-  resetSearch(): void {
-    this.searchTerm = '';
-    this.filteredCategories = this.categories;
+  clearSearch(): void {
+    this.search = '';
+    this.open.clear();
+    this.applySearch();
   }
 
-  navigateToCategory(categoryId: string, categoryTitle: string): void {
-
-    // Navigate to books page with category filter
-    this.router.navigate(['/books'], {
-      queryParams: {
-        category: categoryId,
-        categoryTitle: categoryTitle
-      }
-    });
+  toggle(id: string): void {
+    this.open.has(id) ? this.open.delete(id) : this.open.add(id);
   }
 
-  navigateToSubject(categoryId: string, subjectId: string, subjectTitle: string): void {
-    // Navigate to books page with both category and subject filters
-    this.router.navigate(['/books'], {
-      queryParams: {
-        category: categoryId,
-        // subject: subjectId,
-        subjectTitle: subjectTitle
-      }
-    });
+  get totalBooks(): number {
+    return this.all.reduce((n, c) => n + (c.booksCount ?? 0), 0);
   }
 
-  private normalizeArabicText(text: string): string {
-    if (!text) return '';
-
-    return text
-      .replace(/[\u064B-\u0652\u0670\u0640]/g, '') // Remove diacritics
-      .replace(/[\u0622\u0623\u0625\u0627]/g, 'ا') // Normalize alef
-      .replace(/\u0649/g, 'ي') // Normalize alef maksura
-      .replace(/\u0629/g, 'ه') // Normalize taa marbouta
-      .replace(/[\u0654\u0655]/g, '') // Remove hamza
-      .replace(/\u0624/g, 'و') // Normalize waw with hamza
-      .replace(/\u0626/g, 'ي') // Normalize ya with hamza
-      .replace(/\u0621/g, '') // Remove standalone hamza
-      .replace(/\s+/g, ' ')
-      .trim()
-      .toLowerCase();
+  /** Splits text around the search match for highlighting. */
+  parts(text: string): { text: string; hit: boolean }[] {
+    const q = normalizeArabic(this.search);
+    if (!q) return [{ text, hit: false }];
+    // Match on the normalized text, then map back by position (normalization keeps length for most letters).
+    const norm = normalizeArabic(text);
+    const i = norm.indexOf(q);
+    if (i < 0 || norm.length !== text.trim().replace(/\s+/g, ' ').length) return [{ text, hit: false }];
+    const t = text.trim().replace(/\s+/g, ' ');
+    return [
+      { text: t.slice(0, i), hit: false },
+      { text: t.slice(i, i + q.length), hit: true },
+      { text: t.slice(i + q.length), hit: false }
+    ].filter(p => p.text);
   }
+
+  trackById = (_: number, c: { _id: string }) => c._id;
 }
