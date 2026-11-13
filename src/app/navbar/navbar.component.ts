@@ -115,8 +115,10 @@ export class NavbarComponent implements OnInit, OnDestroy {
     main?.scrollIntoView();
   }
 
-  @HostListener('document:click', ['$event'])
-  onDocumentClick(event: MouseEvent): void {
+  // pointerdown, not click: iOS Safari doesn't send a click to the document for taps on plain
+  // (non-clickable) content, so a click listener left the menu open after an outside tap.
+  @HostListener('document:pointerdown', ['$event'])
+  onDocumentClick(event: Event): void {
     if (!this.openMenu) return;
     const menu = this.host.nativeElement.querySelector(`[data-menu="${this.openMenu}"]`);
     if (menu && !menu.contains(event.target as Node)) this.openMenu = null;

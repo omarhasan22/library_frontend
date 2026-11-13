@@ -70,6 +70,20 @@
 .menu__panel--end { inset-inline-start: auto; inset-inline-end: 0; }
 .menu__panel[hidden] { display: none; }
 
+/* Phones: the account button sits mid-bar, so a panel hung from it ran past the screen edge.
+   Hang the panels from the header bar instead, inside the page gutter. */
+@media (max-width: 991.98px) {
+  .app-header__bar { position: relative; }
+  .menu { position: static; }
+  .menu__panel,
+  .menu__panel--end {
+    top: calc(100% - 4px);
+    inset-inline-start: auto;
+    inset-inline-end: var(--gutter);
+    max-width: calc(100vw - 2 * var(--gutter));
+  }
+}
+
 .menu__link {
   display: flex;
   align-items: center;
@@ -154,8 +168,14 @@
 
 /* ---------- Mobile panel ---------- */
 .mobile-nav {
+  /* 100vh on phones is the height with the browser toolbars hidden, so the last links
+     (شاشة العرض among them) ended up behind the toolbar and could not be tapped.
+     dvh is the height actually visible; vh stays as the fallback for older browsers. */
   max-height: calc(100vh - var(--header-h));
+  max-height: calc(100dvh - var(--header-h));
   overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
   padding: 12px 0 16px;
   border-top: 1px solid var(--line);
   background: var(--surface);

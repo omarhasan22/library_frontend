@@ -1,10 +1,9 @@
 /* Brand: teal #209C90, grey #929393 */
 
 .display-admin {
-  min-height: 100vh;
-  padding: 110px 0 60px; /* fixed navbar */
+  /* The site header is sticky (in the flow), so no offset is needed for it. */
+  padding: 32px 0 60px;
   background: #F2F7F6;
-  font-family: 'Cairo', 'Tajawal', sans-serif;
   color: #22403D;
 }
 
@@ -390,13 +389,16 @@
   justify-content: center;
   padding: 24px;
   background: rgba(6, 28, 26, 0.6);
+  overscroll-behavior: contain;
 }
 
 .editor {
   display: flex;
   flex-direction: column;
   width: min(1320px, 100%);
-  max-height: calc(100vh - 48px);
+  /* 100% of the fixed backdrop = the part of the screen actually visible. (100vh on phones
+     ignores the browser toolbars, which pushed the close button and Save off-screen.) */
+  max-height: 100%;
   overflow: hidden;
   border-radius: 18px;
   background: #ffffff;
@@ -433,7 +435,10 @@
 }
 
 .editor-body {
+  flex: 1 1 auto;
+  min-height: 0;
   overflow: auto;
+  overscroll-behavior: contain;
   padding: 20px 22px;
 }
 
@@ -698,27 +703,42 @@
   top: 14px;
   left: 50%;
   transform: translateX(-50%);
+  max-width: calc(100% - 32px);
   padding: 6px 16px;
   border-radius: 999px;
   background: rgba(0, 0, 0, 0.6);
   color: #ffffff;
   font-size: 0.85rem;
+  text-align: center;
+}
+
+/* Touch screens have no Esc key: say "tap anywhere" only. */
+.hint-touch { display: none; }
+
+@media (pointer: coarse) {
+  .hint-keys { display: none; }
+  .hint-touch { display: inline; }
 }
 
 /* ---------- Toast ---------- */
 
 .toast-msg {
   position: fixed;
-  bottom: 24px;
+  bottom: calc(24px + env(safe-area-inset-bottom, 0px));
   left: 50%;
   z-index: 2600;
   transform: translateX(-50%);
+  width: max-content;
+  max-width: calc(100% - 32px);
   padding: 12px 22px;
   border-radius: 12px;
   background: #17675F;
   color: #ffffff;
   font-weight: 600;
+  text-align: center;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  /* A message, not a control: taps go through to the buttons underneath (e.g. the editor's Save). */
+  pointer-events: none;
 }
 
 .toast-msg.error {
@@ -736,17 +756,82 @@
   }
 }
 
-@media (max-width: 575.98px) {
-  .display-admin {
-    padding-top: 90px;
+/* Finger-sized tap targets on touch screens. */
+@media (pointer: coarse) {
+  .icon-buttons {
+    gap: 6px;
   }
 
+  .icon-buttons button {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .display-admin {
+    padding-top: 20px;
+  }
+
+  /* Header buttons share the full width instead of leaving a ragged row. */
+  .head-actions {
+    width: 100%;
+  }
+
+  .head-actions .btn {
+    flex: 1 1 auto;
+  }
+
+  .panel {
+    padding: 16px;
+  }
+
+  /* iOS zooms into inputs under 16px when they are focused. */
+  .ltr-group .form-control {
+    font-size: 1rem;
+  }
+
+  /* The editor becomes a full-screen sheet. */
   .editor-backdrop {
     padding: 0;
+    align-items: stretch;
   }
 
   .editor {
-    max-height: 100vh;
+    height: 100%;
     border-radius: 0;
+  }
+
+  .editor-head {
+    padding: 10px 16px;
+  }
+
+  .editor-head h4 {
+    font-size: 1.25rem;
+  }
+
+  .editor-body {
+    padding: 16px;
+  }
+
+  .editor-foot {
+    gap: 8px;
+    padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .editor-foot .btn {
+    flex: 1 1 auto;
+  }
+
+  .editor-error {
+    flex-basis: 100%;
+  }
+}
+
+/* Very narrow phones: one date per row, or the date picker text is cut off. */
+@media (max-width: 379.98px) {
+  .date-col {
+    flex: 0 0 100%;
+    max-width: 100%;
   }
 }

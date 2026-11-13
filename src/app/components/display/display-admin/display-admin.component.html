@@ -286,13 +286,13 @@
                 <span class="switch-label">{{ ed.slide.isActive ? 'مفعّلة' : 'معطّلة' }}</span>
               </label>
             </div>
-            <div class="col-6">
-              <label class="form-label">تبدأ في <span class="muted">(اختياري)</span></label>
-              <input type="date" class="form-control" [(ngModel)]="ed.slide.startDate">
+            <div class="col-6 date-col">
+              <label class="form-label" for="slide-start">تبدأ في <span class="muted">(اختياري)</span></label>
+              <input id="slide-start" type="date" class="form-control" [(ngModel)]="ed.slide.startDate">
             </div>
-            <div class="col-6">
-              <label class="form-label">تنتهي في <span class="muted">(اختياري)</span></label>
-              <input type="date" class="form-control" [(ngModel)]="ed.slide.endDate">
+            <div class="col-6 date-col">
+              <label class="form-label" for="slide-end">تنتهي في <span class="muted">(اختياري)</span></label>
+              <input id="slide-end" type="date" class="form-control" [(ngModel)]="ed.slide.endDate">
             </div>
           </div>
         </div>
@@ -328,7 +328,10 @@
     <app-display-stage>
       <app-display-slide [slide]="preview.slide" [imageUrl]="preview.imageUrl" [hijriOffset]="settings.hijriOffset" [animate]="true"></app-display-slide>
     </app-display-stage>
-    <div class="full-hint">انقر في أي مكان أو اضغط Esc للإغلاق</div>
+    <div class="full-hint">
+      <span class="hint-keys">انقر في أي مكان أو اضغط Esc للإغلاق</span>
+      <span class="hint-touch">اضغط في أي مكان للإغلاق</span>
+    </div>
   </div>
 
   <div class="toast-msg" *ngIf="toast" [class.error]="toastError">{{ toast }}</div>

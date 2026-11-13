@@ -365,8 +365,9 @@ export class BookListComponent implements OnInit, OnDestroy {
   trackById = (_: number, b: Book) => b._id;
   trackByLabel = (_: number, c: Chip) => c.label;
 
-  @HostListener('document:click', ['$event'])
-  closeColumns(event: MouseEvent): void {
+  // pointerdown: iOS Safari sends no document click for taps on plain content.
+  @HostListener('document:pointerdown', ['$event'])
+  closeColumns(event: Event): void {
     if (!this.columnsOpen) return;
     const menu = this.host.nativeElement.querySelector('.columns-menu');
     if (menu && !menu.contains(event.target as Node)) this.columnsOpen = false;
