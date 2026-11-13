@@ -7,7 +7,7 @@
     <div class="book-content">
       <div *ngIf="loading" class="loader-overlay">
         <div class="spinner-border text-primary" role="status">
-          <span class="sr-only">Loading...</span>
+          <span class="visually-hidden">Loading...</span>
         </div>
         <p>جاري المعالجة...</p>
       </div>
@@ -99,7 +99,7 @@
         <!-- Wall Number -->
         <div class="form-section" *ngIf="roomNumber">
           <div class="form-section-title">
-            <i class="fas fa-wall"></i>
+            <i class="fas fa-border-all"></i>
             الحائط
           </div>
           <select class="form-control" [(ngModel)]="wallNumber" name="wallNumber">

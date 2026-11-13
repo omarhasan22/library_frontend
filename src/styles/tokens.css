@@ -1,0 +1,80 @@
+/*
+ * Design tokens — مركز المصطفى library.
+ * Palette derived from the logo (teal #209C90, gray #929393). Every text pairing below meets WCAG AA
+ * (4.5:1) on --surface and --surface-page; --brand-500 and --gold-600 are for large text, icons and
+ * decoration only. Names are semantic so a dark theme can later redefine them in one place.
+ */
+:root {
+  /* Brand */
+  --brand-800: #0e4a44;
+  --brand-700: #12635b;   /* hover / pressed */
+  --brand-600: #177a70;   /* buttons, links, focus (5.2:1 on white) */
+  --brand-500: #209c90;   /* logo teal: large accents only (3.4:1) */
+  --brand-200: #a8dcd4;
+  --brand-100: #cdebe6;
+  --brand-50: #e8f5f3;    /* selected rows, chips, subtle fills */
+  --gold-600: #a87b22;    /* decorative highlight only */
+  --gold-50: #fbf5e8;
+
+  /* Neutrals (warm gray, from the logo's gray) */
+  --ink-900: #1f2324;     /* body text */
+  --ink-700: #3a3f41;
+  --ink-600: #5c6163;     /* secondary text (5.9:1 on page) */
+  --ink-500: #6b7072;     /* placeholders, meta (4.7:1 on page) */
+  --ink-400: #878c8e;     /* input borders (3.2:1 — WCAG 1.4.11) */
+  --line-strong: #cdd2cf;
+  --line: #e3e6e4;        /* dividers, card borders */
+  --surface-page: #f7f8f7;
+  --surface: #ffffff;
+  --surface-sunken: #f0f2f1;
+
+  /* Semantic */
+  --danger-700: #7a1a12;
+  --danger-600: #b42318;
+  --danger-100: #fbd9d5;
+  --danger-50: #fef3f2;
+  --warning-700: #6b4a00;
+  --warning-600: #9a6700;
+  --warning-100: #f8e3b0;
+  --warning-50: #fff8e6;
+  --success-700: #14532d;
+  --success-600: #1a7f37;
+  --success-100: #cfe9d6;
+  --success-50: #edf7ef;
+  --info-700: #1d3f8a;
+  --info-600: #175cd3;
+  --info-100: #d1e0ff;
+  --info-50: #eff4ff;
+
+  /* Type */
+  --font-ui: 'IBM Plex Sans Arabic', system-ui, 'Segoe UI', Tahoma, Arial, sans-serif;
+  --fs-xs: 0.8125rem;   /* 13 */
+  --fs-sm: 0.875rem;    /* 14 */
+  --fs-md: 1rem;        /* 16 */
+  --fs-lg: 1.125rem;    /* 18 */
+  --fs-xl: 1.375rem;    /* 22 */
+  --fs-2xl: 1.75rem;    /* 28 */
+  --fs-3xl: 2.25rem;    /* 36 */
+  --lh-tight: 1.35;
+  --lh-body: 1.7;       /* Arabic needs room for dots and marks */
+
+  /* Shape, depth, layout */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-pill: 999px;
+  --shadow-1: 0 1px 2px rgba(31, 35, 36, 0.05), 0 1px 3px rgba(31, 35, 36, 0.07);
+  --shadow-2: 0 10px 28px rgba(31, 35, 36, 0.14), 0 2px 6px rgba(31, 35, 36, 0.06);
+  --focus-ring: 0 0 0 3px rgba(23, 122, 112, 0.35);
+  --header-h: 64px;
+  --container-max: 1280px;
+  --gutter: 16px;
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+  --dur: 160ms;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --gutter: 24px;
+  }
+}

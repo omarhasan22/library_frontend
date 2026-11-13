@@ -51,8 +51,8 @@ const routes: Routes = [
 @NgModule({
   imports: [RouterModule.forRoot(routes, {
     scrollPositionRestoration: 'enabled',
-    anchorScrolling: 'enabled',
-    scrollOffset: [0, 64] // Offset for fixed navbar
+    anchorScrolling: 'enabled'
+    // The sticky header offset is handled in CSS: html { scroll-padding-top } (src/styles/base.css).
   })],
   exports: [RouterModule]
 })

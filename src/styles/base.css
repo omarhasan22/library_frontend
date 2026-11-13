@@ -1,0 +1,172 @@
+/*
+ * Base layer: typography, focus, motion, and a few layout primitives shared by every page.
+ * Component styles stay in their components; anything used by two or more pages lives here.
+ */
+html {
+  scroll-padding-top: calc(var(--header-h) + 16px);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--font-ui);
+  background-color: var(--surface-page);
+  color: var(--ink-900);
+  line-height: var(--lh-body);
+  text-align: start;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3, h4, h5, h6,
+.h1, .h2, .h3, .h4, .h5, .h6 {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  line-height: var(--lh-tight);
+  color: var(--ink-900);
+  /* Arabic letters join: never track or uppercase them. */
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+p { line-height: var(--lh-body); }
+
+a { text-underline-offset: 0.2em; }
+a:hover { text-decoration: underline; }
+.btn:hover, .nav-link:hover, .dropdown-item:hover, .page-link:hover { text-decoration: none; }
+
+::selection { background: var(--brand-100); color: var(--ink-900); }
+
+/* Numbers line up in tables and location codes. */
+table, .tabular, .location, .stat-value { font-variant-numeric: tabular-nums; }
+
+/* ---------- Focus: always visible for keyboard users ---------- */
+:focus-visible {
+  outline: 2px solid var(--brand-600);
+  outline-offset: 2px;
+}
+.btn:focus-visible,
+.page-link:focus-visible,
+.dropdown-item:focus-visible,
+.nav-link:focus-visible {
+  outline: 2px solid var(--brand-600);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+.form-control:focus-visible,
+.form-select:focus-visible,
+.form-check-input:focus-visible {
+  outline: none; /* these show the border + ring instead */
+}
+
+/* ---------- Skip link ---------- */
+.skip-link {
+  position: absolute;
+  inset-inline-start: 12px;
+  top: -100px;
+  z-index: 2000;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-sm);
+  background: var(--brand-600);
+  color: #fff;
+  font-weight: 600;
+}
+.skip-link:focus {
+  top: 12px;
+  color: #fff;
+}
+
+/* ---------- Layout primitives ---------- */
+.app-container {
+  width: 100%;
+  max-width: var(--container-max);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+/* Standard page rhythm under the sticky header. */
+.page {
+  padding-block: 24px 48px;
+}
+@media (min-width: 768px) {
+  .page { padding-block: 32px 64px; }
+}
+
+/* White panel: the one card style used across pages. */
+.surface {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-1);
+}
+.surface-pad { padding: 16px; }
+@media (min-width: 768px) {
+  .surface-pad { padding: 24px; }
+}
+
+.section-title {
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  margin: 0 0 12px;
+}
+
+.text-ink-600 { color: var(--ink-600) !important; }
+.fw-medium { font-weight: 500 !important; }
+.fw-semibold { font-weight: 600 !important; }
+
+/* Chips: filters, tags, selected values. */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  max-width: 100%;
+  padding: 0.25rem 0.75rem;
+  border: 1px solid var(--brand-100);
+  border-radius: var(--radius-pill);
+  background: var(--brand-50);
+  color: var(--brand-800);
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+a.chip:hover { background: var(--brand-100); text-decoration: none; color: var(--brand-800); }
+.chip-neutral { border-color: var(--line); background: var(--surface-sunken); color: var(--ink-700); }
+.chip .chip-remove {
+  display: inline-grid;
+  place-items: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  margin-inline-end: -0.375rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+}
+.chip .chip-remove:hover { background: rgba(14, 74, 68, 0.12); }
+
+/* Icon-only buttons: square, labelled with aria-label in templates. */
+.btn-icon {
+  --bs-btn-padding-x: 0;
+  --bs-btn-padding-y: 0;
+  width: 2.25rem;
+  height: 2.25rem;
+  flex: none;
+}
+.btn-icon.btn-sm { width: 2rem; height: 2rem; }
+
+/* ---------- Motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ---------- Print: the catalogue prints as plain text ---------- */
+@media print {
+  .app-header, .app-footer, .no-print { display: none !important; }
+  body { background: #fff; }
+}

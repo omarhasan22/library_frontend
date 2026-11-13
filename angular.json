@@ -32,11 +32,16 @@
               }
             ],
             "styles": [
-              "src/styles.css",
-              "src/assets/css/styles.css"
+              "node_modules/bootstrap/dist/css/bootstrap.rtl.min.css",
+              "node_modules/@fortawesome/fontawesome-free/css/fontawesome.min.css",
+              "node_modules/@fortawesome/fontawesome-free/css/solid.min.css",
+              "src/styles/tokens.css",
+              "src/styles/bootstrap-overrides.css",
+              "src/styles/base.css",
+              "src/styles.css"
             ],
             "scripts": [
-              "src/assets/js/scripts.js"
+              "node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"
             ]
           },
           "configurations": {
@@ -103,8 +108,13 @@
               "src/assets"
             ],
             "styles": [
-              "src/styles.css",
-              "src/assets/css/styles.css"
+              "node_modules/bootstrap/dist/css/bootstrap.rtl.min.css",
+              "node_modules/@fortawesome/fontawesome-free/css/fontawesome.min.css",
+              "node_modules/@fortawesome/fontawesome-free/css/solid.min.css",
+              "src/styles/tokens.css",
+              "src/styles/bootstrap-overrides.css",
+              "src/styles/base.css",
+              "src/styles.css"
             ],
             "scripts": []
           }
