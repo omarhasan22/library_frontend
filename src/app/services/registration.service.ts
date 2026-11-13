@@ -23,21 +23,14 @@ export class RegistrationService {
   constructor(private http: HttpClient) { }
 
   register(email: string, username: string, password: string): Observable<RegistrationResponse> {
-    console.log('Attempting to register user:', { email, username });
-
     const payload = {
       email: email.toLowerCase().trim(),
       username: username.trim(),
       password
     };
-    console.log('Registration payload:', payload);
 
     return this.http.post<RegistrationResponse>(`${this.baseUrl}/auth/register`, payload)
       .pipe(
-        map(response => {
-          console.log('Registration successful:', response);
-          return response;
-        }),
         catchError(this.handleError)
       );
   }
@@ -49,19 +42,19 @@ export class RegistrationService {
       // Client-side error
       errorMessage = `Error: ${error.error.message}`;
     } else {
-      // Server-side error
+      // Server-side error (the API replies with { error: '...' })
+      const serverMessage = error.error?.error || error.error?.message;
       if (error.status === 409) {
         errorMessage = 'User with this email or username already exists';
       } else if (error.status === 400) {
-        errorMessage = error.error?.message || 'Invalid registration data';
+        errorMessage = serverMessage || 'Invalid registration data';
       } else if (error.status === 0) {
         errorMessage = 'Cannot connect to server. Please check your internet connection';
       } else {
-        errorMessage = error.error?.message || `Server error: ${error.status}`;
+        errorMessage = serverMessage || `Server error: ${error.status}`;
       }
     }
 
-    console.error('Registration error:', errorMessage);
     return throwError(() => new Error(errorMessage));
   }
 }

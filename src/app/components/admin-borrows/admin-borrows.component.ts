@@ -38,16 +38,10 @@ export class AdminBorrowsComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-    // Temporarily load without admin check for testing
-    this.isAdmin = true;
+    // The route's adminGuard has already checked the role (and the API enforces it).
+    this.isAdmin = this.authService.isAdmin();
     this.loadBorrows();
     this.loadStatistics();
-
-    // Check if user is admin
-    this.authService.currentUser$.subscribe(user => {
-      console.log('AdminBorrows - Current user:', user);
-      console.log('AdminBorrows - User role:', user?.role);
-    });
   }
 
   loadBorrows(): void {

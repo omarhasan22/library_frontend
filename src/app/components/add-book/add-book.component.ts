@@ -1,4 +1,4 @@
-import { Component, EventEmitter, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, HostListener, OnInit, Output } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { BookService } from '../../services/book.service';
 import { Book } from '../../models/book.model';
@@ -119,14 +119,16 @@ export class AddBookComponent implements OnInit {
     if (this.isEditMode && this.bookId) {
       this.loadBookForEdit(this.bookId);
     }
+  }
 
-    // Add click listener to close dropdowns when clicking outside
-    document.addEventListener('click', (event) => {
-      const target = event.target as HTMLElement;
-      if (!target.closest('.search-dropdown-container')) {
-        this.closeAllDropdowns();
-      }
-    });
+  // Close dropdowns when clicking outside. (HostListener is removed with the component;
+  // document.addEventListener leaked a listener, and the component, on every visit.)
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    const target = event.target as HTMLElement | null;
+    if (!target?.closest('.search-dropdown-container')) {
+      this.closeAllDropdowns();
+    }
   }
 
   loadBookForEdit(bookId: string): void {
@@ -653,7 +655,6 @@ export class AddBookComponent implements OnInit {
   // --- Prepare Payload (shared between add and update) ---
   private preparePayload(): any {
     const payload: any = { ...this.newBook };
-    console.log('Payload before processing:', payload);
 
     // Clean up temporary _id if new items were added without an _id from the backend
     payload.authors = payload.authors.map((p: any) => p._id ? p._id : { name: p.name });
@@ -685,8 +686,19 @@ export class AddBookComponent implements OnInit {
 
   // --- Add or Update Book Submission ---
   addBook(): void {
-    this.loading = true;
     const payload = this.preparePayload();
+
+    // The database requires a title and a category; say so instead of a generic failure.
+    if (!String(payload.title ?? '').trim()) {
+      alert('يرجى إدخال عنوان الكتاب');
+      return;
+    }
+    if (!payload.category) {
+      alert('يرجى اختيار التصنيف');
+      return;
+    }
+
+    this.loading = true;
 
     if (this.isEditMode && this.bookId) {
       // Update existing book
@@ -698,7 +710,7 @@ export class AddBookComponent implements OnInit {
         },
         error: (err) => {
           console.error('Error updating book:', err);
-          alert('فشل في تحديث الكتاب. يرجى التحقق من المدخلات والمحاولة مرة أخرى.');
+          alert(err?.error?.error || 'فشل في تحديث الكتاب. يرجى التحقق من المدخلات والمحاولة مرة أخرى.');
           this.loading = false;
         }
       });
@@ -728,7 +740,7 @@ export class AddBookComponent implements OnInit {
             numberOfFolders: 1,
             publishers: [],
             editionNumber: 1,
-            publicationYear: 1,
+            // (was publicationYear: 1, so every following book defaulted to the year 1)
             pageCount: 1,
             address: {
               roomNumber: addedBook.address.roomNumber,
@@ -756,7 +768,7 @@ export class AddBookComponent implements OnInit {
         },
         error: (err) => {
           console.error('Error adding book:', err);
-          alert('فشل في إضافة الكتاب. يرجى التحقق من المدخلات والمحاولة مرة أخرى.');
+          alert(err?.error?.error || 'فشل في إضافة الكتاب. يرجى التحقق من المدخلات والمحاولة مرة أخرى.');
           this.loading = false;
         }
       });

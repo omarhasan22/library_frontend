@@ -4,7 +4,7 @@ import { BookService } from '../../services/book.service';
 import { Book } from '../../models/book.model';
 import { AuthService } from '../../services/auth.service';
 import { Subject, Subscription } from 'rxjs';
-import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { debounceTime } from 'rxjs/operators';
 
 @Component({
   selector: 'app-book-list',
@@ -51,6 +51,11 @@ export class BookListComponent implements OnInit, OnDestroy, AfterViewInit {
 
   // Flag to prevent recursive calls
   private isLoadingBooks = false;
+  // In-flight request (cancelled when a newer one starts) and the parameters of the last request,
+  // so the URL update that follows a load doesn't fire the same request a second time.
+  private loadSubscription?: Subscription;
+  private queryParamsSubscription?: Subscription;
+  private lastLoadKey = '';
 
   // Scroll retry counter
   private scrollRetries = 0;
@@ -100,17 +105,14 @@ export class BookListComponent implements OnInit, OnDestroy, AfterViewInit {
   ngOnInit(): void {
     // Subscribe to user changes to check admin status
     this.authSubscription = this.authService.currentUser$.subscribe((user: any) => {
-      console.log('BookList - Current user:', user);
-      console.log('BookList - User role:', user?.role);
-      this.isAdmin = user?.role == 'admin';
-      console.log('BookList - Is admin:', this.isAdmin);
+      this.isAdmin = user?.role === 'admin';
     });
 
-    // Setup debounced search
+    // Setup debounced search. (No distinctUntilChanged: this Subject emits `undefined` every
+    // time, so it used to drop every trigger after the first - sorting only worked once.)
     this.searchSubscription = this.searchSubject
       .pipe(
-        debounceTime(300), // Wait 300ms after the last search trigger
-        distinctUntilChanged()
+        debounceTime(300) // Wait 300ms after the last search trigger
       )
       .subscribe(() => {
         this.loadBooks();
@@ -154,6 +156,8 @@ export class BookListComponent implements OnInit, OnDestroy, AfterViewInit {
     if (this.authSubscription) {
       this.authSubscription.unsubscribe();
     }
+    this.loadSubscription?.unsubscribe();
+    this.queryParamsSubscription?.unsubscribe();
   }
 
   // Helper methods for UTF-8 safe base64 encoding/decoding
@@ -200,24 +204,13 @@ export class BookListComponent implements OnInit, OnDestroy, AfterViewInit {
   // }
 
   loadQueryParams(): void {
-    this.route.queryParams.subscribe(params => {
-      console.log("params ", params);
-
-      // Skip if we're already loading books (prevent recursive calls)
-      if (this.isLoadingBooks) {
-        return;
-      }
-
+    this.queryParamsSubscription = this.route.queryParams.subscribe(params => {
       // Initialize search filters array
       this.searchFilters = [];
 
-      // Check if page parameter exists
-      if (params['page']) {
-        const page = parseInt(params['page'], 10);
-        if (page >= 1) {
-          this.currentPage = page;
-        }
-      }
+      // No page param means page 1 (pages are written as page=null for the first page)
+      const page = parseInt(params['page'], 10);
+      this.currentPage = page >= 1 ? page : 1;
 
       // Check if advanced filters are in URL (base64 encoded JSON)
       if (params['filters']) {
@@ -263,7 +256,6 @@ export class BookListComponent implements OnInit, OnDestroy, AfterViewInit {
           });
         }
       }
-      console.log("this.searchFilters", this.searchFilters);
 
       // Load books if there are filters OR if page parameter exists
       if (this.searchFilters.length > 0 || params['page']) {
@@ -273,14 +265,6 @@ export class BookListComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   loadBooks(): void {
-    // Prevent recursive calls
-    if (this.isLoadingBooks) {
-      return;
-    }
-
-    this.isLoadingBooks = true;
-    this.loading = true;
-
     // trim and take only filters with a non-empty value
     const filters = this.searchFilters
       .map(f => ({ ...f, value: (f.value ?? '').toString().trim() }))
@@ -288,15 +272,23 @@ export class BookListComponent implements OnInit, OnDestroy, AfterViewInit {
 
     // Determine if this is advanced search
     // Advanced search: multiple filters OR single filter that's not 'all' field
-    console.log("filters ", filters);
-
     const isAdvanced = filters.length > 1 ||
       (filters.length === 1 && filters[0].field !== 'all' && filters[0].value !== '');
 
     const query = isAdvanced ? 'advanced' : '';
     const searchTerm = isAdvanced ? JSON.stringify(filters) : this.simpleSearchTerm.trim();
 
-    console.log('Search details:', { isAdvanced, query, searchTerm, filters });
+    // Same request as the one already made/in flight (e.g. triggered by our own URL update): skip it.
+    const loadKey = JSON.stringify([query, searchTerm, this.currentPage, this.itemsPerPage, this.sortField, this.sortDirection]);
+    if (loadKey === this.lastLoadKey) {
+      return;
+    }
+    this.lastLoadKey = loadKey;
+
+    // A newer request replaces an older one still in flight (its response would be stale).
+    this.loadSubscription?.unsubscribe();
+    this.isLoadingBooks = true;
+    this.loading = true;
 
     // Save only the active/trimmed filters
     if (filters.length > 0) {
@@ -306,7 +298,7 @@ export class BookListComponent implements OnInit, OnDestroy, AfterViewInit {
     }
 
     // Make the API call first
-    this.bookService.getAllBooks(query, searchTerm, this.currentPage, this.itemsPerPage, this.sortField, this.sortDirection)
+    this.loadSubscription = this.bookService.getAllBooks(query, searchTerm, this.currentPage, this.itemsPerPage, this.sortField, this.sortDirection)
       .subscribe(
         (res) => {
           this.books = res.books;
@@ -353,6 +345,7 @@ export class BookListComponent implements OnInit, OnDestroy, AfterViewInit {
           console.error('Error loading books', error);
           this.loading = false;
           this.isLoadingBooks = false;
+          this.lastLoadKey = ''; // allow retrying the same request
           alert('حدث خطأ في تحميل الكتب. يرجى المحاولة مرة أخرى.');
         }
       );
@@ -578,6 +571,7 @@ export class BookListComponent implements OnInit, OnDestroy, AfterViewInit {
         () => {
           // Remove the book from the local array instead of reloading
           this.books = this.books.filter(book => book._id !== id);
+          this.lastLoadKey = ''; // data changed: the next load must not be skipped
 
           // Update statistics
           this.filteredCount = Math.max(0, this.filteredCount - 1);
@@ -723,6 +717,10 @@ export class BookListComponent implements OnInit, OnDestroy, AfterViewInit {
     }
 
     return value !== undefined && value !== null ? value : '—';
+  }
+
+  trackById(_index: number, item: { _id?: string }): string | undefined {
+    return item._id;
   }
 
   getNames(list?: { name?: string }[]): string {

@@ -47,18 +47,16 @@ export class UserProfileComponent implements OnInit {
                email: user.email
             });
          },
-         error: (error) => {
-            console.error('Failed to load profile, using cached data:', error);
-            // Fallback to cached user data
-            this.authService.currentUser$.subscribe(user => {
-               if (user) {
-                  this.currentUser = user;
-                  this.profileForm.patchValue({
-                     username: user.username,
-                     email: user.email
-                  });
-               }
-            });
+         error: () => {
+            // Fallback to cached user data (a one-off read, not a subscription that outlives the page)
+            const user = this.authService.currentUser;
+            if (user) {
+               this.currentUser = user;
+               this.profileForm.patchValue({
+                  username: user.username,
+                  email: user.email
+               });
+            }
          }
       });
    }
@@ -68,10 +66,16 @@ export class UserProfileComponent implements OnInit {
       const confirmPassword = form.get('confirmPassword');
 
       if (newPassword && confirmPassword && newPassword.value !== confirmPassword.value) {
-         confirmPassword.setErrors({ passwordMismatch: true });
+         confirmPassword.setErrors({ ...(confirmPassword.errors || {}), passwordMismatch: true });
          return { passwordMismatch: true };
       }
 
+      // Passwords match again: clear the mismatch error we set (it was never removed before,
+      // so the form stayed invalid until the confirmation was retyped).
+      if (confirmPassword?.hasError('passwordMismatch')) {
+         const { passwordMismatch, ...rest } = confirmPassword.errors || {};
+         confirmPassword.setErrors(Object.keys(rest).length ? rest : null);
+      }
       return null;
    }
 

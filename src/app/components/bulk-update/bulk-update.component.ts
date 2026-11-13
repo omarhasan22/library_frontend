@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, HostListener, OnInit } from '@angular/core';
 import { BookService } from '../../services/book.service';
 import { SubjectCategory } from '../../models/subject.model';
 import { Category } from '../../models/category.model';
@@ -76,14 +76,16 @@ export class BulkUpdateComponent implements OnInit {
   ngOnInit(): void {
     this.loadInitialData();
     this.loadHistory();
-    
-    // Close dropdowns when clicking outside
-    document.addEventListener('click', (event) => {
-      const target = event.target as HTMLElement;
-      if (!target.closest('.search-dropdown-container')) {
-        this.closeAllDropdowns();
-      }
-    });
+  }
+
+  // Close dropdowns when clicking outside. (HostListener is removed with the component;
+  // document.addEventListener leaked a listener, and the component, on every visit.)
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    const target = event.target as HTMLElement | null;
+    if (!target?.closest('.search-dropdown-container')) {
+      this.closeAllDropdowns();
+    }
   }
 
   onUpdateTypeChange(): void {
@@ -381,13 +383,14 @@ export class BulkUpdateComponent implements OnInit {
           this.undoData = result.undoData;
         }
         
-        // Reset form
+        // Reset form, and show the new entry in the history list
         this.resetForm();
+        this.loadHistory();
       },
       error: (err) => {
         this.loading = false;
         this.showConfirmationDialog = false;
-        const errorMsg = err.error?.error || 'حدث خطأ في تحديث الكتب';
+        const errorMsg = String(err.error?.error || 'حدث خطأ في تحديث الكتب');
         
         // Check if error message indicates automatic rollback
         if (errorMsg.includes('rollback')) {
@@ -416,8 +419,10 @@ export class BulkUpdateComponent implements OnInit {
     this.availableWalls = [];
   }
 
+  // Undo only needs the history record id (the server works out subject vs category), so it also
+  // works for entries picked from the history list after a reload, not just the latest update.
   showUndoDialog(): void {
-    if (!this.undoData) {
+    if (!this.currentHistoryId) {
       this.errorMessage = 'لا توجد بيانات للتراجع';
       return;
     }

@@ -3,7 +3,7 @@
   <div class="container">
     <a class="navbar-brand d-flex align-items-center" routerLink="/">
       <!-- <i class="fas fa-book-open text-primary me-2"></i> -->
-      <img style="width: 90px;" src="assets/img/logos/dark-logo.png" alt="..." />
+      <img style="width: 90px;" src="assets/img/logos/logo-360.png" width="90" alt="..." />
       <!-- <div class="navbar-brand"><img src="assets/img/logos/dark-logo.png" alt="..." /></div> -->
     </a>
 
@@ -99,7 +99,7 @@
               </a>
             </li>
             <li *ngIf="isLoggedIn">
-              <a class="dropdown-item" href="#" (click)="logout()">
+              <a class="dropdown-item" href="#" (click)="$event.preventDefault(); logout()">
                 <i class="fas fa-sign-out-alt me-2"></i>
                 تسجيل الخروج
               </a>

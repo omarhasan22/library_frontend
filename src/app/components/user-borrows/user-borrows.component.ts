@@ -1,4 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Subscription } from 'rxjs';
 import { BorrowService } from '../../services/borrow.service';
 import { Borrow } from '../../models/borrow.model';
 import { AuthService } from '../../services/auth.service';
@@ -9,7 +10,8 @@ import { Router } from '@angular/router';
    templateUrl: './user-borrows.component.html',
    styleUrls: ['./user-borrows.component.css']
 })
-export class UserBorrowsComponent implements OnInit {
+export class UserBorrowsComponent implements OnInit, OnDestroy {
+   private userSubscription?: Subscription;
    Math = Math; // Expose Math to template
 
    borrows: Borrow[] = [];
@@ -29,16 +31,16 @@ export class UserBorrowsComponent implements OnInit {
    ) { }
 
    ngOnInit(): void {
-      // Check if user is logged in
-      this.authService.currentUser$.subscribe(user => {
-         if (user) {
-            this.isLoggedIn = true;
-            this.currentUser = user;
-            this.loadMyBorrows();
-         } else {
-            this.router.navigate(['/login']);
-         }
+      // The route's authGuard guarantees a session; load once, and just track the user for display.
+      this.isLoggedIn = true;
+      this.loadMyBorrows();
+      this.userSubscription = this.authService.currentUser$.subscribe(user => {
+         this.currentUser = user;
       });
+   }
+
+   ngOnDestroy(): void {
+      this.userSubscription?.unsubscribe();
    }
 
    loadMyBorrows(): void {

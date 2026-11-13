@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { BookService } from '../../services/book.service';
 import { BorrowService } from '../../services/borrow.service';
@@ -16,7 +16,7 @@ import { Subscription } from 'rxjs';
   standalone: false
 
 })
-export class BookDetailComponent implements OnInit {
+export class BookDetailComponent implements OnInit, OnDestroy {
   Math = Math; // Expose Math to template
 
   isLoggedIn = false;
@@ -80,6 +80,9 @@ export class BookDetailComponent implements OnInit {
 
   selectedImageFile: File | null = null;
 
+  // People/categories/publishers/subjects are only needed by the edit form.
+  private editDataLoaded = false;
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
@@ -94,7 +97,7 @@ export class BookDetailComponent implements OnInit {
       this.currentUser = user;
       this.isLoggedIn = !!user;
       // Always update isAdmin based on current user's role
-      this.isAdmin = this.currentUser?.user?.role === 'admin';
+      this.isAdmin = user?.role === 'admin';
     });
     const bookId = this.route.snapshot.paramMap.get('id');
     if (bookId) {
@@ -109,19 +112,26 @@ export class BookDetailComponent implements OnInit {
       );
     }
 
-    // Load data for dropdowns
+    // Dropdown data (several full collections) is loaded on demand when editing starts.
+  }
+
+  // Close dropdowns when clicking outside. (A HostListener is removed automatically with the
+  // component; the previous document.addEventListener leaked one listener per visited book.)
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    const target = event.target as HTMLElement | null;
+    if (!target?.closest('.search-dropdown-container')) {
+      this.closeAllDropdowns();
+    }
+  }
+
+  private loadEditData(): void {
+    if (this.editDataLoaded) return;
+    this.editDataLoaded = true;
     this.loadPeople();
     this.loadCategories();
     this.loadPublishers();
     this.loadSubjects();
-
-    // Add click listener to close dropdowns when clicking outside
-    document.addEventListener('click', (event) => {
-      const target = event.target as HTMLElement;
-      if (!target.closest('.search-dropdown-container')) {
-        this.closeAllDropdowns();
-      }
-    });
   }
 
   closeAllDropdowns(): void {
@@ -481,6 +491,7 @@ export class BookDetailComponent implements OnInit {
 
   toggleEditMode(): void {
     this.isEditMode = true;
+    this.loadEditData();
     this.initializeEditBook();
   }
 
@@ -775,12 +786,6 @@ export class BookDetailComponent implements OnInit {
       alert('تاريخ الإرجاع يجب أن يكون بعد تاريخ الاستعارة');
       return;
     }
-
-    // Debug: Check authentication status
-    console.log('=== Borrow Request Debug ===');
-    console.log('Is logged in:', this.isLoggedIn);
-    console.log('Current user:', this.currentUser);
-    console.log('Access token:', localStorage.getItem('access_token') || sessionStorage.getItem('access_token'));
 
     this.borrowLoading = true;
 

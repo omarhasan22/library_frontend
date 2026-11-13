@@ -1,5 +1,4 @@
-<!-- Navigation -->
-<app-navbar></app-navbar>
+<!-- Navigation is rendered once by AppComponent -->
 
 <!-- Hero Section -->
 <section class="hero-section">
@@ -126,7 +125,7 @@
             <div class="col-lg-3 col-md-4 col-sm-6 mb-4 px-2" *ngFor="let book of recentBooks">
                 <div class="book-card h-100" (click)="viewBook(book._id)">
                     <div class="book-cover">
-                        <img [src]="book.imageUrl || 'assets/img/book-placeholder.jpg'" [alt]="book.title">
+                        <img [src]="book.imageUrl || 'assets/img/book-placeholder.svg'" [alt]="book.title">
                         <div class="book-overlay">
                             <button class="btn btn-light btn-sm">عرض التفاصيل</button>
                         </div>

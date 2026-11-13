@@ -1,4 +1,4 @@
-import { Component, OnInit, HostListener, AfterViewInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, AfterViewInit, OnDestroy, NgZone } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 import { Subscription } from 'rxjs';
@@ -21,31 +21,21 @@ export class NavbarComponent implements OnInit, AfterViewInit, OnDestroy {
 
   constructor(
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private zone: NgZone
   ) { }
 
   ngOnInit(): void {
     // Subscribe to user changes
+    // (AuthService loads the profile on startup when needed.)
     this.subscription = this.authService.currentUser$.subscribe(user => {
       this.currentUser = user;
       this.isLoggedIn = !!user;
-      console.log('Navbar - Current user:', this.currentUser?.role);
-      // Always update isAdmin based on current user's role
-      this.isAdmin = this.currentUser?.role == 'admin';
-      // Debug logging
-      console.log('Navbar - Current user:', user);
-      console.log('Navbar - User role:', this.currentUser?.user?.role);
-      console.log('Navbar - Is admin:', this.isAdmin);
+      this.isAdmin = user?.role === 'admin';
     });
 
-    // If user is logged in but data not loaded, trigger load
-    if (this.authService.isAuthenticated() && !this.authService.currentUser) {
-      console.log("User authenticated but no data, loading...");
-      this.authService.loadUserData().subscribe({
-        next: (user) => console.log("User data loaded in navbar:", user),
-        error: (error) => console.error("Failed to load user data in navbar:", error)
-      });
-    }
+    // Scroll fires constantly: listen outside Angular and only re-render when the state flips.
+    this.zone.runOutsideAngular(() => window.addEventListener('scroll', this.onWindowScroll, { passive: true }));
 
     // Subscribe to router navigation events to close navbar on navigation
     this.routerSubscription = this.router.events
@@ -67,11 +57,15 @@ export class NavbarComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.routerSubscription) {
       this.routerSubscription.unsubscribe();
     }
+    window.removeEventListener('scroll', this.onWindowScroll);
   }
-  @HostListener('window:scroll', [])
-  onWindowScroll() {
-    this.isScrolled = window.scrollY > 50;
-  }
+
+  private onWindowScroll = (): void => {
+    const scrolled = window.scrollY > 50;
+    if (scrolled !== this.isScrolled) {
+      this.zone.run(() => (this.isScrolled = scrolled));
+    }
+  };
 
   logout(): void {
     this.authService.logout();

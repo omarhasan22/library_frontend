@@ -173,8 +173,10 @@ export class HomeComponent implements OnInit {
     this.router.navigate(['/books', bookId]);
   }
 
-  getAuthorsNames(authors: any[]): any {
+  getAuthorsNames(authors: any[]): string {
     if (!authors || authors.length === 0) return 'غير محدد';
+    // (Previously returned undefined whenever authors existed, so recent-book cards showed no author.)
+    return authors.map(a => a?.name).filter(Boolean).join('، ') || 'غير محدد';
   }
 
 }

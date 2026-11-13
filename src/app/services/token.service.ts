@@ -20,22 +20,37 @@ export class TokenService {
 
   constructor() { }
 
-  // Store access token
+  // Store access token. Each token lives in exactly one storage, so a stale copy in the
+  // other storage can never shadow a fresh one.
   storeAccessToken(token: string, persistent: boolean = false): void {
-    if (persistent) {
-      localStorage.setItem(this.ACCESS_TOKEN_KEY, token);
-    } else {
-      sessionStorage.setItem(this.ACCESS_TOKEN_KEY, token);
-    }
+    this.store(this.ACCESS_TOKEN_KEY, token, persistent);
   }
 
   // Store refresh token
   storeRefreshToken(token: string, persistent: boolean = false): void {
-    if (persistent) {
-      localStorage.setItem(this.REFRESH_TOKEN_KEY, token);
-    } else {
-      sessionStorage.setItem(this.REFRESH_TOKEN_KEY, token);
-    }
+    this.store(this.REFRESH_TOKEN_KEY, token, persistent);
+  }
+
+  // Replace the access token after a refresh, keeping it next to the refresh token.
+  updateAccessToken(token: string): void {
+    this.storeAccessToken(token, this.isPersistent());
+  }
+
+  // True when the session was stored with "remember me" (localStorage).
+  isPersistent(): boolean {
+    return !!localStorage.getItem(this.REFRESH_TOKEN_KEY) || !!localStorage.getItem(this.ACCESS_TOKEN_KEY);
+  }
+
+  // A session is usable while either token is still valid (an expired access token can be refreshed).
+  hasValidSession(): boolean {
+    const access = this.getAccessToken();
+    const refresh = this.getRefreshToken();
+    return (!!access && this.isTokenValid(access)) || (!!refresh && this.isTokenValid(refresh));
+  }
+
+  private store(key: string, token: string, persistent: boolean): void {
+    (persistent ? sessionStorage : localStorage).removeItem(key);
+    (persistent ? localStorage : sessionStorage).setItem(key, token);
   }
 
   // Get access token
@@ -84,7 +99,6 @@ export class TokenService {
 
       return JSON.parse(jsonPayload);
     } catch (error) {
-      console.error('Error decoding token:', error);
       return null;
     }
   }
@@ -100,7 +114,6 @@ export class TokenService {
       const currentTime = Date.now() / 1000;
       return payload.exp > currentTime;
     } catch (error) {
-      console.error('Error validating token:', error);
       return false;
     }
   }

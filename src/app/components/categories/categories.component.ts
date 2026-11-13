@@ -68,7 +68,6 @@ export class CategoriesComponent implements OnInit {
   }
 
   toggleCategory(categoryId: string): void {
-    console.log(123);
 
     this.expandedCategories[categoryId] = !this.expandedCategories[categoryId];
 
@@ -134,7 +133,6 @@ export class CategoriesComponent implements OnInit {
   }
 
   navigateToCategory(categoryId: string, categoryTitle: string): void {
-    console.log(456);
 
     // Navigate to books page with category filter
     this.router.navigate(['/books'], {

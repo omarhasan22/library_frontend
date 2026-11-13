@@ -42,10 +42,10 @@
                   </div>
                </div>
                <div class="col-md-3">
-                  <select class="form-select" [(ngModel)]="limit" (change)="loadPublishers()">
-                     <option value="10">10 لكل صفحة</option>
-                     <option value="25">25 لكل صفحة</option>
-                     <option value="50">50 لكل صفحة</option>
+                  <select class="form-select" [(ngModel)]="limit" (ngModelChange)="currentPage = 1; loadPublishers()">
+                     <option [ngValue]="10">10 لكل صفحة</option>
+                     <option [ngValue]="25">25 لكل صفحة</option>
+                     <option [ngValue]="50">50 لكل صفحة</option>
                   </select>
                </div>
             </div>

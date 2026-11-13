@@ -14,6 +14,7 @@ import { ExportsComponent } from './components/exports/exports.component';
 import { AuthorDashboardComponent } from './components/author-dashboard/author-dashboard.component';
 import { PublisherDashboardComponent } from './components/publisher-dashboard/publisher-dashboard.component';
 import { BulkUpdateComponent } from './components/bulk-update/bulk-update.component';
+import { authGuard, adminGuard } from './guards/auth.guard';
 
 
 const routes: Routes = [
@@ -22,43 +23,21 @@ const routes: Routes = [
   { path: 'books', component: BookListComponent },
   { path: 'books/:id', component: BookDetailComponent },
   { path: 'categories', component: CategoriesComponent },
-  { path: 'authors', component: AuthorDashboardComponent },
-  { path: 'publishers', component: PublisherDashboardComponent },
-  { path: 'exports', component: ExportsComponent },
-  { path: 'bulk-update', component: BulkUpdateComponent },
   { path: 'login', component: LoginComponent },
   { path: 'register', component: RegisterComponent },
 
-  // Protected routes (require authentication)
-  {
-    path: 'add-book',
-    component: AddBookComponent,
-    // canActivate: [AuthGuard, AdminGuard]
-  },
-  {
-    path: 'edit-book/:id',
-    component: AddBookComponent,
-    // canActivate: [AuthGuard, AdminGuard]
-  },
+  // Admin tools
+  { path: 'authors', component: AuthorDashboardComponent, canActivate: [adminGuard] },
+  { path: 'publishers', component: PublisherDashboardComponent, canActivate: [adminGuard] },
+  { path: 'exports', component: ExportsComponent, canActivate: [adminGuard] },
+  { path: 'bulk-update', component: BulkUpdateComponent, canActivate: [adminGuard] },
+  { path: 'add-book', component: AddBookComponent, canActivate: [adminGuard] },
+  { path: 'edit-book/:id', component: AddBookComponent, canActivate: [adminGuard] },
+  { path: 'admin/borrows', component: AdminBorrowsComponent, canActivate: [adminGuard] },
 
-  // User routes
-  {
-    path: 'profile',
-    component: UserProfileComponent,
-    // canActivate: [AuthGuard]
-  },
-
-  // Borrow routes
-  {
-    path: 'my-borrows',
-    component: UserBorrowsComponent,
-    // canActivate: [AuthGuard]
-  },
-  {
-    path: 'admin/borrows',
-    component: AdminBorrowsComponent,
-    // canActivate: [AuthGuard, AdminGuard]
-  },
+  // Logged-in users
+  { path: 'profile', component: UserProfileComponent, canActivate: [authGuard] },
+  { path: 'my-borrows', component: UserBorrowsComponent, canActivate: [authGuard] },
 
   // Wildcard route - redirect to home
   { path: '**', redirectTo: '' }

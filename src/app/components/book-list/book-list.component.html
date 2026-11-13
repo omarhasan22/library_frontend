@@ -1,5 +1,4 @@
-<!-- Navigation -->
-<app-navbar></app-navbar>
+<!-- Navigation is rendered once by AppComponent -->
 
 <!-- Full Screen Book List -->
 <div class="books-container">
@@ -171,10 +170,10 @@
             </tr>
           </thead>
           <tbody *ngIf="!loading">
-            <tr *ngFor="let book of books; let i = index" [id]="'book-' + book._id" class="book-row">
-              <td>{{ 30 * (currentPage - 1) + i + 1 }}</td>
+            <tr *ngFor="let book of books; let i = index; trackBy: trackById" [id]="'book-' + book._id" class="book-row">
+              <td>{{ itemsPerPage * (currentPage - 1) + i + 1 }}</td>
               <td *ngFor="let col of visibleColumns">
-                <span [innerHTML]="renderValue(book, col.key)"></span>
+                <span>{{ renderValue(book, col.key) }}</span>
               </td>
               <td>
                 <div class="action-buttons">
@@ -213,10 +212,10 @@
   <div class="grid-container" *ngIf="viewMode === 'grid' && !loading">
     <div class="container-fluid">
       <div class="row g-4">
-        <div class="col-xl-3 col-lg-4 col-md-6" *ngFor="let book of books">
+        <div class="col-xl-3 col-lg-4 col-md-6" *ngFor="let book of books; trackBy: trackById">
           <div class="book-grid-card">
             <div class="book-cover">
-              <img [src]="book.imageUrl || 'assets/img/book-placeholder.jpg'" [alt]="book.title">
+              <img [src]="book.imageUrl || 'assets/img/book-placeholder.svg'" [alt]="book.title">
               <div class="book-overlay">
                 <div class="overlay-actions">
                   <button class="btn btn-light btn-sm" 

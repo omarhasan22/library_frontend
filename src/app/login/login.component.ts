@@ -61,8 +61,6 @@ export class LoginComponent implements OnInit {
     // First login to get tokens
     this.loginService.login(emailOrUsername, password, isEmail).pipe(
       switchMap(loginResponse => {
-        console.log('Login response:', loginResponse);
-
         // Store tokens
         this.tokenService.storeAccessToken(loginResponse.accessToken, rememberMe);
         this.tokenService.storeRefreshToken(loginResponse.refreshToken, rememberMe);
@@ -77,12 +75,10 @@ export class LoginComponent implements OnInit {
         }
 
         // Otherwise, fetch user data
-        console.log('Fetching user data after login...');
         return this.authService.loadUserData();
       })
     ).subscribe({
-      next: (user) => {
-        console.log('Login complete with user:', user);
+      next: () => {
         this.isSuccess = true;
         this.message = 'Login successful! Redirecting...';
 
@@ -91,7 +87,6 @@ export class LoginComponent implements OnInit {
         }, 1000);
       },
       error: (err) => {
-        console.error('Login error:', err);
         this.isLoading = false;
 
         if (err.status === 401) {

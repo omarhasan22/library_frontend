@@ -45,18 +45,10 @@ export class PublisherDashboardComponent implements OnInit {
    }
 
    ngOnInit(): void {
-      // Check if user is admin
-      this.authService.currentUser$.subscribe(user => {
-         this.isAdmin = user?.role === 'admin';
-         if (!this.isAdmin) {
-            // Redirect non-admin users to home page
-            this.router.navigate(['/']);
-            return;
-         }
-         // Only load data if user is admin
-         this.loadPublishers();
-         this.loadStats();
-      });
+      // The route's adminGuard has already checked the role (and the API enforces it).
+      this.isAdmin = this.authService.isAdmin();
+      this.loadPublishers();
+      this.loadStats();
    }
 
    loadPublishers(): void {

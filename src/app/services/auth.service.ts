@@ -1,9 +1,8 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
-import { catchError, map, switchMap, tap } from 'rxjs/operators';
+import { BehaviorSubject, Observable, throwError } from 'rxjs';
+import { map, tap } from 'rxjs/operators';
 import { TokenService } from './token.service';
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Router } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
 import { environment } from 'src/environments/environment';
 
 export interface User {
@@ -17,6 +16,8 @@ export interface User {
   updatedAt?: Date;
   __v?: number;
 }
+
+const USER_KEY = 'current_user';
 
 @Injectable({
   providedIn: 'root',
@@ -32,26 +33,26 @@ export class AuthService {
 
   constructor(
     private tokenService: TokenService,
-    private http: HttpClient,
-    private router: Router
+    private http: HttpClient
   ) {
-    // Check if user is already logged in (page refresh scenario)
-    const token = this.tokenService.getAccessToken();
-    const storedUser = this.loadStoredUser();
+    // Page load: the session is valid while either token is (an expired access token is refreshed
+    // by the interceptor). Without a session, drop any leftover user so the UI doesn't look logged in.
+    const hasSession = this.tokenService.hasValidSession();
+    if (!hasSession) {
+      this.tokenService.clearTokens();
+      this.clearStoredUser();
+    }
+    const storedUser = hasSession ? this.loadStoredUser() : null;
 
-    // Initialize subjects
-    this.isLoggedInSubject = new BehaviorSubject<boolean>(!!token && this.tokenService.isTokenValid(token));
+    this.isLoggedInSubject = new BehaviorSubject<boolean>(hasSession);
     this.isLoggedIn$ = this.isLoggedInSubject.asObservable();
 
     this.currentUserSubject = new BehaviorSubject<User | null>(storedUser);
     this.currentUser$ = this.currentUserSubject.asObservable();
 
-    // If we have a valid token but no user data, fetch it
-    if (this.isAuthenticated() && !storedUser) {
-      this.loadUserData().subscribe({
-        next: (user) => console.log('User data loaded on init:', user),
-        error: (error) => console.error('Failed to load user data on init:', error)
-      });
+    // Logged in but no user data yet (e.g. new tab): fetch it once, here only.
+    if (hasSession && !storedUser) {
+      this.loadUserData().subscribe({ error: () => { /* interceptor handles auth failures */ } });
     }
   }
 
@@ -65,16 +66,14 @@ export class AuthService {
     return this.isLoggedInSubject.value;
   }
 
-  // Check if authenticated
+  // True while the session can still be used (valid access token, or a refresh token to renew it).
   isAuthenticated(): boolean {
-    const token = this.tokenService.getAccessToken();
-    return token ? this.tokenService.isTokenValid(token) : false;
+    return this.tokenService.hasValidSession();
   }
 
-  // Check if user is admin
+  // Check if user is admin (UI only; the API enforces roles itself)
   isAdmin(): boolean {
-    const user = this.currentUser;
-    return user?.role === 'admin' || false;
+    return this.currentUser?.role === 'admin';
   }
 
   // Set login state - called after successful login
@@ -82,8 +81,7 @@ export class AuthService {
     this.isLoggedInSubject.next(isLoggedIn);
 
     if (isLoggedIn && user) {
-      this.currentUserSubject.next(user);
-      this.storeUser(user);
+      this.setUserInfo(user);
     } else if (!isLoggedIn) {
       this.currentUserSubject.next(null);
       this.clearStoredUser();
@@ -92,18 +90,16 @@ export class AuthService {
 
   // Set user info
   setUserInfo(user: User): void {
-    this.currentUserSubject.next(user);
-    this.storeUser(user);
+    const safeUser = this.withoutSecrets(user);
+    this.currentUserSubject.next(safeUser);
+    this.storeUser(safeUser);
   }
 
   // Load user data from API using token
   loadUserData(): Observable<User> {
-    const token = this.tokenService.getAccessToken();
-    if (!token) {
+    if (!this.isAuthenticated()) {
       return throwError(() => new Error('No authentication token found'));
     }
-
-    // Use the new profile endpoint
     return this.getProfile();
   }
 
@@ -124,50 +120,51 @@ export class AuthService {
   logout(): void {
     this.tokenService.clearTokens();
     this.setLoginState(false, null);
-    // this.router.navigate(['/login']);
   }
 
-  // Store user in localStorage
+  // The user is kept in the same storage as the tokens, so both disappear together
+  // (sessionStorage unless "remember me").
   private storeUser(user: User): void {
     try {
-      localStorage.setItem('current_user', JSON.stringify(user));
-    } catch (error) {
-      console.error('Failed to store user data:', error);
+      const persistent = this.tokenService.isPersistent();
+      (persistent ? sessionStorage : localStorage).removeItem(USER_KEY);
+      (persistent ? localStorage : sessionStorage).setItem(USER_KEY, JSON.stringify(user));
+    } catch {
+      // Storage unavailable (private mode / quota): keep the user in memory only.
     }
   }
 
-  // Load user from localStorage
   private loadStoredUser(): User | null {
     try {
-      const userData = localStorage.getItem('current_user');
-      if (userData) {
-        const user = JSON.parse(userData);
-        console.log('Loaded stored user:', user);
-        return user;
-      }
-    } catch (error) {
-      console.error('Failed to load stored user data:', error);
+      const userData = sessionStorage.getItem(USER_KEY) || localStorage.getItem(USER_KEY);
+      if (!userData) return null;
+      const parsed = JSON.parse(userData);
+      const user = this.withoutSecrets(parsed);
+      // Older versions stored the full profile including the password hash: rewrite it clean.
+      if ('password' in parsed) this.storeUser(user);
+      return user;
+    } catch {
+      return null;
     }
-    return null;
   }
 
-  // Clear stored user data
   private clearStoredUser(): void {
-    localStorage.removeItem('current_user');
+    try {
+      localStorage.removeItem(USER_KEY);
+      sessionStorage.removeItem(USER_KEY);
+    } catch { }
+  }
+
+  private withoutSecrets(user: User): User {
+    const { password, ...rest } = user as User & { password?: string };
+    return rest;
   }
 
   // Get user profile
   getProfile(): Observable<User> {
     return this.http.get<{ user: User }>(`${this.baseUrl}/auth/profile`).pipe(
       map(response => response.user),
-      tap((user: User) => {
-        console.log('Profile fetched successfully:', user);
-        this.setUserInfo(user);
-      }),
-      catchError((error: HttpErrorResponse) => {
-        console.error('Failed to fetch profile:', error);
-        return throwError(() => error);
-      })
+      tap((user: User) => this.setUserInfo(user))
     );
   }
 
@@ -175,14 +172,9 @@ export class AuthService {
   updateProfile(profileData: { username?: string; email?: string; currentPassword?: string; newPassword?: string }): Observable<any> {
     return this.http.put(`${this.baseUrl}/auth/profile`, profileData).pipe(
       tap((response: any) => {
-        // Update current user data if profile was updated successfully
         if (response.user) {
           this.setUserInfo(response.user);
         }
-      }),
-      catchError((error: HttpErrorResponse) => {
-        console.error('Profile update failed:', error);
-        return throwError(() => error);
       })
     );
   }
