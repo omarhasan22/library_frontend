@@ -121,7 +121,8 @@
           "builder": "angular-cli-ghpages:deploy",
           "options": {
             "baseHref": "/",
-            "dir": "dist/library-frontend"
+            "dir": "dist/library-frontend",
+            "cname": "markzalmostafa.net"
           }
         }
       }
