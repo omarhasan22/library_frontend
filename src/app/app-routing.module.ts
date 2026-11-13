@@ -14,6 +14,8 @@ import { ExportsComponent } from './components/exports/exports.component';
 import { AuthorDashboardComponent } from './components/author-dashboard/author-dashboard.component';
 import { PublisherDashboardComponent } from './components/publisher-dashboard/publisher-dashboard.component';
 import { BulkUpdateComponent } from './components/bulk-update/bulk-update.component';
+import { DisplayScreenComponent } from './components/display/display-screen/display-screen.component';
+import { DisplayAdminComponent } from './components/display/display-admin/display-admin.component';
 import { authGuard, adminGuard } from './guards/auth.guard';
 
 
@@ -25,6 +27,8 @@ const routes: Routes = [
   { path: 'categories', component: CategoriesComponent },
   { path: 'login', component: LoginComponent },
   { path: 'register', component: RegisterComponent },
+  // The library's display screen (full-screen slideshow; no navbar)
+  { path: 'display', component: DisplayScreenComponent },
 
   // Admin tools
   { path: 'authors', component: AuthorDashboardComponent, canActivate: [adminGuard] },
@@ -34,6 +38,7 @@ const routes: Routes = [
   { path: 'add-book', component: AddBookComponent, canActivate: [adminGuard] },
   { path: 'edit-book/:id', component: AddBookComponent, canActivate: [adminGuard] },
   { path: 'admin/borrows', component: AdminBorrowsComponent, canActivate: [adminGuard] },
+  { path: 'admin/display', component: DisplayAdminComponent, canActivate: [adminGuard] },
 
   // Logged-in users
   { path: 'profile', component: UserProfileComponent, canActivate: [authGuard] },

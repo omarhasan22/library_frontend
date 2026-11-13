@@ -1,5 +1,10 @@
 /* You can add global styles to this file, and also import other style files */
 
+/* The full-screen display page (/display): no page scrolling behind it. */
+body.display-mode {
+  overflow: hidden;
+}
+
 
 .form-signin {
     width:100%;

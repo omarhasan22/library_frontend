@@ -74,6 +74,12 @@
             تحديث جماعي
           </a>
         </li>
+        <li class="nav-item" *ngIf="isAdmin">
+          <a class="nav-link" routerLink="/admin/display" routerLinkActive="active">
+            <i class="fas fa-tv me-1"></i>
+            شاشة العرض
+          </a>
+        </li>
         <li class="nav-item dropdown">
           <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
             <i class="fas fa-user-circle me-1"></i>

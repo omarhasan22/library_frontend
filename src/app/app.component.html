@@ -35,7 +35,8 @@
  
     </body> -->
 
-<app-navbar></app-navbar>
+<!-- The display screen (/display) runs full screen, without the site navigation. -->
+<app-navbar *ngIf="!isDisplayRoute"></app-navbar>
 
 <router-outlet></router-outlet>
 

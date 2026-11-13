@@ -1,0 +1,200 @@
+<!-- Plain divs only: the site theme styles section/header/footer elements globally (e.g. section padding). -->
+<div class="slide" [ngClass]="'theme-' + theme + ' tpl-' + slide.template" [class.animate]="animate">
+
+  <!-- Branded background (the photo templates bring their own) -->
+  <ng-container *ngIf="slide.template !== 'image' && slide.template !== 'photo'">
+    <div class="bg"></div>
+    <div class="pattern" [style.background-image]="patternUrl"></div>
+  </ng-container>
+
+  <ng-container [ngSwitch]="slide.template">
+
+    <!-- ============ Welcome ============ -->
+    <div *ngSwitchCase="'welcome'" class="welcome">
+      <app-display-emblem class="deco deco-left spin"></app-display-emblem>
+      <app-display-emblem class="deco deco-right spin-reverse"></app-display-emblem>
+
+      <img class="welcome-logo rise" [src]="logoSrc" alt="">
+      <div class="ornament rise d1">
+        <span class="ornament-line"></span>
+        <app-display-emblem class="ornament-star" [starOnly]="true"></app-display-emblem>
+        <span class="ornament-line"></span>
+      </div>
+      <h1 class="welcome-title clamp-2 rise d2" [ngClass]="size(slide.title, 26, 42)">{{ slide.title }}</h1>
+      <p class="welcome-sub clamp-2 rise d3" *ngIf="slide.subtitle">{{ slide.subtitle }}</p>
+
+      <div class="welcome-clock rise d4" *ngIf="clock$ | async as c">
+        <div class="clock-time">{{ c.time }}<small>{{ c.period }}</small></div>
+        <span class="clock-sep"></span>
+        <div class="clock-dates">
+          <div><span class="clock-day">{{ c.weekday }}</span> {{ c.hijri }}</div>
+          <div class="faint">{{ c.gregorian }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ Announcement ============ -->
+    <div *ngSwitchCase="'announcement'" class="frame announce">
+      <app-display-emblem class="deco announce-deco spin"></app-display-emblem>
+      <div class="frame-head rise"><img class="brand-logo" [src]="logoSrc" alt=""></div>
+
+      <div class="announce-main">
+        <div class="announce-content">
+          <span class="tag rise d1" *ngIf="slide.subtitle">
+            <app-display-emblem class="tag-star" [starOnly]="true"></app-display-emblem>{{ slide.subtitle }}
+          </span>
+          <h1 class="announce-title clamp-3 rise d2" [ngClass]="size(slide.title, 36, 70)">{{ slide.title }}</h1>
+          <p class="announce-text clamp-6 rise d3" *ngIf="slide.body" [ngClass]="size(slide.body, 200, 400)">{{ slide.body }}</p>
+        </div>
+      </div>
+
+      <div class="frame-foot rise d4" *ngIf="slide.attribution">
+        <app-display-emblem class="foot-star"></app-display-emblem>{{ slide.attribution }}
+      </div>
+    </div>
+
+    <!-- ============ Quote (verse / hadith / wisdom) ============ -->
+    <div *ngSwitchCase="'quote'" class="quote">
+      <div class="quote-border"></div>
+      <div class="quote-border inner"></div>
+      <app-display-emblem class="corner c-tl" [starOnly]="true"></app-display-emblem>
+      <app-display-emblem class="corner c-tr" [starOnly]="true"></app-display-emblem>
+      <app-display-emblem class="corner c-bl" [starOnly]="true"></app-display-emblem>
+      <app-display-emblem class="corner c-br" [starOnly]="true"></app-display-emblem>
+
+      <div class="quote-main">
+        <img class="quote-logo rise" [src]="logoSrc" alt="">
+        <div class="quote-label rise d1" *ngIf="slide.subtitle">
+          <span class="ornament-line"></span>{{ slide.subtitle }}<span class="ornament-line"></span>
+        </div>
+        <blockquote class="quote-text clamp-4 rise d2" [ngClass]="size(slide.body, 60, 140)">{{ slide.body }}</blockquote>
+        <div class="quote-source rise d3" *ngIf="slide.attribution">
+          <app-display-emblem class="source-star" [starOnly]="true"></app-display-emblem>
+          <span>{{ slide.attribution }}</span>
+          <app-display-emblem class="source-star" [starOnly]="true"></app-display-emblem>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ Event ============ -->
+    <div *ngSwitchCase="'event'" class="event">
+      <div class="event-info">
+        <div class="frame-head rise"><img class="brand-logo" [src]="logoSrc" alt=""></div>
+        <div class="event-main">
+          <span class="tag rise d1" *ngIf="slide.subtitle">
+            <app-display-emblem class="tag-star" [starOnly]="true"></app-display-emblem>{{ slide.subtitle }}
+          </span>
+          <h1 class="event-title clamp-3 rise d2" [ngClass]="size(slide.title, 28, 56)">{{ slide.title }}</h1>
+          <p class="event-text clamp-3 rise d3" *ngIf="slide.body" [ngClass]="size(slide.body, 120, 240)">{{ slide.body }}</p>
+          <ul class="facts rise d4" *ngIf="slide.eventDate || slide.eventTime || slide.location">
+            <li *ngIf="slide.eventDate">
+              <span class="fact-icon">
+                <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2.5" /><path d="M3 10h18M8 3v4M16 3v4" /></svg>
+              </span>
+              <span class="fact-text">{{ slide.eventDate }}</span>
+            </li>
+            <li *ngIf="slide.eventTime">
+              <span class="fact-icon">
+                <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3.5 2" /></svg>
+              </span>
+              <span class="fact-text">{{ slide.eventTime }}</span>
+            </li>
+            <li *ngIf="slide.location">
+              <span class="fact-icon">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11.2a7 7 0 0 1 14 0C19 14.8 12 21 12 21z" /><circle cx="12" cy="9.8" r="2.6" /></svg>
+              </span>
+              <span class="fact-text">{{ slide.location }}</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="event-visual">
+        <div class="star-stack pop d1">
+          <div class="star-halo"></div>
+          <div class="star-shape">
+            <img *ngIf="imageUrl; else eventNoImage" [src]="imageUrl" alt="">
+            <ng-template #eventNoImage>
+              <div class="star-fill"><app-display-emblem class="star-fill-emblem"></app-display-emblem></div>
+            </ng-template>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ Featured book ============ -->
+    <div *ngSwitchCase="'book'" class="frame book">
+      <div class="frame-head rise"><img class="brand-logo" [src]="logoSrc" alt=""></div>
+      <div class="book-main">
+        <div class="book-info">
+          <span class="tag rise d1" *ngIf="slide.subtitle">
+            <app-display-emblem class="tag-star" [starOnly]="true"></app-display-emblem>{{ slide.subtitle }}
+          </span>
+          <h1 class="book-title clamp-3 rise d2" [ngClass]="size(slide.title, 26, 52)">{{ slide.title }}</h1>
+          <div class="book-author rise d2" *ngIf="slide.attribution">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M4 20h4L19.5 8.5a2.1 2.1 0 0 0-3-3L5 17v3z" /><path d="M14.5 7.5l2 2" /></svg>
+            <span>{{ slide.attribution }}</span>
+          </div>
+          <p class="book-text clamp-4 rise d3" *ngIf="slide.body" [ngClass]="size(slide.body, 150, 300)">{{ slide.body }}</p>
+          <div class="book-place rise d4" *ngIf="slide.location">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11.2a7 7 0 0 1 14 0C19 14.8 12 21 12 21z" /><circle cx="12" cy="9.8" r="2.6" /></svg>
+            <span>{{ slide.location }}</span>
+          </div>
+        </div>
+
+        <div class="book-visual pop d1">
+          <app-display-emblem class="book-deco spin"></app-display-emblem>
+          <div class="book-cover">
+            <img *ngIf="imageUrl; else bookNoCover" [src]="imageUrl" alt="">
+            <ng-template #bookNoCover>
+              <div class="cover-placeholder">
+                <app-display-emblem class="cover-emblem"></app-display-emblem>
+                <div class="cover-title">{{ slide.title }}</div>
+                <div class="cover-author" *ngIf="slide.attribution">{{ slide.attribution }}</div>
+              </div>
+            </ng-template>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ Photo with caption ============ -->
+    <div *ngSwitchCase="'photo'" class="photo">
+      <img *ngIf="imageUrl; else photoMissing" class="photo-img kenburns" [src]="imageUrl" alt="">
+      <ng-template #photoMissing>
+        <div class="bg"></div>
+        <div class="pattern" [style.background-image]="patternUrl"></div>
+      </ng-template>
+      <div class="photo-shade"></div>
+      <div class="photo-logo rise"><img [src]="logoSrc" alt=""></div>
+      <div class="missing-hint" *ngIf="!imageUrl && editing">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5" /><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" /></svg>
+        <span>ارفع صورة لتظهر هنا</span>
+      </div>
+      <div class="photo-caption" *ngIf="slide.title || slide.subtitle">
+        <span class="photo-bar rise d1"></span>
+        <h1 class="photo-title clamp-2 rise d2" *ngIf="slide.title" [ngClass]="size(slide.title, 34, 64)">{{ slide.title }}</h1>
+        <p class="photo-sub clamp-2 rise d3" *ngIf="slide.subtitle">{{ slide.subtitle }}</p>
+      </div>
+    </div>
+
+    <!-- ============ Image only (uploaded as-is) ============ -->
+    <div *ngSwitchCase="'image'" class="image-only" [class.contain]="slide.imageFit === 'contain'">
+      <ng-container *ngIf="imageUrl; else imageMissing">
+        <div class="image-blur" *ngIf="slide.imageFit === 'contain'" [style.background-image]="blurBackground"></div>
+        <img class="image-main" [src]="imageUrl" alt="">
+      </ng-container>
+      <ng-template #imageMissing>
+        <div class="theme-teal image-empty">
+          <div class="bg"></div>
+          <div class="pattern" style="background-image: url(assets/img/display/pattern-white.svg)"></div>
+          <div class="missing-hint">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5" /><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" /></svg>
+            <span>ارفع صورة لتظهر هنا</span>
+          </div>
+        </div>
+      </ng-template>
+    </div>
+
+  </ng-container>
+</div>

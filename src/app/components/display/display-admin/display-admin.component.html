@@ -1,0 +1,335 @@
+<div class="display-admin" dir="rtl">
+  <div class="container-xl">
+
+    <!-- Header -->
+    <div class="page-head">
+      <div>
+        <h2 class="page-title">
+          <span class="title-icon"><app-display-emblem></app-display-emblem></span>
+          شاشة العرض
+        </h2>
+        <p class="page-sub">صمّم ما يظهر على شاشة المكتبة: اختر قالباً بألوان المركز، أو ارفع صورة جاهزة مباشرة.</p>
+      </div>
+      <div class="head-actions">
+        <a class="btn btn-outline-teal" [href]="screenUrl" target="_blank" rel="noopener">
+          <span><i class="fas fa-external-link-alt ms-2"></i></span>فتح الشاشة
+        </a>
+        <button type="button" class="btn btn-outline-teal" (click)="quickInput.click()">
+          <span><i class="fas fa-upload ms-2"></i></span>رفع صورة مباشرة
+        </button>
+        <input #quickInput type="file" [accept]="acceptTypes" hidden (change)="quickUpload($event)">
+        <button type="button" class="btn btn-teal" (click)="newSlide()">
+          <span><i class="fas fa-plus ms-2"></i></span>شريحة من قالب
+        </button>
+      </div>
+    </div>
+
+    <div class="state" *ngIf="loading">
+      <div class="spinner-border" role="status"></div>
+    </div>
+
+    <div class="alert alert-danger d-flex align-items-center justify-content-between" *ngIf="loadError">
+      <span>{{ loadError }}</span>
+      <button type="button" class="btn btn-sm btn-outline-danger" (click)="load()">إعادة المحاولة</button>
+    </div>
+
+    <div class="row g-4" *ngIf="!loading && !loadError">
+
+      <!-- Slides -->
+      <div class="col-lg-8">
+        <div class="panel">
+          <div class="panel-head">
+            <h5>الشرائح <span class="count">{{ slides.length }}</span></h5>
+            <span class="muted">تُعرض الآن: {{ liveCount }} · تُعرض بالترتيب من الأعلى</span>
+          </div>
+
+          <div class="empty" *ngIf="!slides.length">
+            <app-display-emblem class="empty-emblem"></app-display-emblem>
+            <p>لا توجد شرائح بعد. ستعرض الشاشة رسالة الترحيب حتى تضيف أول شريحة.</p>
+            <button type="button" class="btn btn-teal" (click)="newSlide()">أضف أول شريحة</button>
+          </div>
+
+          <div class="slide-list">
+            <div class="slide-card" *ngFor="let s of slides; let i = index; trackBy: trackSlide"
+              [class.dimmed]="statusOf(s) !== 'live'">
+              <button type="button" class="thumb" (click)="edit(s)" title="تعديل">
+                <app-display-stage>
+                  <app-display-slide [slide]="s" [imageUrl]="mediaUrl(s.image)" [hijriOffset]="settings.hijriOffset"></app-display-slide>
+                </app-display-stage>
+                <span class="order-badge">{{ i + 1 }}</span>
+              </button>
+
+              <div class="card-body">
+                <div class="card-title" [title]="slideLabel(s)">{{ slideLabel(s) }}</div>
+                <div class="card-meta">
+                  <span class="status" [ngClass]="'st-' + statusOf(s)">{{ statusText(s) }}</span>
+                  <span>{{ templateOf(s.template).name }}</span>
+                  <span>{{ s.duration }} ثانية</span>
+                </div>
+                <div class="card-meta" *ngIf="s.startDate || s.endDate">
+                  <span class="schedule">{{ scheduleText(s) }}</span>
+                </div>
+
+                <div class="card-actions">
+                  <label class="switch" [class.disabled]="busy.has(s._id!)">
+                    <input type="checkbox" [checked]="s.isActive" [disabled]="busy.has(s._id!)" (change)="toggleActive(s)">
+                    <span class="switch-track"><span class="switch-thumb"></span></span>
+                    <span class="switch-label">{{ s.isActive ? 'مفعّلة' : 'معطّلة' }}</span>
+                  </label>
+                  <div class="icon-buttons">
+                    <button type="button" title="تقديم" (click)="move(i, -1)" [disabled]="i === 0 || reordering">
+                      <span><i class="fas fa-arrow-up"></i></span>
+                    </button>
+                    <button type="button" title="تأخير" (click)="move(i, 1)" [disabled]="i === slides.length - 1 || reordering">
+                      <span><i class="fas fa-arrow-down"></i></span>
+                    </button>
+                    <button type="button" title="معاينة بملء الشاشة" (click)="openPreview(s)">
+                      <span><i class="fas fa-expand"></i></span>
+                    </button>
+                    <button type="button" title="تعديل" (click)="edit(s)">
+                      <span><i class="fas fa-pen"></i></span>
+                    </button>
+                    <button type="button" class="danger" title="حذف" (click)="remove(s)" [disabled]="busy.has(s._id!)">
+                      <span><i class="fas fa-trash"></i></span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Screen settings -->
+      <div class="col-lg-4">
+        <div class="panel">
+          <div class="panel-head">
+            <h5>إعدادات الشاشة</h5>
+          </div>
+
+          <label class="form-label">رابط الشاشة</label>
+          <div class="input-group mb-1 ltr-group">
+            <input class="form-control" [value]="screenUrl" readonly dir="ltr">
+            <button type="button" class="btn btn-outline-teal" (click)="copyScreenUrl()">نسخ</button>
+          </div>
+          <p class="hint">افتح هذا الرابط في متصفح الشاشة، ثم اضغط F لملء الشاشة.</p>
+
+          <hr>
+
+          <label class="switch mb-2">
+            <input type="checkbox" [(ngModel)]="settings.tickerEnabled">
+            <span class="switch-track"><span class="switch-thumb"></span></span>
+            <span class="switch-label">شريط الأخبار أسفل الشاشة</span>
+          </label>
+          <div *ngIf="settings.tickerEnabled" class="mb-3">
+            <textarea class="form-control" rows="4" maxlength="3000" [(ngModel)]="settings.tickerText"
+              placeholder="اكتب كل خبر في سطر مستقل"></textarea>
+            <div class="hint">كل سطر يظهر كخبر مستقل يتحرك على الشريط.</div>
+          </div>
+
+          <label class="switch mb-3">
+            <input type="checkbox" [(ngModel)]="settings.showClock">
+            <span class="switch-track"><span class="switch-thumb"></span></span>
+            <span class="switch-label">إظهار الساعة والتاريخ</span>
+          </label>
+
+          <label class="form-label">تعديل التاريخ الهجري</label>
+          <select class="form-select" [(ngModel)]="settings.hijriOffset">
+            <option *ngFor="let o of hijriOffsets" [ngValue]="o">
+              {{ o === 0 ? 'بدون تعديل' : (o > 0 ? '+' + o : o) + (o === 1 || o === -1 ? ' يوم' : ' يومان') }}
+            </option>
+          </select>
+          <div class="hint mb-3">اليوم على الشاشة: <strong>{{ hijriToday }}</strong></div>
+
+          <label class="form-label">الانتقال بين الشرائح</label>
+          <select class="form-select mb-3" [(ngModel)]="settings.transition">
+            <option *ngFor="let t of transitions" [ngValue]="t.id">{{ t.name }}</option>
+          </select>
+
+          <button type="button" class="btn btn-teal w-100" (click)="saveSettings()" [disabled]="savingSettings">
+            {{ savingSettings ? 'جارٍ الحفظ...' : 'حفظ الإعدادات' }}
+          </button>
+        </div>
+
+        <div class="panel tips">
+          <h6>نصائح</h6>
+          <ul>
+            <li>التغييرات تظهر على الشاشة خلال دقيقة دون إعادة تشغيلها.</li>
+            <li>للتصاميم الجاهزة استخدم صورة بمقاس 1920×1080 لتملأ الشاشة.</li>
+            <li>حدّد تاريخ بداية ونهاية للإعلانات المؤقتة لتختفي تلقائياً.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= Editor ================= -->
+  <div class="editor-backdrop" *ngIf="editor as ed" (mousedown)="$event.target === $event.currentTarget && !ed.saving && closeEditor()">
+    <div class="editor" role="dialog" aria-modal="true">
+      <div class="editor-head">
+        <h4>{{ ed.id ? 'تعديل الشريحة' : (ed.step === 'template' ? 'اختر قالباً' : 'شريحة جديدة') }}</h4>
+        <button type="button" class="close-x" (click)="closeEditor()" [disabled]="ed.saving" aria-label="إغلاق">&times;</button>
+      </div>
+
+      <!-- Step 1: template gallery -->
+      <div class="editor-body" *ngIf="ed.step === 'template'">
+        <p class="muted mb-3">كل القوالب مصممة بألوان المركز وشعاره. اختر قالباً ثم عدّل النصوص كما تريد.</p>
+        <div class="gallery">
+          <button type="button" class="tpl-card" *ngFor="let t of templates" (click)="chooseTemplate(t.id)">
+            <div class="tpl-thumb">
+              <app-display-stage>
+                <app-display-slide [slide]="samples[t.id]" [imageUrl]="t.sampleImage || null" [hijriOffset]="settings.hijriOffset"></app-display-slide>
+              </app-display-stage>
+            </div>
+            <div class="tpl-info">
+              <div class="tpl-name">{{ t.name }}</div>
+              <div class="tpl-desc">{{ t.description }}</div>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Step 2: form + live preview -->
+      <div class="editor-body form-layout" *ngIf="ed.step === 'form' && editorTemplate as tpl">
+        <div class="editor-form">
+
+          <div class="mb-3">
+            <label class="form-label">القالب</label>
+            <select class="form-select" [ngModel]="ed.slide.template" (ngModelChange)="changeTemplate($event)">
+              <option *ngFor="let t of templates" [ngValue]="t.id">{{ t.name }}</option>
+            </select>
+          </div>
+
+          <div class="mb-3" *ngIf="tpl.themed">
+            <label class="form-label">الألوان</label>
+            <div class="themes">
+              <button type="button" *ngFor="let th of themes" class="theme-option"
+                [class.selected]="ed.slide.theme === th.id" (click)="setTheme(th.id)">
+                <span class="swatch" [style.background]="th.colors[0]">
+                  <span class="swatch-dot" [style.background]="th.colors[1]"></span>
+                </span>
+                {{ th.name }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Featured book: fill from the library catalogue -->
+          <div class="book-picker mb-3" *ngIf="ed.slide.template === 'book'">
+            <label class="form-label">اختيار كتاب من المكتبة <span class="muted">(اختياري)</span></label>
+            <input class="form-control" placeholder="ابحث بعنوان الكتاب..." [(ngModel)]="bookQuery" (ngModelChange)="onBookQuery($event)">
+            <div class="book-results" *ngIf="bookResults.length || bookSearching">
+              <div class="muted p-2" *ngIf="bookSearching">جارٍ البحث...</div>
+              <button type="button" *ngFor="let b of bookResults" (click)="pickBook(b)">
+                <strong>{{ b.title }}</strong>
+                <small *ngIf="authorsOf(b)">{{ authorsOf(b) }}</small>
+              </button>
+            </div>
+            <div class="hint">يملأ العنوان والمؤلف ومكان الكتاب تلقائياً.</div>
+          </div>
+
+          <div class="mb-3" *ngFor="let f of tpl.fields">
+            <label class="form-label">
+              {{ f.label }} <span class="req" *ngIf="f.required">*</span>
+            </label>
+            <textarea *ngIf="f.multiline; else singleLine" class="form-control" rows="4" [maxlength]="f.max"
+              [placeholder]="f.placeholder || ''" [(ngModel)]="ed.slide[f.key]"></textarea>
+            <ng-template #singleLine>
+              <input class="form-control" [maxlength]="f.max" [placeholder]="f.placeholder || ''" [(ngModel)]="ed.slide[f.key]">
+            </ng-template>
+          </div>
+
+          <!-- Image -->
+          <div class="mb-3" *ngIf="tpl.image !== 'none'">
+            <label class="form-label">{{ tpl.imageLabel }} <span class="req" *ngIf="tpl.image === 'required'">*</span></label>
+            <input #fileInput type="file" [accept]="acceptTypes" hidden (change)="onFileInput($event)">
+            <div class="dropzone" [class.dragover]="dragOver" [class.has-image]="!!editorImage"
+              (dragover)="$event.preventDefault(); dragOver = true" (dragleave)="dragOver = false" (drop)="onDrop($event)"
+              (click)="fileInput.click()">
+              <ng-container *ngIf="editorImage; else noImage">
+                <img class="drop-thumb" [src]="editorImage" alt="">
+                <div class="drop-actions">
+                  <button type="button" class="btn btn-sm btn-outline-teal" (click)="$event.stopPropagation(); fileInput.click()">تغيير</button>
+                  <button type="button" class="btn btn-sm btn-outline-danger" (click)="$event.stopPropagation(); clearImage()">إزالة</button>
+                </div>
+              </ng-container>
+              <ng-template #noImage>
+                <div class="drop-empty">
+                  <span class="drop-icon"><i class="fas fa-cloud-upload-alt"></i></span>
+                  <div>اسحب الصورة هنا أو انقر للاختيار</div>
+                  <small>JPG أو PNG أو WEBP، حتى 15 ميغابايت</small>
+                </div>
+              </ng-template>
+            </div>
+          </div>
+
+          <div class="mb-3" *ngIf="tpl.fitChoice">
+            <label class="form-label">طريقة العرض</label>
+            <div class="segmented">
+              <button type="button" [class.selected]="ed.slide.imageFit === 'contain'" (click)="ed.slide.imageFit = 'contain'">
+                الصورة كاملة
+              </button>
+              <button type="button" [class.selected]="ed.slide.imageFit === 'cover'" (click)="ed.slide.imageFit = 'cover'">
+                ملء الشاشة (قص الأطراف)
+              </button>
+            </div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-6">
+              <label class="form-label">مدة العرض (ثانية)</label>
+              <input type="number" class="form-control" min="3" max="600" [(ngModel)]="ed.slide.duration">
+            </div>
+            <div class="col-6 d-flex align-items-end">
+              <label class="switch">
+                <input type="checkbox" [(ngModel)]="ed.slide.isActive">
+                <span class="switch-track"><span class="switch-thumb"></span></span>
+                <span class="switch-label">{{ ed.slide.isActive ? 'مفعّلة' : 'معطّلة' }}</span>
+              </label>
+            </div>
+            <div class="col-6">
+              <label class="form-label">تبدأ في <span class="muted">(اختياري)</span></label>
+              <input type="date" class="form-control" [(ngModel)]="ed.slide.startDate">
+            </div>
+            <div class="col-6">
+              <label class="form-label">تنتهي في <span class="muted">(اختياري)</span></label>
+              <input type="date" class="form-control" [(ngModel)]="ed.slide.endDate">
+            </div>
+          </div>
+        </div>
+
+        <div class="editor-preview">
+          <div class="preview-label">معاينة مباشرة</div>
+          <div class="preview-frame">
+            <app-display-stage>
+              <app-display-slide [slide]="ed.slide" [imageUrl]="editorImage" [hijriOffset]="settings.hijriOffset" [editing]="true"></app-display-slide>
+            </app-display-stage>
+          </div>
+          <button type="button" class="btn btn-sm btn-outline-teal mt-2" (click)="openPreview(ed.slide, editorImage)">
+            معاينة بملء الشاشة مع الحركة
+          </button>
+        </div>
+      </div>
+
+      <div class="editor-foot" *ngIf="ed.step === 'form'">
+        <div class="editor-error" *ngIf="ed.error">{{ ed.error }}</div>
+        <button type="button" class="btn btn-light" *ngIf="!ed.id" (click)="ed.step = 'template'" [disabled]="ed.saving">
+          تغيير القالب
+        </button>
+        <button type="button" class="btn btn-light" (click)="closeEditor()" [disabled]="ed.saving">إلغاء</button>
+        <button type="button" class="btn btn-teal" (click)="save()" [disabled]="ed.saving">
+          {{ ed.saving ? 'جارٍ الحفظ...' : 'حفظ الشريحة' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= Full-size preview ================= -->
+  <div class="full-preview" *ngIf="preview" (click)="preview = null">
+    <app-display-stage>
+      <app-display-slide [slide]="preview.slide" [imageUrl]="preview.imageUrl" [hijriOffset]="settings.hijriOffset" [animate]="true"></app-display-slide>
+    </app-display-stage>
+    <div class="full-hint">انقر في أي مكان أو اضغط Esc للإغلاق</div>
+  </div>
+
+  <div class="toast-msg" *ngIf="toast" [class.error]="toastError">{{ toast }}</div>
+</div>

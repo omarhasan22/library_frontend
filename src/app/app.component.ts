@@ -11,12 +11,16 @@ import { filter } from 'rxjs/operators';
 export class AppComponent {
   title = 'UI';
   isHomePage: boolean = true;
+  // Checked up front too, so a TV opening /display never flashes the navbar.
+  isDisplayRoute = location.pathname.startsWith('/display');
 
   constructor(private router: Router,
     private renderer: Renderer2) {
     this.router.events
       .pipe(filter(e => e instanceof NavigationEnd))
       .subscribe((e: NavigationEnd) => {
+        this.isDisplayRoute = e.urlAfterRedirects.startsWith('/display');
+
         const nav = document.querySelector('#mainNav');
         if (!nav) return;
 

@@ -1,0 +1,212 @@
+.screen {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  background: #000000;
+  overflow: hidden;
+}
+
+.screen.idle {
+  cursor: none;
+}
+
+.slides {
+  position: absolute;
+  inset: 0;
+}
+
+.slides.with-bar {
+  bottom: 96px;
+}
+
+.layer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.enter-fade { animation: layer-fade 1s ease both; }
+.enter-slide { animation: layer-slide 1.1s cubic-bezier(0.7, 0, 0.2, 1) both; }
+.enter-zoom { animation: layer-zoom 1.2s cubic-bezier(0.16, 0.84, 0.3, 1) both; }
+
+@keyframes layer-fade {
+  from { opacity: 0; }
+}
+
+/* Right-to-left: the next slide comes in from the left. */
+@keyframes layer-slide {
+  from { transform: translateX(-100%); }
+}
+
+@keyframes layer-zoom {
+  from { opacity: 0; transform: scale(1.08); }
+}
+
+/* ---------- Bottom bar (on the 1920px stage) ---------- */
+
+.bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 96px;
+  display: flex;
+  align-items: stretch;
+  direction: rtl;
+  background: #ffffff;
+  color: #22403D;
+  font-family: 'Cairo', 'Tajawal', sans-serif;
+  box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.18);
+}
+
+.bar-brand {
+  flex: 0 0 120px;
+  display: grid;
+  place-items: center;
+  background: #209C90;
+}
+
+.bar-emblem {
+  width: 64px;
+  height: 64px;
+  --emblem-star: #ffffff;
+  --emblem-petal: rgba(255, 255, 255, 0.65);
+  --emblem-stroke: 10;
+}
+
+.bar-ticker {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Two identical copies side by side; sliding by one copy's width loops seamlessly.
+   Right-to-left text, so it moves rightwards: each item's start appears first. */
+.ticker-track {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  display: flex;
+  animation: ticker 60s linear infinite;
+  will-change: transform;
+}
+
+.ticker-copy {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  min-width: 1500px;
+}
+
+.ticker-item {
+  padding: 0 34px;
+  font-size: 40px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.ticker-sep {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  --emblem-star: #209C90;
+  --emblem-stroke: 15;
+}
+
+@keyframes ticker {
+  from { transform: translateX(0); }
+  to { transform: translateX(50%); }
+}
+
+.bar-date {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  padding: 0 36px;
+  font-size: 38px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.bar-date strong {
+  font-weight: 800;
+  color: #1C9286;
+}
+
+.bar-date-sep {
+  display: inline-block;
+  width: 2px;
+  height: 40px;
+  margin: 0 26px;
+  background: rgba(32, 156, 144, 0.35);
+}
+
+.faint {
+  color: #7E8B89;
+}
+
+.bar-clock {
+  flex: 0 0 auto;
+  min-width: 270px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 0 36px;
+  background: #126B62;
+  color: #ffffff;
+  font-size: 54px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.bar-clock small {
+  font-size: 28px;
+  font-weight: 700;
+  opacity: 0.8;
+}
+
+/* ---------- On-screen controls ---------- */
+
+.controls {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  direction: rtl;
+  font-family: 'Cairo', 'Tajawal', sans-serif;
+  transition: opacity 0.4s ease;
+}
+
+.screen.idle .controls {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.controls button {
+  padding: 8px 18px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.controls button:hover {
+  background: rgba(32, 156, 144, 0.9);
+}
+
+.status {
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: rgba(180, 40, 40, 0.85);
+  color: #ffffff;
+  font-size: 14px;
+}

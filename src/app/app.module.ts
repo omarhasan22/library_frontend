@@ -25,6 +25,11 @@ import { AuthorDashboardComponent } from './components/author-dashboard/author-d
 import { PublisherDashboardComponent } from './components/publisher-dashboard/publisher-dashboard.component';
 import { BulkUpdateComponent } from './components/bulk-update/bulk-update.component';
 import { CommonModule } from '@angular/common';
+import { DisplayStageComponent } from './components/display/display-stage.component';
+import { DisplayEmblemComponent } from './components/display/display-emblem.component';
+import { DisplaySlideComponent } from './components/display/display-slide/display-slide.component';
+import { DisplayScreenComponent } from './components/display/display-screen/display-screen.component';
+import { DisplayAdminComponent } from './components/display/display-admin/display-admin.component';
 
 
 @NgModule({
@@ -45,7 +50,12 @@ import { CommonModule } from '@angular/common';
         ExportsComponent,
         AuthorDashboardComponent,
         PublisherDashboardComponent,
-        BulkUpdateComponent
+        BulkUpdateComponent,
+        DisplayStageComponent,
+        DisplayEmblemComponent,
+        DisplaySlideComponent,
+        DisplayScreenComponent,
+        DisplayAdminComponent
     ],
     bootstrap: [AppComponent], imports: [BrowserModule,
         AppRoutingModule,

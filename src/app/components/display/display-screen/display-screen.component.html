@@ -1,0 +1,56 @@
+<div class="screen" [class.idle]="idle">
+  <app-display-stage>
+    <div class="slides" [class.with-bar]="showBar">
+      <div *ngFor="let layer of layers; trackBy: trackLayer" class="layer" [ngClass]="'enter-' + settings.transition">
+        <app-display-slide [slide]="layer.slide" [imageUrl]="mediaUrl(layer.slide)"
+          [hijriOffset]="settings.hijriOffset" [animate]="true"></app-display-slide>
+      </div>
+    </div>
+
+    <!-- Bottom bar: news ticker and/or clock -->
+    <div class="bar" *ngIf="showBar">
+      <div class="bar-brand">
+        <app-display-emblem class="bar-emblem"></app-display-emblem>
+      </div>
+
+      <div class="bar-ticker" *ngIf="tickerItems.length; else barDate">
+        <div class="ticker-track" [style.animation-duration.s]="tickerDuration">
+          <div class="ticker-copy" #tickerCopy>
+            <ng-container *ngTemplateOutlet="tickerContent"></ng-container>
+          </div>
+          <div class="ticker-copy" aria-hidden="true">
+            <ng-container *ngTemplateOutlet="tickerContent"></ng-container>
+          </div>
+        </div>
+      </div>
+      <ng-template #barDate>
+        <div class="bar-date">
+          <ng-container *ngIf="clock$ | async as c">
+            <strong>{{ c.weekday }}</strong>&nbsp;{{ c.hijri }}
+            <span class="bar-date-sep"></span>
+            <span class="faint">{{ c.gregorian }}</span>
+          </ng-container>
+        </div>
+      </ng-template>
+
+      <div class="bar-clock" *ngIf="settings.showClock">
+        <ng-container *ngIf="clock$ | async as c">{{ c.time }}<small>{{ c.period }}</small></ng-container>
+      </div>
+    </div>
+  </app-display-stage>
+
+  <ng-template #tickerContent>
+    <ng-container *ngFor="let item of tickerItems">
+      <span class="ticker-item">{{ item }}</span>
+      <app-display-emblem class="ticker-sep" [starOnly]="true"></app-display-emblem>
+    </ng-container>
+  </ng-template>
+
+  <!-- Shown while the mouse moves; hidden on an unattended screen -->
+  <div class="controls">
+    <button type="button" (click)="toggleFullscreen()">
+      {{ isFullscreen ? 'خروج من ملء الشاشة' : 'ملء الشاشة (F)' }}
+    </button>
+    <span class="status" *ngIf="offline">غير متصل - يُعرض آخر محتوى محفوظ</span>
+  </div>
+</div>
