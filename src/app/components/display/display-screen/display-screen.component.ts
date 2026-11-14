@@ -1,13 +1,26 @@
-import { Component, ElementRef, HostListener, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
+import { Component, ElementRef, HostListener, OnDestroy, OnInit, QueryList, ViewChild, ViewChildren, inject } from '@angular/core';
 import { Subscription, map } from 'rxjs';
 import { DisplayService } from '../../../services/display.service';
 import {
-  DEFAULT_DISPLAY_SETTINGS, DisplayData, DisplaySettings, DisplaySlide, FALLBACK_SLIDE, clockParts, slideStatus
+  BarHadith, DEFAULT_DISPLAY_SETTINGS, DisplayData, DisplaySettings, DisplaySlide, FALLBACK_SLIDE, clockParts,
+  parseHadiths, slideStatus
 } from '../../../models/display.model';
 
 interface Layer {
   key: number;
   slide: DisplaySlide;
+}
+
+/** What the middle of the bottom bar shows. */
+type BarMode = 'news' | 'hadith' | 'date';
+
+interface HadithLayer {
+  key: number;
+  hadith: BarHadith;
+  leaving: boolean;
+  /** How far a hadith longer than the bar has slid to bring its end into view (px). */
+  shift: number;
+  scrollSeconds: number;
 }
 
 const CACHE_KEY = 'display_screen_cache';
@@ -16,7 +29,15 @@ const RETRY_MS = 15_000;           // faster retries while there is nothing to s
 const TRANSITION_MS = 1300;        // keep the previous slide underneath while the next one enters
 const RELOAD_AFTER_MS = 24 * 3600_000; // reload daily to pick up new versions of the site
 const TICKER_SPEED = 110;          // px per second
+const HADITH_SWAP_MS = 700;        // one hadith slides out while the next slides in
+const HADITH_HOLD_MS = 2500;       // a long hadith rests this long before and after scrolling
+const HADITH_SCROLL_SPEED = 70;    // px per second
 const IDLE_MS = 3000;
+
+/** Time to read a hadith from across the room: about 11 letters a second, 6 to 20 seconds. */
+function readingMs(hadith: BarHadith): number {
+  return Math.min(20_000, Math.max(6_000, 3_000 + (hadith.text.length + hadith.source.length) * 90));
+}
 
 /**
  * The page the library's screen opens (/display): plays the enabled slides in a loop.
@@ -32,6 +53,9 @@ export class DisplayScreenComponent implements OnInit, OnDestroy {
   layers: Layer[] = [];
   tickerItems: string[] = [];
   tickerDuration = 60;
+  hadiths: BarHadith[] = [];
+  hadithLayers: HadithLayer[] = [];
+  barMode: BarMode = 'date';
   offline = false;
   idle = false;
   isFullscreen = false;
@@ -40,6 +64,7 @@ export class DisplayScreenComponent implements OnInit, OnDestroy {
   readonly clock$ = this.display.now$.pipe(map(date => clockParts(date, this.settings.hijriOffset)));
 
   @ViewChild('tickerCopy') private tickerCopy?: ElementRef<HTMLElement>;
+  @ViewChildren('hadithLine') private hadithLines?: QueryList<ElementRef<HTMLElement>>;
 
   private slides: DisplaySlide[] = [];
   private current: DisplaySlide | null = null;
@@ -51,10 +76,15 @@ export class DisplayScreenComponent implements OnInit, OnDestroy {
   private cleanupTimer?: ReturnType<typeof setTimeout>;
   private pollTimer?: ReturnType<typeof setTimeout>;
   private idleTimer?: ReturnType<typeof setTimeout>;
+  private barTimer?: ReturnType<typeof setTimeout>;
+  private hadithScrollTimer?: ReturnType<typeof setTimeout>;
+  private hadithCleanupTimer?: ReturnType<typeof setTimeout>;
+  private hadithIndex = 0;
+  private hadithKey = 0;
   private wakeLock: { release(): Promise<void> } | null = null;
 
   get showBar(): boolean {
-    return this.tickerItems.length > 0 || this.settings.showClock;
+    return this.tickerItems.length > 0 || this.hadiths.length > 0 || this.settings.showClock;
   }
 
   ngOnInit(): void {
@@ -71,6 +101,7 @@ export class DisplayScreenComponent implements OnInit, OnDestroy {
     document.body.classList.remove('display-mode');
     this.fetchSub?.unsubscribe();
     [this.advanceTimer, this.cleanupTimer, this.pollTimer, this.idleTimer].forEach(t => clearTimeout(t));
+    this.clearBarTimers();
     this.wakeLock?.release().catch(() => { /* already released */ });
   }
 
@@ -78,7 +109,7 @@ export class DisplayScreenComponent implements OnInit, OnDestroy {
     return this.display.mediaUrl(slide.image);
   }
 
-  trackLayer(_: number, layer: Layer): number {
+  trackLayer(_: number, layer: Layer | HadithLayer): number {
     return layer.key;
   }
 
@@ -114,12 +145,14 @@ export class DisplayScreenComponent implements OnInit, OnDestroy {
     this.settings = { ...DEFAULT_DISPLAY_SETTINGS, ...data.settings };
     this.slides = data.slides || [];
 
-    const items = this.settings.tickerEnabled
+    const news = this.settings.tickerEnabled
       ? (this.settings.tickerText || '').split('\n').map(s => s.trim()).filter(Boolean)
       : [];
-    if (items.join('\n') !== this.tickerItems.join('\n')) {
-      this.tickerItems = items;
-      setTimeout(() => this.measureTicker());
+    const hadiths = this.settings.hadithEnabled ? parseHadiths(this.settings.hadithText) : [];
+    if (news.join('\n') !== this.tickerItems.join('\n') || JSON.stringify(hadiths) !== JSON.stringify(this.hadiths)) {
+      this.tickerItems = news;
+      this.hadiths = hadiths;
+      this.startBar();
     }
 
     // The slide on screen: keep it if it is still scheduled (updating its content in place),
@@ -190,6 +223,80 @@ export class DisplayScreenComponent implements OnInit, OnDestroy {
   private measureTicker(): void {
     const width = this.tickerCopy?.nativeElement.offsetWidth;
     if (width) this.tickerDuration = Math.max(20, Math.round(width / TICKER_SPEED));
+  }
+
+  // ---------- bottom bar: news and hadiths take turns ----------
+
+  /** Starts the bar over: the news first (one full pass), then each hadith, then the news again. */
+  private startBar(): void {
+    this.clearBarTimers();
+    this.hadithLayers = [];
+    if (this.tickerItems.length) this.showNews();
+    else if (this.hadiths.length) this.showHadith(0);
+    else this.barMode = 'date';
+  }
+
+  private showNews(): void {
+    this.clearBarTimers();
+    this.barMode = 'news';
+    this.hadithLayers = [];
+    // Once the ticker is on the page: measure it, and after one full pass hand over to the hadiths.
+    this.barTimer = setTimeout(() => {
+      this.measureTicker();
+      if (this.hadiths.length) this.barTimer = setTimeout(() => this.showHadith(0), this.tickerDuration * 1000);
+    });
+  }
+
+  private showHadith(index: number): void {
+    this.clearBarTimers();
+    this.barMode = 'hadith';
+    this.hadithIndex = index;
+    const hadith = this.hadiths[index];
+    const key = ++this.hadithKey;
+    const entering: HadithLayer = { key, hadith, leaving: false, shift: 0, scrollSeconds: 0 };
+    const previous = this.hadithLayers.filter(l => !l.leaving).pop();
+    this.hadithLayers = previous ? [{ ...previous, leaving: true }, entering] : [entering];
+    this.hadithCleanupTimer = setTimeout(() => (this.hadithLayers = this.hadithLayers.filter(l => !l.leaving)), HADITH_SWAP_MS);
+
+    // Measure once it is on the page in the Arabic web font.
+    this.barTimer = setTimeout(() => (document.fonts?.ready ?? Promise.resolve()).then(() => {
+      if (this.hadithKey !== key || this.barMode !== 'hadith') return; // the bar moved on meanwhile
+      let stay = readingMs(hadith);
+      const overflow = this.hadithOverflow();
+      if (overflow > 0) {
+        // Longer than the bar: rest, slide to its end, rest again.
+        const scrollMs = (overflow / HADITH_SCROLL_SPEED) * 1000;
+        this.hadithScrollTimer = setTimeout(() => {
+          entering.shift = overflow;
+          entering.scrollSeconds = scrollMs / 1000;
+        }, HADITH_SWAP_MS + HADITH_HOLD_MS);
+        stay = Math.max(stay, HADITH_SWAP_MS + 2 * HADITH_HOLD_MS + scrollMs);
+      } else if (this.hadiths.length === 1 && !this.tickerItems.length) {
+        return; // a single short hadith simply stays
+      }
+      this.barTimer = setTimeout(() => this.nextHadith(), stay);
+    }));
+  }
+
+  private nextHadith(): void {
+    const next = this.hadithIndex + 1;
+    if (next < this.hadiths.length) this.showHadith(next);
+    else if (this.tickerItems.length) this.showNews();
+    else this.showHadith(0);
+  }
+
+  /** How much wider the newest hadith is than the room it has (px; 0 or less if it fits). */
+  private hadithOverflow(): number {
+    const line = this.hadithLines?.last?.nativeElement;
+    const box = line?.parentElement;
+    if (!line || !box) return 0;
+    const style = getComputedStyle(box);
+    const room = box.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+    return Math.ceil(line.offsetWidth - room);
+  }
+
+  private clearBarTimers(): void {
+    [this.barTimer, this.hadithScrollTimer, this.hadithCleanupTimer].forEach(t => clearTimeout(t));
   }
 
   // ---------- screen controls ----------

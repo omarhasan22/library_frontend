@@ -127,6 +127,18 @@
             <div class="hint">كل سطر يظهر كخبر مستقل يتحرك على الشريط.</div>
           </div>
 
+          <label class="switch mb-2">
+            <input type="checkbox" [(ngModel)]="settings.hadithEnabled">
+            <span class="switch-track"><span class="switch-thumb"></span></span>
+            <span class="switch-label">أحاديث في الشريط أسفل الشاشة</span>
+          </label>
+          <div *ngIf="settings.hadithEnabled" class="mb-3">
+            <textarea class="form-control" rows="5" maxlength="5000" aria-label="أحاديث الشريط" [(ngModel)]="settings.hadithText"
+              placeholder="«إنّما الأعمال بالنيّات» | متّفق عليه"></textarea>
+            <div class="hint">كل سطر حديث يظهر وحده لثوانٍ ثم يتبعه التالي. اكتب المصدر بعد العلامة | ليظهر بخط أخف.</div>
+            <div class="hint" *ngIf="settings.tickerEnabled">الأخبار والأحاديث تتناوب: تمرّ الأخبار مرة، ثم الأحاديث، وهكذا.</div>
+          </div>
+
           <label class="switch mb-3">
             <input type="checkbox" [(ngModel)]="settings.showClock">
             <span class="switch-track"><span class="switch-thumb"></span></span>

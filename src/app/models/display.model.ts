@@ -34,9 +34,30 @@ export interface DisplaySettings {
   tickerEnabled: boolean;
   /** One news item per line. */
   tickerText: string;
+  hadithEnabled: boolean;
+  /** One hadith per line, optionally "text | source". */
+  hadithText: string;
   showClock: boolean;
   hijriOffset: number;
   transition: DisplayTransition;
+}
+
+/** A hadith for the bottom bar. */
+export interface BarHadith {
+  text: string;
+  source: string;
+}
+
+/** Reads the admin's hadith list: one per line, the source (optional) after the first "|". */
+export function parseHadiths(text: string): BarHadith[] {
+  return (text || '').split('\n')
+    .map(line => {
+      const bar = line.indexOf('|');
+      return bar === -1
+        ? { text: line.trim(), source: '' }
+        : { text: line.slice(0, bar).trim(), source: line.slice(bar + 1).trim() };
+    })
+    .filter(h => h.text);
 }
 
 export interface DisplayData {
@@ -230,6 +251,8 @@ export const DISPLAY_TEMPLATES: DisplayTemplateDef[] = [
 export const DEFAULT_DISPLAY_SETTINGS: DisplaySettings = {
   tickerEnabled: false,
   tickerText: '',
+  hadithEnabled: false,
+  hadithText: '',
   showClock: true,
   hijriOffset: 0,
   transition: 'fade'

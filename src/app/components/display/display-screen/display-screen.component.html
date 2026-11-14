@@ -7,31 +7,47 @@
       </div>
     </div>
 
-    <!-- Bottom bar: news ticker and/or clock -->
+    <!-- Bottom bar: news ticker and hadiths (taking turns), or the date; and the clock -->
     <div class="bar" *ngIf="showBar">
       <div class="bar-brand">
         <app-display-emblem class="bar-emblem"></app-display-emblem>
       </div>
 
-      <div class="bar-ticker" *ngIf="tickerItems.length; else barDate">
-        <div class="ticker-track" [style.animation-duration.s]="tickerDuration">
-          <div class="ticker-copy" #tickerCopy>
-            <ng-container *ngTemplateOutlet="tickerContent"></ng-container>
-          </div>
-          <div class="ticker-copy" aria-hidden="true">
-            <ng-container *ngTemplateOutlet="tickerContent"></ng-container>
+      <ng-container [ngSwitch]="barMode">
+        <div class="bar-ticker" *ngSwitchCase="'news'">
+          <div class="ticker-track" [style.animation-duration.s]="tickerDuration">
+            <div class="ticker-copy" #tickerCopy>
+              <ng-container *ngTemplateOutlet="tickerContent"></ng-container>
+            </div>
+            <div class="ticker-copy" aria-hidden="true">
+              <ng-container *ngTemplateOutlet="tickerContent"></ng-container>
+            </div>
           </div>
         </div>
-      </div>
-      <ng-template #barDate>
-        <div class="bar-date">
+
+        <!-- One hadith at a time: slides up into view, a long one then scrolls to its end -->
+        <div class="bar-hadith" *ngSwitchCase="'hadith'">
+          <div *ngFor="let layer of hadithLayers; trackBy: trackLayer" class="hadith" [class.leaving]="layer.leaving">
+            <div class="hadith-line" #hadithLine
+              [style.transform]="'translateX(' + layer.shift + 'px)'" [style.transition-duration.s]="layer.scrollSeconds">
+              <app-display-emblem class="hadith-star" [starOnly]="true"></app-display-emblem>
+              <span class="hadith-text">{{ layer.hadith.text }}</span>
+              <ng-container *ngIf="layer.hadith.source">
+                <span class="hadith-sep"></span>
+                <span class="hadith-source">{{ layer.hadith.source }}</span>
+              </ng-container>
+            </div>
+          </div>
+        </div>
+
+        <div class="bar-date" *ngSwitchDefault>
           <ng-container *ngIf="clock$ | async as c">
             <strong>{{ c.weekday }}</strong>&nbsp;{{ c.hijri }}
             <span class="bar-date-sep"></span>
             <span class="faint">{{ c.gregorian }}</span>
           </ng-container>
         </div>
-      </ng-template>
+      </ng-container>
 
       <div class="bar-clock" *ngIf="settings.showClock">
         <ng-container *ngIf="clock$ | async as c">{{ c.time }}<small>{{ c.period }}</small></ng-container>

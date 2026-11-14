@@ -16,7 +16,7 @@
 }
 
 .slides.with-bar {
-  bottom: 96px;
+  bottom: 72px;
 }
 
 .layer {
@@ -49,7 +49,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  height: 96px;
+  height: 72px;
   display: flex;
   align-items: stretch;
   direction: rtl;
@@ -60,15 +60,15 @@
 }
 
 .bar-brand {
-  flex: 0 0 120px;
+  flex: 0 0 96px;
   display: grid;
   place-items: center;
   background: #209C90;
 }
 
 .bar-emblem {
-  width: 64px;
-  height: 64px;
+  width: 48px;
+  height: 48px;
   --emblem-star: #ffffff;
   --emblem-petal: rgba(255, 255, 255, 0.65);
   --emblem-stroke: 10;
@@ -101,16 +101,16 @@
 }
 
 .ticker-item {
-  padding: 0 34px;
-  font-size: 40px;
+  padding: 0 28px;
+  font-size: 30px;
   font-weight: 700;
   white-space: nowrap;
 }
 
 .ticker-sep {
   flex: 0 0 auto;
-  width: 28px;
-  height: 28px;
+  width: 22px;
+  height: 22px;
   --emblem-star: #209C90;
   --emblem-stroke: 15;
 }
@@ -120,12 +120,92 @@
   to { transform: translateX(50%); }
 }
 
+/* One hadith at a time. Text runs right-to-left from the brand side; a hadith longer than the
+   bar slides rightwards to show its end. The edges fade so long text isn't cut off abruptly. */
+.bar-hadith {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+  overflow: hidden;
+  --edge-fade: linear-gradient(to right, transparent, #000 30px, #000 calc(100% - 30px), transparent);
+  -webkit-mask-image: var(--edge-fade);
+  mask-image: var(--edge-fade);
+}
+
+.hadith {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 30px;
+  animation: hadith-in 0.7s cubic-bezier(0.16, 0.84, 0.3, 1) both;
+}
+
+.hadith.leaving {
+  animation: hadith-out 0.7s ease both;
+}
+
+@keyframes hadith-in {
+  from { opacity: 0; transform: translateY(100%); }
+}
+
+@keyframes hadith-out {
+  to { opacity: 0; transform: translateY(-100%); }
+}
+
+.hadith-line {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  white-space: nowrap;
+  transition-property: transform;
+  transition-timing-function: linear;
+}
+
+.hadith-star {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  --emblem-star: #209C90;
+  --emblem-stroke: 15;
+}
+
+.hadith-text {
+  font-size: 30px;
+  font-weight: 700;
+}
+
+.hadith-sep {
+  width: 2px;
+  height: 30px;
+  margin: 0 6px;
+  background: rgba(32, 156, 144, 0.35);
+}
+
+.hadith-source {
+  font-size: 22px;
+  font-weight: 600;
+  color: #7E8B89;
+}
+
+/* The news, the hadiths and the date fade in as they take turns. */
+.bar-ticker,
+.bar-hadith,
+.bar-date {
+  animation: bar-in 0.6s ease both;
+}
+
+@keyframes bar-in {
+  from { opacity: 0; }
+}
+
 .bar-date {
   flex: 1;
   display: flex;
   align-items: center;
-  padding: 0 36px;
-  font-size: 38px;
+  padding: 0 30px;
+  font-size: 28px;
   font-weight: 600;
   white-space: nowrap;
 }
@@ -138,8 +218,8 @@
 .bar-date-sep {
   display: inline-block;
   width: 2px;
-  height: 40px;
-  margin: 0 26px;
+  height: 30px;
+  margin: 0 20px;
   background: rgba(32, 156, 144, 0.35);
 }
 
@@ -149,21 +229,21 @@
 
 .bar-clock {
   flex: 0 0 auto;
-  min-width: 270px;
+  min-width: 210px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  padding: 0 36px;
+  gap: 10px;
+  padding: 0 30px;
   background: #126B62;
   color: #ffffff;
-  font-size: 54px;
+  font-size: 40px;
   font-weight: 800;
   white-space: nowrap;
 }
 
 .bar-clock small {
-  font-size: 28px;
+  font-size: 21px;
   font-weight: 700;
   opacity: 0.8;
 }
